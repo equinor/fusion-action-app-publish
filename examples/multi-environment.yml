@@ -1,0 +1,43 @@
+name: Multi-Environment Deploy
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - ci
+          - fqa
+          - fprd
+        default: 'ci'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Publish to Fusion
+        uses: equinor/fusion-action-app-publish@v1
+        with:
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          env: ${{ github.event.inputs.environment || 'auto' }}
+          artifact: 'dist'
+        
+      - name: Print deployment info
+        run: |
+          echo "🚀 Deployed to environment: ${{ steps.deploy.outputs.target-env }}"
+          echo "📱 App URL: ${{ steps.deploy.outputs.app-url }}"
+          echo "🌐 Portal URL: ${{ steps.deploy.outputs.portal-url }}"

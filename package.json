@@ -1,0 +1,41 @@
+{
+  "name": "fusion-action-app-publish",
+  "version": "1.0.0",
+  "description": "GitHub Action to authenticate & publish Fusion apps using fusion-framework-cli",
+  "main": "validate.js",
+  "scripts": {
+    "test": "node scripts/validate.js ci dist '' client-id tenant-id https://fusion.equinor.com pr",
+    "test:auto": "node scripts/validate.js auto ./dist '' client-id tenant-id https://fusion.equinor.com pr", 
+    "test:token": "node scripts/validate.js fqa ./dist token123 '' '' ''",
+    "lint": "echo 'No linting configured yet'",
+    "validate-example": "node scripts/validate.js fprd ./dist token123 '' '' ''"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/equinor/fusion-action-app-publish.git"
+  },
+  "keywords": [
+    "fusion",
+    "equinor",
+    "github-action",
+    "deployment",
+    "publish",
+    "azure",
+    "fusion-framework"
+  ],
+  "author": "Equinor Fusion Core",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/equinor/fusion-action-app-publish/issues"
+  },
+  "homepage": "https://github.com/equinor/fusion-action-app-publish#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "action.yml",
+    "validate.js",
+    "README.md",
+    "LICENSE"
+  ]
+}

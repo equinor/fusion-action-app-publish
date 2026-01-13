@@ -1,0 +1,26 @@
+name: Deploy to Fusion (Azure OIDC)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Required for OIDC
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Publish to Fusion
+        uses: equinor/fusion-action-app-publish@v1
+        with:
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          env: 'fprd'
+          artifact: 'dist'
