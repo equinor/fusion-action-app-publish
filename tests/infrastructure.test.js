@@ -64,7 +64,7 @@ describe('Script Infrastructure Tests', () => {
       },
       {
         script: 'post-publish-metadata.js',
-        keywords: ['manifest', 'github', 'postPrComment', 'extractAppManifest']
+        keywords: ['metadata', 'github', 'postPrComment', 'extractAppMetadata']
       }
     ];
 

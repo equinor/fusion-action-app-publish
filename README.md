@@ -12,7 +12,7 @@ A GitHub Action to authenticate and publish Fusion applications using the `@equi
 - 🔄 **PR Deployments**: Automatic preview deployments for pull requests
 - 🧪 **Fully Tested**: 100% test coverage with comprehensive unit tests
 - 🔍 **Detailed Logging**: Clear output and error messages for debugging
-- 📝 **Rich Metadata**: Extracts app information and posts deployment details to PRs
+- 📝 **Rich Metadata**: Extracts app information from metadata.json (name -> appKey) and posts deployment details to PRs
 
 ## Usage
 
@@ -205,10 +205,20 @@ app-bundle/
 ├── index.html
 ├── bundle.js
 ├── styles.css
-└── app.manifest.json  # Required for metadata extraction
+└── metadata.json  # Required for metadata extraction
 ```
 
-The action will automatically extract metadata from `app.manifest.json` when present. The extraction process uses `unzip -p` to read the manifest directly from the zip archive without creating temporary files, making it more efficient and faster.
+The action will automatically extract metadata from `metadata.json` when present. The extraction process uses `unzip -p` to read the metadata directly from the zip archive without creating temporary files, making it more efficient and faster.
+
+#### Expected metadata.json format:
+```json
+{
+  "name": "fusion-framework-cookbook-app-react",
+  "version": "4.1.8"
+}
+```
+
+The `name` field will be used as the app key for deployment.
 
 ## Troubleshooting
 

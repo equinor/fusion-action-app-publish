@@ -4,7 +4,7 @@ const util = require('node:util');
 
 describe('post-publish-metadata.js', () => {
   let mockCore, mockGithub, mockFs, mockExec;
-  let extractAppManifest, generateAppUrl, postPrComment;
+  let extractAppMetadata, generateAppUrl, postPrComment;
   
   beforeEach(() => {
     // Clear module cache
@@ -56,7 +56,7 @@ describe('post-publish-metadata.js', () => {
     
     // Import the functions after mocking
     const module = require('../scripts/post-publish-metadata');
-    extractAppManifest = module.extractAppManifest;
+    extractAppMetadata = module.extractAppMetadata;
     generateAppUrl = module.generateAppUrl;
     postPrComment = module.postPrComment;
   });
@@ -87,22 +87,22 @@ describe('post-publish-metadata.js', () => {
       expect(result).toBe('https://fusion.fqa.fusion-dev.net/apps/my-app?$tag=v1.2.3');
     });
 
-    test('should use appKey as fallback for app identifier', () => {
-      const manifest = { appKey: 'my-app' };
+    test('should generate URL when key is present', () => {
+      const meta = { key: 'my-app' };
       const env = 'ci';
       const tag = 'latest';
 
-      const result = generateAppUrl(manifest, env, tag);
+      const result = generateAppUrl(meta, env, tag);
       
       expect(result).toBe('https://fusion.ci.fusion-dev.net/apps/my-app');
     });
 
-    test('should use name as fallback for app identifier', () => {
-      const manifest = { name: 'my-app' };
+    test('should generate URL with different environment', () => {
+      const meta = { key: 'my-app' };
       const env = 'tr';
       const tag = 'latest';
 
-      const result = generateAppUrl(manifest, env, tag);
+      const result = generateAppUrl(meta, env, tag);
       
       expect(result).toBe('https://fusion.tr.fusion-dev.net/apps/my-app');
     });
@@ -148,82 +148,109 @@ describe('post-publish-metadata.js', () => {
     });
 
     test('should throw error when no app identifier found', () => {
-      const manifest = { description: 'An app without key/appKey/name' };
+      const meta = { description: 'An app without key' };
       const env = 'fprd';
       const tag = 'latest';
 
-      expect(() => generateAppUrl(manifest, env, tag))
-        .toThrow('App key/name not found in manifest');
+      expect(() => generateAppUrl(meta, env, tag))
+        .toThrow('App key not found in metadata');
     });
   });
 
-  describe('extractAppManifest', () => {
-    test('should extract manifest from zip file using unzip -p', async () => {
-      const manifestContent = JSON.stringify({
-        key: 'test-app',
-        version: '1.0.0',
-        displayName: 'Test App'
+  describe('extractAppMetadata', () => {
+    test('should extract metadata from zip file using unzip -p', async () => {
+      const metadataContent = JSON.stringify({
+        name: 'fusion-framework-cookbook-app-react',
+        version: '4.1.8'
       });
 
-      mockExec.mockResolvedValue({ stdout: manifestContent, stderr: '' });
+      mockExec.mockResolvedValue({ stdout: metadataContent, stderr: '' });
 
-      const result = await extractAppManifest('/path/to/app.zip');
+      const result = await extractAppMetadata('/path/to/app.zip');
       
-      expect(mockExec).toHaveBeenCalledWith('unzip -p "/path/to/app.zip" "*/app.manifest.json"');
+      expect(mockExec).toHaveBeenCalledWith('unzip -p "/path/to/app.zip" "*/metadata.json"');
       expect(result).toEqual({
-        key: 'test-app',
-        version: '1.0.0',
-        displayName: 'Test App'
+        name: 'fusion-framework-cookbook-app-react',
+        version: '4.1.8',
+        key: 'fusion-framework-cookbook-app-react'
       });
     });
 
     test('should handle warnings from unzip command', async () => {
-      const manifestContent = JSON.stringify({ key: 'test-app' });
-      mockExec.mockResolvedValue({ stdout: manifestContent, stderr: 'Warning: some files skipped' });
+      const metadataContent = JSON.stringify({ name: 'test-app', version: '1.0.0' });
+      mockExec.mockResolvedValue({ stdout: metadataContent, stderr: 'Warning: some files skipped' });
 
-      const result = await extractAppManifest('/path/to/app.zip');
+      const result = await extractAppMetadata('/path/to/app.zip');
       
       expect(mockCore.warning).toHaveBeenCalledWith('Warning from unzip: Warning: some files skipped');
-      expect(result).toEqual({ key: 'test-app' });
+      expect(result).toEqual({
+        name: 'test-app',
+        version: '1.0.0',
+        key: 'test-app'
+      });
     });
 
     test('should throw error for unsupported file format', async () => {
-      await expect(extractAppManifest('/path/to/app.txt'))
+      await expect(extractAppMetadata('/path/to/app.txt'))
         .rejects.toThrow('Unsupported artifact format: .txt. Only .zip files are supported.');
     });
 
-    test('should throw error when manifest not found (empty output)', async () => {
+    test('should throw error when metadata not found (empty output)', async () => {
       mockExec.mockResolvedValue({ stdout: '', stderr: '' });
 
-      await expect(extractAppManifest('/path/to/app.zip'))
-        .rejects.toThrow('app.manifest.json not found in artifact');
+      await expect(extractAppMetadata('/path/to/app.zip'))
+        .rejects.toThrow('metadata.json not found in artifact');
     });
 
     test('should handle exec command errors', async () => {
       mockExec.mockRejectedValue(new Error('unzip command failed'));
 
-      await expect(extractAppManifest('/path/to/app.zip'))
+      await expect(extractAppMetadata('/path/to/app.zip'))
         .rejects.toThrow('unzip command failed');
       
       expect(mockCore.error).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to extract app manifest')
+        expect.stringContaining('Failed to extract app metadata')
       );
     });
 
-    test('should handle invalid JSON in manifest', async () => {
+    test('should handle invalid JSON in metadata', async () => {
       mockExec.mockResolvedValue({ stdout: 'invalid json content', stderr: '' });
 
-      await expect(extractAppManifest('/path/to/app.zip'))
-        .rejects.toThrow('Invalid JSON format in app.manifest.json');
+      await expect(extractAppMetadata('/path/to/app.zip'))
+        .rejects.toThrow('Invalid JSON format in metadata.json');
     });
 
-    test('should handle whitespace around manifest content', async () => {
-      const manifestContent = JSON.stringify({ key: 'test-app' });
-      mockExec.mockResolvedValue({ stdout: `  \n${manifestContent}\n  `, stderr: '' });
+    test('should handle whitespace around metadata content', async () => {
+      const metadataContent = JSON.stringify({ name: 'test-app', version: '2.0.0' });
+      mockExec.mockResolvedValue({ stdout: `  \n${metadataContent}\n  `, stderr: '' });
 
-      const result = await extractAppManifest('/path/to/app.zip');
+      const result = await extractAppMetadata('/path/to/app.zip');
       
-      expect(result).toEqual({ key: 'test-app' });
+      expect(result).toEqual({
+        name: 'test-app',
+        version: '2.0.0',
+        key: 'test-app'
+      });
+    });
+
+    test('should include additional fields from metadata.json', async () => {
+      const metadataContent = JSON.stringify({
+        name: 'my-app',
+        version: '3.0.0',
+        description: 'My custom app',
+        author: 'Test Author'
+      });
+      mockExec.mockResolvedValue({ stdout: metadataContent, stderr: '' });
+
+      const result = await extractAppMetadata('/path/to/app.zip');
+      
+      expect(result).toEqual({
+        name: 'my-app',
+        version: '3.0.0',
+        description: 'My custom app',
+        author: 'Test Author',
+        key: 'my-app'
+      });
     });
   });
 
@@ -249,8 +276,8 @@ describe('post-publish-metadata.js', () => {
     });
 
     test('should post comment for PR deployment', async () => {
-      const manifest = {
-        displayName: 'Test App',
+      const meta = {
+        name: 'Test App',
         version: '1.0.0',
         key: 'test-app',
         description: 'A test application'
@@ -258,7 +285,7 @@ describe('post-publish-metadata.js', () => {
       
       mockGithub.context.payload.pull_request = { number: 123 };
 
-      await postPrComment(manifest, 'fprd', 'v1.0.0', 
+      await postPrComment(meta, 'fprd', 'v1.0.0', 
         'https://fusion.equinor.com/apps/test-app', 
         'https://fusion.equinor.com/admin/test-app');
 
@@ -277,10 +304,10 @@ describe('post-publish-metadata.js', () => {
     });
 
     test('should extract PR number from pr- tag', async () => {
-      const manifest = { displayName: 'Test App', key: 'test-app' };
+      const meta = { name: 'Test App', key: 'test-app' };
       mockGithub.context.payload = {}; // No PR in payload
 
-      await postPrComment(manifest, 'ci', 'pr-456', 
+      await postPrComment(meta, 'ci', 'pr-456', 
         'https://fusion.ci.fusion-dev.net/apps/test-app', 
         'https://admin.url');
 
@@ -290,10 +317,10 @@ describe('post-publish-metadata.js', () => {
     });
 
     test('should skip comment when no PR number available', async () => {
-      const manifest = { displayName: 'Test App' };
+      const meta = { name: 'Test App' };
       mockGithub.context.payload = {}; // No PR context
 
-      await postPrComment(manifest, 'fprd', 'v1.0.0', 'https://app.url', 'https://admin.url');
+      await postPrComment(meta, 'fprd', 'v1.0.0', 'https://app.url', 'https://admin.url');
 
       expect(mockOctokit.rest.issues.createComment).not.toHaveBeenCalled();
       expect(mockCore.info).toHaveBeenCalledWith('Not a PR deployment, skipping PR comment');
@@ -301,32 +328,32 @@ describe('post-publish-metadata.js', () => {
 
     test('should skip comment when GITHUB_TOKEN not available', async () => {
       delete process.env.GITHUB_TOKEN;
-      const manifest = { displayName: 'Test App' };
+      const meta = { name: 'Test App' };
 
-      await postPrComment(manifest, 'fprd', 'v1.0.0', 'https://app.url', 'https://admin.url');
+      await postPrComment(meta, 'fprd', 'v1.0.0', 'https://app.url', 'https://admin.url');
 
       expect(mockCore.info).toHaveBeenCalledWith('GITHUB_TOKEN not available, skipping PR comment');
       expect(mockOctokit.rest.issues.createComment).not.toHaveBeenCalled();
     });
 
     test('should handle comment creation errors gracefully', async () => {
-      const manifest = { displayName: 'Test App', key: 'test-app' };
+      const meta = { name: 'Test App', key: 'test-app' };
       mockGithub.context.payload.pull_request = { number: 123 };
       
       mockOctokit.rest.issues.createComment.mockRejectedValue(
         new Error('API Error')
       );
 
-      await postPrComment(manifest, 'fprd', 'v1.0.0', 'https://app.url', 'https://admin.url');
+      await postPrComment(meta, 'fprd', 'v1.0.0', 'https://app.url', 'https://admin.url');
 
       expect(mockCore.warning).toHaveBeenCalledWith('Failed to post PR comment: API Error');
     });
 
-    test('should use fallback values for missing manifest fields', async () => {
-      const manifest = { key: 'test-app' }; // Missing displayName, version, description
+    test('should use fallback values for missing metadata fields', async () => {
+      const meta = { name: 'test-app', key: 'test-app' }; // Missing version, description
       mockGithub.context.payload.pull_request = { number: 123 };
 
-      await postPrComment(manifest, 'fprd', 'v1.0.0', 'https://app.url', 'https://admin.url');
+      await postPrComment(meta, 'fprd', 'v1.0.0', 'https://app.url', 'https://admin.url');
 
       const calledWith = mockOctokit.rest.issues.createComment.mock.calls[0][0];
       expect(calledWith.body).toContain('**Application:** test-app');
@@ -335,15 +362,15 @@ describe('post-publish-metadata.js', () => {
     });
 
     test('should include all required sections in comment body', async () => {
-      const manifest = {
-        displayName: 'Test App',
+      const meta = {
+        name: 'Test App',
         version: '1.0.0',
         key: 'test-app',
         entry: { path: './bundle.js' }
       };
       mockGithub.context.payload.pull_request = { number: 123 };
 
-      await postPrComment(manifest, 'fprd', 'v1.0.0', 
+      await postPrComment(meta, 'fprd', 'v1.0.0', 
         'https://fusion.equinor.com/apps/test-app',
         'https://admin.url');
 

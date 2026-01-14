@@ -13,13 +13,13 @@ const util = require('node:util');
 const exec = util.promisify(require('node:child_process').exec);
 
 /**
- * Extracts app manifest from the artifact
- * Uses `unzip -p` to read the manifest directly from the zip file
+ * Extracts app metadata from the artifact
+ * Uses `unzip -p` to read the metadata directly from the zip file
  * without extracting to temporary files for better performance and security
  * @param {string} artifactPath - Path to the artifact
- * @returns {Promise<Object>} - Parsed app manifest
+ * @returns {Promise<Object>} - Parsed app metadata with mapped fields
  */
-async function extractAppManifest(artifactPath) {
+async function extractAppMetadata(artifactPath) {
   try {
     // Only zip format supported for now
     const artifactExtension = path.extname(artifactPath).toLowerCase();
@@ -28,44 +28,48 @@ async function extractAppManifest(artifactPath) {
       throw new Error(`Unsupported artifact format: ${artifactExtension}. Only .zip files are supported.`);
     }
 
-    // Read app.manifest.json directly from zip without extracting
-    const { stdout, stderr } = await exec(`unzip -p "${artifactPath}" "*/app.manifest.json"`);
+    // Read metadata.json directly from zip without extracting
+    const { stdout, stderr } = await exec(`unzip -p "${artifactPath}" "*/metadata.json"`);
     
     if (stderr) {
       core.warning(`Warning from unzip: ${stderr}`);
     }
 
-    const manifestContent = stdout.trim();
+    const metadataContent = stdout.trim();
     
-    if (!manifestContent) {
-      throw new Error('app.manifest.json not found in artifact');
+    if (!metadataContent) {
+      throw new Error('metadata.json not found in artifact');
     }
 
     try {
-      const manifest = JSON.parse(manifestContent);
-      return manifest;
+      const metadata = JSON.parse(metadataContent);
+      
+      // Add key field using name for app identification
+      metadata.key = metadata.name;
+      
+      return metadata;
     } catch (parseError) {
-      throw new Error(`Invalid JSON format in app.manifest.json: ${parseError.message}`);
+      throw new Error(`Invalid JSON format in metadata.json: ${parseError.message}`);
     }
 
   } catch (error) {
-    core.error(`Failed to extract app manifest: ${error.message}`);
+    core.error(`Failed to extract app metadata: ${error.message}`);
     throw error;
   }
 }
 
 /**
  * Generates application URL based on environment and app info
- * @param {Object} manifest - App manifest object
+ * @param {Object} meta - App metadata object
  * @param {string} env - Environment (ci, fqa, fprd, tr, next)
  * @param {string} tag - Deployment tag
  * @returns {string} - Application URL
  */
-function generateAppUrl(manifest, env, tag) {
-  const appKey = manifest.key || manifest.appKey || manifest.name;
+function generateAppUrl(meta, env, tag) {
+  const appKey = meta.key;
   
   if (!appKey) {
-    throw new Error('App key/name not found in manifest');
+    throw new Error('App key not found in metadata');
   }
 
   // Environment-specific Fusion portal base URLs
@@ -89,13 +93,13 @@ function generateAppUrl(manifest, env, tag) {
 
 /**
  * Posts a comment to the PR with the application URL and deployment info
- * @param {Object} manifest - App manifest object
+ * @param {Object} meta - App metadata object
  * @param {string} env - Environment
  * @param {string} tag - Deployment tag
  * @param {string} appUrl - Application URL
  * @param {string} appAdminUrl - Application Admin URL
  */
-async function postPrComment(manifest, env, tag, appUrl, appAdminUrl) {
+async function postPrComment(meta, env, tag, appUrl, appAdminUrl) {
   try {
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
@@ -115,9 +119,9 @@ async function postPrComment(manifest, env, tag, appUrl, appAdminUrl) {
       return;
     }
 
-    const appName = manifest.displayName || manifest.name || manifest.key;
-    const appVersion = manifest.version || 'unknown';
-    const appDescription = manifest.description || '';
+    const appName = meta.name;
+    const appVersion = meta.version || 'unknown';
+    const appDescription = meta.description || '';
 
     // Create formatted comment with deployment details
     const commentBody = `## 🚀 Application Deployed Successfully
@@ -135,8 +139,8 @@ ${appDescription ? `**Description:** ${appDescription}\n\n` : ''}
 - **App Config:** [View app config](${appAdminUrl}/config)
 
 ### 📋 Deployment Details
-- **App Key:** \`${manifest.key || manifest.appKey || manifest.name}\`
-- **Bundle:** ${manifest.entry?.path || 'Not specified'}
+- **App Key:** \`${meta.key}\`
+- **Bundle:** ${meta.entry?.path || 'Not specified'}
 - **Build Time:** ${new Date().toISOString()}
 
 ---
@@ -176,19 +180,19 @@ async function postPublishMetadata() {
       throw new Error(`Artifact not found: ${artifactPath}`);
     }
 
-    // Extract app manifest from artifact
-    const manifest = await extractAppManifest(artifactPath);
+    // Extract app metadata from artifact
+    const meta = await extractAppMetadata(artifactPath);
     
-    const appName = manifest.displayName || manifest.name || manifest.key;
-    const appVersion = manifest.version || 'unknown';
-    const appKey = manifest.key || manifest.appKey;
+    const appName = meta.name;
+    const appVersion = meta.version || 'unknown';
+    const appKey = meta.key;
 
     core.info(`App Name: ${appName}`);
     core.info(`App Version: ${appVersion}`);
     core.info(`App Key: ${appKey}`);
 
     // Generate application URL
-    const appUrl = generateAppUrl(manifest, env, tag);
+    const appUrl = generateAppUrl(meta, env, tag);
     core.info(`App URL: ${appUrl}`);
 
     // Set outputs for use in other steps
@@ -207,7 +211,7 @@ async function postPublishMetadata() {
     core.setOutput('publish-info', publishInfo);
 
     // Post comment to PR if applicable
-    await postPrComment(manifest, env, tag, appUrl, appAdminUrl);
+    await postPrComment(meta, env, tag, appUrl, appAdminUrl);
 
     core.info('Post-publish metadata processing completed successfully');
 
@@ -223,7 +227,7 @@ if (require.main === module) {
 
 module.exports = {
   postPublishMetadata,
-  extractAppManifest,
+  extractAppMetadata,
   generateAppUrl,
   postPrComment
 };

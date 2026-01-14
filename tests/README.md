@@ -19,7 +19,7 @@ All tests are located in the `/tests` directory:
 - `tests/validate-artifact.test.js` - Tests for artifact validation script
 - `tests/validate-env.test.js` - Tests for environment validation script  
 - `tests/validate-is-token-or-azure.test.js` - Tests for token/Azure validation script
-- `tests/post-publish-metadata.test.js` - Tests for metadata extraction and PR commenting
+- `tests/post-publish-metadata.test.js` - Tests for metadata extraction from metadata.json and PR commenting
 - `tests/setup.js` - Test environment setup
 
 ### Configuration Files
@@ -137,13 +137,15 @@ Tests for `scripts/validate-is-token-or-azure.js`:
 
 Tests for `scripts/post-publish-metadata.js`:
 
-**Manifest Extraction:**
+**Metadata Extraction:**
 - ZIP file direct reading using `unzip -p` (no temporary files)
-- Async manifest extraction with proper error handling
+- Async metadata extraction with proper error handling
+- metadata.json format support (name -> appKey mapping)
 - Unsupported file formats (only .zip supported)
-- Missing manifest files detection
+- Missing metadata files detection
 - JSON parsing validation
 - Command execution error handling
+- Field mapping and additional metadata preservation
 
 **URL Generation:**
 - Environment-specific URLs (ci, fqa, fprd, tr, next)

@@ -51,5 +51,13 @@ The action supports these environments:
 Your app bundle should be:
 - A `.zip` archive file, OR
 - A directory containing your built application
-- Should include `app.manifest.json` for automatic metadata extraction
+- Should include `metadata.json` for automatic metadata extraction
 - Default path expected: `./app-bundle.zip`
+
+Expected `metadata.json` format:
+```json
+{
+  "name": "your-app-name",
+  "version": "1.0.0"
+}
+```
