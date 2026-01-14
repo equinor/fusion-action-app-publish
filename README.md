@@ -6,6 +6,7 @@ A GitHub Action to authenticate and publish Fusion applications using the `@equi
 
 - 🔐 **Flexible Authentication**: Use either pre-acquired Fusion tokens or Azure Service Principal credentials
 - 🏗️ **Artifact Publishing**: Support for directories and zip archive files (.zip)
+- ⚡ **Efficient Processing**: Direct zip file reading without temporary file extraction
 - ✅ **Comprehensive Validation**: Validated inputs, file formats, and authentication methods
 - 🌍 **Multi-Environment**: Support for ci, tr, fprd, fqa, and next environments
 - 🔄 **PR Deployments**: Automatic preview deployments for pull requests
@@ -207,7 +208,7 @@ app-bundle/
 └── app.manifest.json  # Required for metadata extraction
 ```
 
-The action will automatically extract metadata from `app.manifest.json` when present.
+The action will automatically extract metadata from `app.manifest.json` when present. The extraction process uses `unzip -p` to read the manifest directly from the zip archive without creating temporary files, making it more efficient and faster.
 
 ## Troubleshooting
 

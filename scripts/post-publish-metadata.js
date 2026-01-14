@@ -9,75 +9,49 @@ const core = require('@actions/core');
 const github = require('@actions/github');
 const fs = require('node:fs');
 const path = require('node:path');
-const { execSync } = require('child_process');
+const util = require('node:util');
+const exec = util.promisify(require('node:child_process').exec);
 
 /**
  * Extracts app manifest from the artifact
+ * Uses `unzip -p` to read the manifest directly from the zip file
+ * without extracting to temporary files for better performance and security
  * @param {string} artifactPath - Path to the artifact
- * @returns {Object} - Parsed app manifest
+ * @returns {Promise<Object>} - Parsed app manifest
  */
-function extractAppManifest(artifactPath) {
+async function extractAppManifest(artifactPath) {
   try {
-    // Create a temporary directory for extraction
-    const tempDir = path.join(__dirname, '..', '.temp-extract');
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
-    }
-
-    // Extract the artifact to temp directory (only zip format supported for now)
+    // Only zip format supported for now
     const artifactExtension = path.extname(artifactPath).toLowerCase();
-    let extractCommand;
     
-    if (artifactExtension === '.zip') {
-      extractCommand = `unzip -q "${artifactPath}" -d "${tempDir}"`;
-    } else {
+    if (artifactExtension !== '.zip') {
       throw new Error(`Unsupported artifact format: ${artifactExtension}. Only .zip files are supported.`);
     }
 
-    execSync(extractCommand, { stdio: 'pipe' });
-
-    // Look for app.manifest.json in the extracted files
-    const manifestPath = findFileRecursively(tempDir, 'app.manifest.json');
+    // Read app.manifest.json directly from zip without extracting
+    const { stdout, stderr } = await exec(`unzip -p "${artifactPath}" "*/app.manifest.json"`);
     
-    if (!manifestPath) {
+    if (stderr) {
+      core.warning(`Warning from unzip: ${stderr}`);
+    }
+
+    const manifestContent = stdout.trim();
+    
+    if (!manifestContent) {
       throw new Error('app.manifest.json not found in artifact');
     }
 
-    const manifestContent = fs.readFileSync(manifestPath, 'utf8');
-    const manifest = JSON.parse(manifestContent);
+    try {
+      const manifest = JSON.parse(manifestContent);
+      return manifest;
+    } catch (parseError) {
+      throw new Error(`Invalid JSON format in app.manifest.json: ${parseError.message}`);
+    }
 
-    // Cleanup temp directory
-    fs.rmSync(tempDir, { recursive: true, force: true });
-
-    return manifest;
   } catch (error) {
     core.error(`Failed to extract app manifest: ${error.message}`);
     throw error;
   }
-}
-
-/**
- * Recursively find a file by name in a directory
- * @param {string} dir - Directory to search
- * @param {string} filename - File to find
- * @returns {string|null} - Path to file or null if not found
- */
-function findFileRecursively(dir, filename) {
-  const files = fs.readdirSync(dir);
-  
-  for (const file of files) {
-    const filePath = path.join(dir, file);
-    const stat = fs.statSync(filePath);
-    
-    if (stat.isDirectory()) {
-      const found = findFileRecursively(filePath, filename);
-      if (found) return found;
-    } else if (file === filename) {
-      return filePath;
-    }
-  }
-  
-  return null;
 }
 
 /**
@@ -203,7 +177,7 @@ async function postPublishMetadata() {
     }
 
     // Extract app manifest from artifact
-    const manifest = extractAppManifest(artifactPath);
+    const manifest = await extractAppManifest(artifactPath);
     
     const appName = manifest.displayName || manifest.name || manifest.key;
     const appVersion = manifest.version || 'unknown';
@@ -251,6 +225,5 @@ module.exports = {
   postPublishMetadata,
   extractAppManifest,
   generateAppUrl,
-  postPrComment,
-  findFileRecursively
+  postPrComment
 };

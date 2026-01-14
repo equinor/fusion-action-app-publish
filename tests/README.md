@@ -138,11 +138,12 @@ Tests for `scripts/validate-is-token-or-azure.js`:
 Tests for `scripts/post-publish-metadata.js`:
 
 **Manifest Extraction:**
-- ZIP file extraction
-- Unsupported file formats (tar, rar no longer supported)
-- Missing manifest files
-- Cleanup operations
-- Error handling
+- ZIP file direct reading using `unzip -p` (no temporary files)
+- Async manifest extraction with proper error handling
+- Unsupported file formats (only .zip supported)
+- Missing manifest files detection
+- JSON parsing validation
+- Command execution error handling
 
 **URL Generation:**
 - Environment-specific URLs (ci, fqa, fprd, tr, next)

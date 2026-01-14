@@ -1,9 +1,10 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const util = require('node:util');
 
 describe('post-publish-metadata.js', () => {
-  let mockCore, mockGithub, mockFs, mockExecSync, mockFindFileRecursively;
-  let extractAppManifest, generateAppUrl, postPrComment, findFileRecursively;
+  let mockCore, mockGithub, mockFs, mockExec;
+  let extractAppManifest, generateAppUrl, postPrComment;
   
   beforeEach(() => {
     // Clear module cache
@@ -28,7 +29,7 @@ describe('post-publish-metadata.js', () => {
       readFileSync: jest.fn().mockReturnValue('{}')
     };
 
-    mockExecSync = jest.fn();
+    mockExec = jest.fn().mockResolvedValue({ stdout: '{}', stderr: '' });
 
     const mockOctokit = {
       rest: {
@@ -49,71 +50,20 @@ describe('post-publish-metadata.js', () => {
     // Mock modules
     jest.doMock('@actions/core', () => mockCore);
     jest.doMock('@actions/github', () => mockGithub);
-    jest.doMock('fs', () => mockFs);
-    jest.doMock('child_process', () => ({ execSync: mockExecSync }));
+    jest.doMock('node:fs', () => mockFs);
+    jest.doMock('node:util', () => ({ promisify: jest.fn(() => mockExec) }));
+    jest.doMock('node:child_process', () => ({}));
     
     // Import the functions after mocking
     const module = require('../scripts/post-publish-metadata');
     extractAppManifest = module.extractAppManifest;
     generateAppUrl = module.generateAppUrl;
     postPrComment = module.postPrComment;
-    findFileRecursively = module.findFileRecursively;
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
     delete process.env.GITHUB_TOKEN;
-  });
-
-  describe('findFileRecursively', () => {
-    test('should find file in root directory', () => {
-      mockFs.readdirSync.mockReturnValue(['app.manifest.json', 'other-file.js']);
-      mockFs.statSync.mockReturnValue({ isDirectory: () => false });
-
-      const result = findFileRecursively('/test/dir', 'app.manifest.json');
-      
-      expect(result).toBe(path.join('/test/dir', 'app.manifest.json'));
-    });
-
-    test('should find file in nested directory', () => {
-      mockFs.readdirSync
-        .mockReturnValueOnce(['subdirectory', 'other-file.js'])
-        .mockReturnValueOnce(['app.manifest.json']);
-      
-      mockFs.statSync
-        .mockReturnValueOnce({ isDirectory: () => true })
-        .mockReturnValueOnce({ isDirectory: () => false })
-        .mockReturnValueOnce({ isDirectory: () => false });
-
-      const result = findFileRecursively('/test/dir', 'app.manifest.json');
-      
-      expect(result).toBe(path.join('/test/dir/subdirectory', 'app.manifest.json'));
-    });
-
-    test('should return null when file not found', () => {
-      mockFs.readdirSync.mockReturnValue(['other-file.js', 'another-file.txt']);
-      mockFs.statSync.mockReturnValue({ isDirectory: () => false });
-
-      const result = findFileRecursively('/test/dir', 'app.manifest.json');
-      
-      expect(result).toBeNull();
-    });
-
-    test('should search recursively through multiple levels', () => {
-      mockFs.readdirSync
-        .mockReturnValueOnce(['level1'])
-        .mockReturnValueOnce(['level2'])
-        .mockReturnValueOnce(['app.manifest.json']);
-      
-      mockFs.statSync
-        .mockReturnValueOnce({ isDirectory: () => true })
-        .mockReturnValueOnce({ isDirectory: () => true })
-        .mockReturnValueOnce({ isDirectory: () => false });
-
-      const result = findFileRecursively('/test/dir', 'app.manifest.json');
-      
-      expect(result).toBe(path.join('/test/dir/level1/level2', 'app.manifest.json'));
-    });
   });
 
   describe('generateAppUrl', () => {
@@ -208,28 +158,18 @@ describe('post-publish-metadata.js', () => {
   });
 
   describe('extractAppManifest', () => {
-    beforeEach(() => {
-      // Mock findFileRecursively to return a valid path by default
-      mockFs.readdirSync.mockReturnValue(['app.manifest.json']);
-      mockFs.statSync.mockReturnValue({ isDirectory: () => false });
-    });
-
-    test('should extract manifest from zip file', () => {
+    test('should extract manifest from zip file using unzip -p', async () => {
       const manifestContent = JSON.stringify({
         key: 'test-app',
         version: '1.0.0',
         displayName: 'Test App'
       });
 
-      mockFs.readFileSync.mockReturnValue(manifestContent);
-      mockExecSync.mockImplementation(() => {});
+      mockExec.mockResolvedValue({ stdout: manifestContent, stderr: '' });
 
-      const result = extractAppManifest('/path/to/app.zip');
+      const result = await extractAppManifest('/path/to/app.zip');
       
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('unzip -q "/path/to/app.zip"'),
-        { stdio: 'pipe' }
-      );
+      expect(mockExec).toHaveBeenCalledWith('unzip -p "/path/to/app.zip" "*/app.manifest.json"');
       expect(result).toEqual({
         key: 'test-app',
         version: '1.0.0',
@@ -237,46 +177,53 @@ describe('post-publish-metadata.js', () => {
       });
     });
 
-    test('should throw error for tar file (no longer supported)', () => {
-      expect(() => extractAppManifest('/path/to/app.tar'))
-        .toThrow('Unsupported artifact format: .tar. Only .zip files are supported.');
+    test('should handle warnings from unzip command', async () => {
+      const manifestContent = JSON.stringify({ key: 'test-app' });
+      mockExec.mockResolvedValue({ stdout: manifestContent, stderr: 'Warning: some files skipped' });
+
+      const result = await extractAppManifest('/path/to/app.zip');
+      
+      expect(mockCore.warning).toHaveBeenCalledWith('Warning from unzip: Warning: some files skipped');
+      expect(result).toEqual({ key: 'test-app' });
     });
 
-    test('should throw error for rar file (no longer supported)', () => {
-      expect(() => extractAppManifest('/path/to/app.rar'))
-        .toThrow('Unsupported artifact format: .rar. Only .zip files are supported.');
+    test('should throw error for unsupported file format', async () => {
+      await expect(extractAppManifest('/path/to/app.txt'))
+        .rejects.toThrow('Unsupported artifact format: .txt. Only .zip files are supported.');
     });
 
-    test('should throw error for unsupported file format', () => {
-      expect(() => extractAppManifest('/path/to/app.txt'))
-        .toThrow('Unsupported artifact format: .txt. Only .zip files are supported.');
+    test('should throw error when manifest not found (empty output)', async () => {
+      mockExec.mockResolvedValue({ stdout: '', stderr: '' });
+
+      await expect(extractAppManifest('/path/to/app.zip'))
+        .rejects.toThrow('app.manifest.json not found in artifact');
     });
 
-    test('should throw error when manifest not found', () => {
-      mockFs.readdirSync.mockReturnValue(['other-file.js']); // No manifest file
+    test('should handle exec command errors', async () => {
+      mockExec.mockRejectedValue(new Error('unzip command failed'));
 
-      expect(() => extractAppManifest('/path/to/app.zip'))
-        .toThrow('app.manifest.json not found in artifact');
-    });
-
-    test('should handle extraction errors', () => {
-      mockExecSync.mockImplementation(() => {
-        throw new Error('Extraction failed');
-      });
-
-      expect(() => extractAppManifest('/path/to/app.zip'))
-        .toThrow('Extraction failed');
+      await expect(extractAppManifest('/path/to/app.zip'))
+        .rejects.toThrow('unzip command failed');
       
       expect(mockCore.error).toHaveBeenCalledWith(
         expect.stringContaining('Failed to extract app manifest')
       );
     });
 
-    test('should handle invalid JSON in manifest', () => {
-      mockFs.readFileSync.mockReturnValue('invalid json content');
+    test('should handle invalid JSON in manifest', async () => {
+      mockExec.mockResolvedValue({ stdout: 'invalid json content', stderr: '' });
 
-      expect(() => extractAppManifest('/path/to/app.zip'))
-        .toThrow();
+      await expect(extractAppManifest('/path/to/app.zip'))
+        .rejects.toThrow('Invalid JSON format in app.manifest.json');
+    });
+
+    test('should handle whitespace around manifest content', async () => {
+      const manifestContent = JSON.stringify({ key: 'test-app' });
+      mockExec.mockResolvedValue({ stdout: `  \n${manifestContent}\n  `, stderr: '' });
+
+      const result = await extractAppManifest('/path/to/app.zip');
+      
+      expect(result).toEqual({ key: 'test-app' });
     });
   });
 
