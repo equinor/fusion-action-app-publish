@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 // Create a more isolated approach to testing by intercepting the module loading
 describe('validate-artifact.js', () => {

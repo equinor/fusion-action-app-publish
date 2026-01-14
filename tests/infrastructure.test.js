@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 // Test that checks the basic functionality and structure of each script
 describe('Script Infrastructure Tests', () => {

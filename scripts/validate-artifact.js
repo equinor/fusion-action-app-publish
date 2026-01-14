@@ -5,8 +5,8 @@
  */
 
 const core = require('@actions/core');
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 // Main function to validate the artifact input
 function validateArtifact() {

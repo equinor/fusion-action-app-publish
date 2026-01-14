@@ -7,8 +7,8 @@
 
 const core = require('@actions/core');
 const github = require('@actions/github');
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 const { execSync } = require('child_process');
 
 /**
