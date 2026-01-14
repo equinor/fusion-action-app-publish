@@ -80,9 +80,9 @@ Tests for `scripts/validate-artifact.js`:
 - Existing files
 
 **File Extension Validation:**
-- Supported formats: .zip, .tar, .rar
-- Unsupported formats: .txt, .pdf, no extension
-- Case insensitive extensions (.ZIP, .TAR)
+- Supported formats: .zip
+- Unsupported formats: .tar, .rar, .txt, .pdf, no extension
+- Case insensitive extensions (.ZIP)
 
 **Output Setting:**
 - Setting artifact-path output
@@ -138,8 +138,8 @@ Tests for `scripts/validate-is-token-or-azure.js`:
 Tests for `scripts/post-publish-metadata.js`:
 
 **Manifest Extraction:**
-- ZIP, TAR, RAR file extraction
-- Unsupported file formats
+- ZIP file extraction
+- Unsupported file formats (tar, rar no longer supported)
 - Missing manifest files
 - Cleanup operations
 - Error handling

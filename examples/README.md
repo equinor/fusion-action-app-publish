@@ -49,7 +49,7 @@ The action supports these environments:
 ## 📦 Artifact Requirements
 
 Your app bundle should be:
-- A `.zip`, `.tar`, or `.rar` archive file, OR
+- A `.zip` archive file, OR
 - A directory containing your built application
 - Should include `app.manifest.json` for automatic metadata extraction
 - Default path expected: `./app-bundle.zip`

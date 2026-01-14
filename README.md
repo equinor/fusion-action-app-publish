@@ -5,7 +5,7 @@ A GitHub Action to authenticate and publish Fusion applications using the `@equi
 ## Features
 
 - 🔐 **Flexible Authentication**: Use either pre-acquired Fusion tokens or Azure Service Principal credentials
-- 🏗️ **Artifact Publishing**: Support for directories and archive files (.zip, .tar, .rar)
+- 🏗️ **Artifact Publishing**: Support for directories and zip archive files (.zip)
 - ✅ **Comprehensive Validation**: Validated inputs, file formats, and authentication methods
 - 🌍 **Multi-Environment**: Support for ci, tr, fprd, fqa, and next environments
 - 🔄 **PR Deployments**: Automatic preview deployments for pull requests
@@ -196,9 +196,7 @@ When using `env: 'ci'` with a `prNR`, the action automatically creates preview d
 The action supports various artifact types:
 
 ### Archive Files (Recommended)
-- `.zip` files - Standard ZIP archives
-- `.tar` files - TAR archives
-- `.rar` files - RAR archives
+- `.zip` files - Standard ZIP archives (only format supported currently)
 
 ### Directory
 ```

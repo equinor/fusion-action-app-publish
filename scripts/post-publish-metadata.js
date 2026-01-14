@@ -24,18 +24,14 @@ function extractAppManifest(artifactPath) {
       fs.mkdirSync(tempDir, { recursive: true });
     }
 
-    // Extract the artifact to temp directory
+    // Extract the artifact to temp directory (only zip format supported for now)
     const artifactExtension = path.extname(artifactPath).toLowerCase();
     let extractCommand;
     
     if (artifactExtension === '.zip') {
       extractCommand = `unzip -q "${artifactPath}" -d "${tempDir}"`;
-    } else if (artifactExtension === '.tar') {
-      extractCommand = `tar -xf "${artifactPath}" -C "${tempDir}"`;
-    } else if (artifactExtension === '.rar') {
-      extractCommand = `unrar x "${artifactPath}" "${tempDir}/"`;
     } else {
-      throw new Error(`Unsupported artifact format: ${artifactExtension}`);
+      throw new Error(`Unsupported artifact format: ${artifactExtension}. Only .zip files are supported.`);
     }
 
     execSync(extractCommand, { stdio: 'pipe' });

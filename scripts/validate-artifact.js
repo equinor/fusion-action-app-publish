@@ -26,8 +26,8 @@ function validateArtifact() {
     return;
   }
 
-  // Validate that the artifact is a .zip, .tar .rar file
-  const validExtensions = ['.zip', '.tar', '.rar'];
+  // Validate that the artifact is a .zip file (only zip format supported for now)
+  const validExtensions = ['.zip'];
   const artifactExtension = path.extname(artifactPath).toLowerCase();
   if (!validExtensions.includes(artifactExtension)) {
     core.setFailed(`Artifact file must be one of the following types: ${validExtensions.join(', ')}`);

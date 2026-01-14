@@ -52,7 +52,7 @@ describe('Script Infrastructure Tests', () => {
     const scriptChecks = [
       {
         script: 'validate-artifact.js',
-        keywords: ['artifact', 'zip', 'tar', 'rar', 'existsSync']
+        keywords: ['artifact', 'zip', 'existsSync']
       },
       {
         script: 'validate-env.js', 

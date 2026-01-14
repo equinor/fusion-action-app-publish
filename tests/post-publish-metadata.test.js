@@ -237,33 +237,19 @@ describe('post-publish-metadata.js', () => {
       });
     });
 
-    test('should extract manifest from tar file', () => {
-      const manifestContent = JSON.stringify({ key: 'test-app' });
-      mockFs.readFileSync.mockReturnValue(manifestContent);
-
-      const result = extractAppManifest('/path/to/app.tar');
-      
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('tar -xf "/path/to/app.tar"'),
-        { stdio: 'pipe' }
-      );
+    test('should throw error for tar file (no longer supported)', () => {
+      expect(() => extractAppManifest('/path/to/app.tar'))
+        .toThrow('Unsupported artifact format: .tar. Only .zip files are supported.');
     });
 
-    test('should extract manifest from rar file', () => {
-      const manifestContent = JSON.stringify({ key: 'test-app' });
-      mockFs.readFileSync.mockReturnValue(manifestContent);
-
-      const result = extractAppManifest('/path/to/app.rar');
-      
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('unrar x "/path/to/app.rar"'),
-        { stdio: 'pipe' }
-      );
+    test('should throw error for rar file (no longer supported)', () => {
+      expect(() => extractAppManifest('/path/to/app.rar'))
+        .toThrow('Unsupported artifact format: .rar. Only .zip files are supported.');
     });
 
     test('should throw error for unsupported file format', () => {
       expect(() => extractAppManifest('/path/to/app.txt'))
-        .toThrow('Unsupported artifact format: .txt');
+        .toThrow('Unsupported artifact format: .txt. Only .zip files are supported.');
     });
 
     test('should throw error when manifest not found', () => {

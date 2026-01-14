@@ -18,8 +18,8 @@ validate-is-token-or-azure.js |     100 |      100 |     100 |     100
 **17 test cases** covering:
 - ✅ Input validation (empty, undefined, null inputs)
 - ✅ File existence validation (missing files)
-- ✅ File extension validation (.zip, .tar, .rar and invalid formats)
-- ✅ Case insensitive extensions (.ZIP, .TAR)
+- ✅ File extension validation (.zip format only, .tar/.rar no longer supported)
+- ✅ Case insensitive extensions (.ZIP)
 - ✅ Output setting (artifact-path with absolute/relative paths)
 - ✅ Complete validation flows
 

@@ -99,7 +99,7 @@ describe('validate-artifact.js', () => {
       require('../scripts/validate-artifact.js');
       
       expect(mockCore.setFailed).toHaveBeenCalledWith(
-        'Artifact file must be one of the following types: .zip, .tar, .rar'
+        'Artifact file must be one of the following types: .zip'
       );
     });
 
@@ -109,7 +109,7 @@ describe('validate-artifact.js', () => {
       require('../scripts/validate-artifact.js');
       
       expect(mockCore.setFailed).toHaveBeenCalledWith(
-        'Artifact file must be one of the following types: .zip, .tar, .rar'
+        'Artifact file must be one of the following types: .zip'
       );
     });
 
@@ -119,7 +119,7 @@ describe('validate-artifact.js', () => {
       require('../scripts/validate-artifact.js');
       
       expect(mockCore.setFailed).toHaveBeenCalledWith(
-        'Artifact file must be one of the following types: .zip, .tar, .rar'
+        'Artifact file must be one of the following types: .zip'
       );
     });
 
@@ -132,35 +132,28 @@ describe('validate-artifact.js', () => {
       expect(mockCore.info).toHaveBeenCalledWith('Artifact validation passed.');
     });
 
-    test('should pass for .tar extension', () => {
+    test('should fail for .tar extension (no longer supported)', () => {
       mockCore.getInput.mockReturnValue('test-file.tar');
       
       require('../scripts/validate-artifact.js');
       
-      expect(mockCore.setFailed).not.toHaveBeenCalled();
-      expect(mockCore.info).toHaveBeenCalledWith('Artifact validation passed.');
+      expect(mockCore.setFailed).toHaveBeenCalledWith(
+        'Artifact file must be one of the following types: .zip'
+      );
     });
 
-    test('should pass for .rar extension', () => {
+    test('should fail for .rar extension (no longer supported)', () => {
       mockCore.getInput.mockReturnValue('test-file.rar');
       
       require('../scripts/validate-artifact.js');
       
-      expect(mockCore.setFailed).not.toHaveBeenCalled();
-      expect(mockCore.info).toHaveBeenCalledWith('Artifact validation passed.');
+      expect(mockCore.setFailed).toHaveBeenCalledWith(
+        'Artifact file must be one of the following types: .zip'
+      );
     });
 
     test('should handle case insensitive extensions (.ZIP)', () => {
       mockCore.getInput.mockReturnValue('test-file.ZIP');
-      
-      require('../scripts/validate-artifact.js');
-      
-      expect(mockCore.setFailed).not.toHaveBeenCalled();
-      expect(mockCore.info).toHaveBeenCalledWith('Artifact validation passed.');
-    });
-
-    test('should handle case insensitive extensions (.TAR)', () => {
-      mockCore.getInput.mockReturnValue('test-file.TAR');
       
       require('../scripts/validate-artifact.js');
       
