@@ -9,14 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Initial release of Fusion App Publish Action
-- Support for Fusion environments: CI, FQA, FPRD, TR
+- Support for Fusion environments: ci, tr, fprd, fqa, next
 - Automatic environment resolution with `env: auto`
-- PR-specific environment support (`pr-<number>`)
-- Flexible authentication (Fusion token, Azure SP, Azure OIDC)
-- Comprehensive input validation
-- Rich output capture (app URLs, portal URLs, metadata)
-- Optional build step before publishing
+- PR-specific environment support (`pr-<number>`) when using `ci` environment
+- Flexible authentication (Fusion token, Azure OIDC)
+- Comprehensive input validation with detailed error messages
+- Rich output capture (app URLs, portal URLs, deployment details)
 - Configurable CLI version pinning
+- Complete test suite with 100% coverage
 
 ### Security
 - Automatic masking of sensitive tokens in logs

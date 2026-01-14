@@ -29,5 +29,4 @@ jobs:
         with:
           fusion-token: ${{ secrets.FUSION_TOKEN }}
           env: 'fprd'
-          artifact: 'dist'
-          build-before-publish: 'false'  # Already built above
+          artifact: './app-bundle.zip'

@@ -13,8 +13,10 @@ on:
         type: choice
         options:
           - ci
+          - tr
           - fqa
           - fprd
+          - next
         default: 'ci'
 
 permissions:
@@ -33,11 +35,12 @@ jobs:
         with:
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
           azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          fusion-resource-id: ${{ secrets.FUSION_RESOURCE_ID }}
           env: ${{ github.event.inputs.environment || 'auto' }}
-          artifact: 'dist'
+          artifact: './app-bundle.zip'
         
       - name: Print deployment info
         run: |
-          echo "🚀 Deployed to environment: ${{ steps.deploy.outputs.target-env }}"
+          echo "🚀 Deployed to environment: ${{ steps.deploy.outputs.environment }}"
           echo "📱 App URL: ${{ steps.deploy.outputs.app-url }}"
           echo "🌐 Portal URL: ${{ steps.deploy.outputs.portal-url }}"

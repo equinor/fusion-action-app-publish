@@ -84,7 +84,7 @@ git push origin v1 --force
 
 ## 📋 Pre-publish Checklist
 
-- [ ] All tests pass (run `npm test`)
+- [ ] All tests pass (run `pnpm test`)
 - [ ] Documentation is complete
 - [ ] Examples are tested
 - [ ] CHANGELOG.md is updated

@@ -22,5 +22,6 @@ jobs:
         with:
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
           azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          fusion-resource-id: ${{ secrets.FUSION_RESOURCE_ID }}
           env: 'fprd'
-          artifact: 'dist'
+          artifact: './app-bundle.zip'

@@ -24,33 +24,29 @@ inputs:
     default: 'https://fusion.equinor.com'
 
   env:
-    description: 'Target environment (dev/test/prod/qa/staging) or "auto" for PR-based selection'
-    required: true
-
-  pr-env-prefix:
-    description: 'Prefix for PR environments (e.g., "pr" creates "pr-123")'
+    description: 'Target environment (ci/fqa/fprd/tr/next) or "ci" for PR-based selection'
+    default: 'ci'
     required: false
-    default: 'pr'
+
+  prNR:
+    description: 'Pull Request number (used if env is "ci")'
+    required: false
 
   artifact:
-    description: 'Path to built artifact (default: dist)'
+    description: 'Path to built artifact (default: ./app-bundle.zip)'
     required: false
-    default: 'dist'
+    default: './app-bundle.zip'
 
-  build-before-publish:
-    description: 'Run build step first?'
+  tag:
+    description: 'Tag to apply to the deployment'
     required: false
-    default: 'true'
-
-  cli-version:
-    description: 'Fusion Framework CLI version to use'
-    required: false
-    default: '^13.0.0'
+    default: 'latest'
 
   working-directory:
     description: 'Working directory'
     required: false
     default: '.'
+
 
 outputs:
   app-url:
@@ -63,7 +59,7 @@ outputs:
   
   target-env:
     description: 'Resolved target environment (useful with auto mode)'
-    value: ${{ steps.env-resolver.outputs.target-env }}
+    value: ${{ steps.validate-env.outputs.env }}
   
   app-name:
     description: 'Application name from package.json'
@@ -75,18 +71,46 @@ outputs:
   
   publish-info:
     description: 'Formatted publish information for PR comments'
-    value: ${{ steps.publish.outputs.publish-info }}
+    value: ${{ steps.metadata.outputs.publish-info }}
 
 runs:
   using: 'composite'
   steps:
-    - name: Validate inputs
+
+    - name: Validate Artifact
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: node ${{ github.action_path }}/scripts/validate.js "${{ inputs.env }}" "${{ inputs.artifact }}" "${{ inputs.fusion-token }}" "${{ inputs.azure-client-id }}" "${{ inputs.azure-tenant-id }}" "${{ inputs.azure-resource-id }}" "${{ inputs.pr-env-prefix }}"
+      run: node ${{ github.action_path }}/scripts/validate-artifact.js
+      env:
+        INPUT_ARTIFACT: ${{ inputs.artifact }}
 
-    - name: Azure Login
-      if: ${{ inputs.fusion-token == '' }}
+    - name: Validate Environment
+      id: validate-env
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: node ${{ github.action_path }}/scripts/validate-env.js
+      env:
+        INPUT_PRNR: ${{ inputs.prNR }}
+        INPUT_ENV: ${{ inputs.env }}
+        INPUT_TAG: ${{ inputs.tag }}
+      outputs:
+        ENV: ${{ steps.validate-env.outputs.env }}
+        TAG: ${{ steps.validate-env.outputs.tag }}
+        
+    - name: Validate Is Token or Azure Auth Provided
+      id: validate-auth
+      shell: bash
+      run: node ${{ github.action_path }}/scripts/validate-is-token-or-azure.js
+      env:
+        INPUT_FUSION_TOKEN: ${{ inputs.fusion-token }}
+        INPUT_AZURE_CLIENT_ID: ${{ inputs.azure-client-id }}
+        INPUT_AZURE_TENANT_ID: ${{ inputs.azure-tenant-id }}
+        INPUT_AZURE_RESOURCE_ID: ${{ inputs.azure-resource-id }}
+      outputs:
+        IS_TOKEN: ${{ steps.validate-auth.outputs.isToken }}
+
+    - name: Azure Login (if SP)
+      if: steps.validate-auth.outputs.isToken == 'false'
       uses: azure/login@v2
       with:
         client-id: ${{ inputs.azure-client-id }}
@@ -94,7 +118,7 @@ runs:
         allow-no-subscriptions: true
 
     - name: Acquire token (if SP)
-      if: ${{ inputs.fusion-token == '' }}
+      if: steps.validate-auth.outputs.isToken == 'false'
       id: token
       shell: bash
       run: |
@@ -103,133 +127,42 @@ runs:
         echo "::add-mask::$TOKEN"
 
     - name: Set token from input
-      if: ${{ inputs.fusion-token != '' }}
+      if: steps.validate-auth.outputs.isToken == 'true'
       shell: bash
       run: |
         echo "FUSION_TOKEN=${{ inputs.fusion-token }}" >> $GITHUB_ENV
         echo "::add-mask::${{ inputs.fusion-token }}"
 
-    - name: Resolve target environment
-      id: env-resolver
-      shell: bash
-      run: |
-        if [ "${{ inputs.env }}" = "auto" ]; then
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            ENV="${{ inputs.pr-env-prefix }}-${{ github.event.pull_request.number }}"
-            echo "🔀 PR detected: Using environment '$ENV'"
-          elif [ "${{ github.ref }}" = "refs/heads/main" ] || [ "${{ github.ref }}" = "refs/heads/master" ]; then
-            ENV="fprd"
-            echo "🚀 Main branch: Using environment '$ENV'"
-          else
-            ENV="ci"
-            echo "🧪 Feature branch: Using environment '$ENV'"
-          fi
-        else
-          ENV="${{ inputs.env }}"
-          echo "📍 Manual environment: Using '$ENV'"
-        fi
-        echo "target-env=$ENV" >> $GITHUB_OUTPUT
-        echo "TARGET_ENV=$ENV" >> $GITHUB_ENV
-
     - name: Setup Node
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
-
-    - name: Install Fusion CLI
-      shell: bash
-      run: |
-        echo "📦 Installing Fusion Framework CLI v${{ inputs.cli-version }}"
-        npm install -g "@equinor/fusion-framework-cli@${{ inputs.cli-version }}"
-        echo "✅ CLI installed globally"
-
-    - name: Build (optional)
-      if: ${{ inputs.build-before-publish == 'true' }}
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        echo "🏗️ Building application..."
-        fusion-framework-cli app build
-
-    - name: Gather metadata
-      id: metadata
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        # Extract version from package.json
-        if [ -f "package.json" ]; then
-          VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "unknown")
-          APP_NAME=$(node -p "require('./package.json').name" 2>/dev/null || echo "unknown")
-        else
-          VERSION="unknown"
-          APP_NAME="unknown"
-        fi
-        
-        echo "app-name=$APP_NAME" >> $GITHUB_OUTPUT
-        echo "app-version=$VERSION" >> $GITHUB_OUTPUT
-        echo "commit-sha=${{ github.sha }}" >> $GITHUB_OUTPUT
-        echo "branch-ref=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-        
-        echo "📋 Deployment Metadata:"
-        echo "   App: $APP_NAME"
-        echo "   Version: $VERSION"
-        echo "   Commit: ${{ github.sha }}"
-        echo "   Branch: ${{ github.ref_name }}"
-        echo "   Environment: ${{ env.TARGET_ENV }}"
+        node-version: '24'
 
     - name: Publish
       id: publish
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
-        GITHUB_SHA: ${{ github.sha }}
-        GITHUB_REF: ${{ github.ref }}
-        GITHUB_REPOSITORY: ${{ github.repository }}
-        GITHUB_ACTOR: ${{ github.actor }}
-        GITHUB_RUN_ID: ${{ github.run_id }}
+        FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
+        INPUT_ARTIFACT: ${{ inputs.artifact }}
       run: |
-        echo "🚀 Publishing to Fusion..."
-        echo "   Environment: ${{ env.TARGET_ENV }}"
-        echo "   Artifact: ${{ inputs.artifact }}"
-        echo "   Commit: ${{ github.sha }} by ${{ github.actor }}"
-        echo "   Workflow: ${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        
-        # Execute publish with comprehensive output capture
-        set +e  # Don't exit on error, we want to capture output
-        PUBLISH_OUTPUT=$(fusion-framework-cli app publish --env "${{ env.TARGET_ENV }}" "${{ inputs.artifact }}" 2>&1)
-        PUBLISH_EXIT_CODE=$?
-        set -e
-        
-        echo "$PUBLISH_OUTPUT"
-        
-        if [ $PUBLISH_EXIT_CODE -eq 0 ]; then
-          echo "✅ Publish completed successfully"
-          
-          # Try to extract URLs from CLI output
-          APP_URL=$(echo "$PUBLISH_OUTPUT" | grep -oE 'https://[^[:space:]]*fusion[^[:space:]]*' | head -1 || echo "")
-          PORTAL_URL=$(echo "$PUBLISH_OUTPUT" | grep -oE 'Portal: https://[^[:space:]]*' | sed 's/Portal: //' || echo "")
-          
-          if [ -n "$APP_URL" ]; then
-            echo "app-url=$APP_URL" >> $GITHUB_OUTPUT
-            echo "🔗 App URL: $APP_URL"
-          fi
-          
-          if [ -n "$PORTAL_URL" ]; then
-            echo "portal-url=$PORTAL_URL" >> $GITHUB_OUTPUT
-            echo "🔗 Portal URL: $PORTAL_URL"
-          fi
-          
-          # Set combined publish info for easy access
-          PUBLISH_INFO="App: ${{ steps.metadata.outputs.app-name }} v${{ steps.metadata.outputs.app-version }}\nEnvironment: ${{ env.TARGET_ENV }}\nCommit: ${{ github.sha }}\nBranch: ${{ github.ref_name }}"
-          echo "publish-info<<EOF" >> $GITHUB_OUTPUT
-          echo -e "$PUBLISH_INFO" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          
-        else
-          echo "❌ Publish failed with exit code $PUBLISH_EXIT_CODE"
-          exit $PUBLISH_EXIT_CODE
-        fi
+        npx fusion-framework-cli app publish \
+          --env "${{ steps.validate-env.outputs.env }}" \
+          --tag "${{ steps.validate-env.outputs.tag }}" \
+          "${{ inputs.artifact }}" \
+
+    - name: Post Publish Metadata
+      id: metadata
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: node ${{ github.action_path }}/scripts/post-publish-metadata.js
+      env:
+        INPUT_ARTIFACT: ${{ inputs.artifact }}
+        INPUT_ENV: ${{ steps.validate-env.outputs.env }}
+        INPUT_TAG: ${{ steps.validate-env.outputs.tag }}
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        GITHUB_TOKEN: ${{ github.token }}
 
     - name: Azure Logout (cleanup)
-      if: ${{ always() && inputs.fusion-token == '' }}
+      if: ${{ always() && steps.validate-auth.outputs.isToken == 'false' }}
       uses: azure/logout@v2

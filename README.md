@@ -5,11 +5,13 @@ A GitHub Action to authenticate and publish Fusion applications using the `@equi
 ## Features
 
 - 🔐 **Flexible Authentication**: Use either pre-acquired Fusion tokens or Azure Service Principal credentials
-- 🏗️ **Optional Build Step**: Automatically build your app before publishing
-- ✅ **Input Validation**: Comprehensive validation of inputs before execution
-- 🌍 **Multi-Environment**: Support for dev, test, staging, prod, and qa environments
-- 📦 **Package Manager Agnostic**: Works with pnpm, npm, and yarn
+- 🏗️ **Artifact Publishing**: Support for directories and archive files (.zip, .tar, .rar)
+- ✅ **Comprehensive Validation**: Validated inputs, file formats, and authentication methods
+- 🌍 **Multi-Environment**: Support for ci, tr, fprd, fqa, and next environments
+- 🔄 **PR Deployments**: Automatic preview deployments for pull requests
+- 🧪 **Fully Tested**: 100% test coverage with comprehensive unit tests
 - 🔍 **Detailed Logging**: Clear output and error messages for debugging
+- 📝 **Rich Metadata**: Extracts app information and posts deployment details to PRs
 
 ## Usage
 
@@ -32,11 +34,12 @@ jobs:
         uses: equinor/fusion-action-app-publish@v1
         with:
           fusion-token: ${{ secrets.FUSION_TOKEN }}
-          env: 'prod'
-          artifact: 'dist'
+          env: 'fprd'
+          artifact: './app-bundle.zip'
+          tag: 'v1.0.0'
 ```
 
-### Using Azure Service Principal
+### Using Azure Service Principal (OIDC)
 
 ```yaml
 name: Deploy to Fusion
@@ -45,6 +48,11 @@ on:
   push:
     branches: [main]
 
+# Required for Azure OIDC authentication
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -57,44 +65,39 @@ jobs:
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
           azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           azure-resource-id: ${{ secrets.FUSION_RESOURCE_ID }}
-          env: 'prod'
-          artifact: 'dist'
+          env: 'fprd'
+          artifact: './app-bundle.zip'
 ```
 
-### Complete Workflow with Build
+### PR Preview Deployments
 
 ```yaml
-name: Build and Deploy to Fusion
+name: PR Preview
 
 on:
-  push:
-    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write  # For posting deployment comments
 
 jobs:
-  deploy:
+  deploy-preview:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-      
-      - name: Install dependencies
-        run: pnpm install
-      
-      - name: Publish to Fusion
+      - name: Deploy PR Preview
+        id: deploy
         uses: equinor/fusion-action-app-publish@v1
         with:
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
           azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          azure-resource-id: ${{ secrets.FUSION_RESOURCE_ID }}
-          env: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
-          artifact: 'dist'
-          build-before-publish: 'true'
-          working-directory: '.'
+          env: 'ci'  # Will create pr-{number} deployment
+          prNR: ${{ github.event.number }}
+          artifact: './app-bundle.zip'
 ```
 
 ## Inputs
@@ -104,17 +107,23 @@ jobs:
 | `fusion-token` | Pre-acquired Fusion bearer token | No | - |
 | `azure-client-id` | Azure Service Principal Client ID | No | - |
 | `azure-tenant-id` | Azure Tenant ID | No | - |
-| `azure-resource-id` | Fusion audience/resource ID for token acquisition | No | - |
-| `env` | Target environment (dev/test/staging/prod/qa) | **Yes** | - |
-| `artifact` | Path to built artifact | No | `dist` |
-| `build-before-publish` | Run build step before publishing | No | `true` |
+| `azure-resource-id` | Fusion audience/resource ID for token acquisition | No | `https://fusion.equinor.com` |
+| `env` | Target environment (ci/tr/fprd/fqa/next) | No | `ci` |
+| `prNR` | Pull Request number (used with env=ci) | No | - |
+| `artifact` | Path to built artifact file or directory | No | `./app-bundle.zip` |
+| `tag` | Tag to apply to the deployment | No | `latest` |
 | `working-directory` | Working directory for commands | No | `.` |
 
 ## Outputs
 
 | Output | Description |
 |--------|-------------|
-| `published-url` | URL of the published application (if available) |
+| `app-url` | Direct URL to the published application |
+| `portal-url` | Fusion portal URL for managing the application |
+| `target-env` | Resolved target environment |
+| `app-name` | Application name from manifest |
+| `app-version` | Application version from manifest |
+| `publish-info` | Formatted publish information for PR comments |
 
 ## Authentication Methods
 
@@ -126,7 +135,8 @@ Use this method if you already have a Fusion bearer token:
 - uses: equinor/fusion-action-app-publish@v1
   with:
     fusion-token: ${{ secrets.FUSION_TOKEN }}
-    env: 'prod'
+    env: 'fprd'
+    artifact: './app-bundle.zip'
 ```
 
 ### Method 2: Azure Service Principal
@@ -134,12 +144,19 @@ Use this method if you already have a Fusion bearer token:
 Use this method to let the action acquire a token using Azure Service Principal:
 
 ```yaml
+# Requires OIDC permissions
+permissions:
+  id-token: write
+  contents: read
+
+# In job steps:
 - uses: equinor/fusion-action-app-publish@v1
   with:
     azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
     azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
     azure-resource-id: ${{ secrets.FUSION_RESOURCE_ID }}
-    env: 'prod'
+    env: 'fprd'
+    artifact: './app-bundle.zip'
 ```
 
 **Note**: You must provide **either** `fusion-token` **or** all three Azure SP credentials. Providing both or neither will result in a validation error.
@@ -166,29 +183,33 @@ For **Service Principal** method:
 ## Supported Environments
 
 The action validates against these environments:
-- `dev` - Development
-- `test` - Test 
-- `staging` - Staging
-- `prod` - Production
-- `qa` - Quality Assurance
+- `ci` - Continuous Integration / Pull Request previews
+- `tr` - Test/Trial environment
+- `fprd` - Full Production
+- `fqa` - Full Quality Assurance
+- `next` - Next/Beta environment
+
+When using `env: 'ci'` with a `prNR`, the action automatically creates preview deployments tagged as `pr-{number}`.
 
 ## Artifact Requirements
 
 The action supports various artifact types:
 
-### Directory (Recommended)
+### Archive Files (Recommended)
+- `.zip` files - Standard ZIP archives
+- `.tar` files - TAR archives
+- `.rar` files - RAR archives
+
+### Directory
 ```
-dist/
+app-bundle/
 ├── index.html
 ├── bundle.js
 ├── styles.css
-└── manifest.json
+└── app.manifest.json  # Required for metadata extraction
 ```
 
-### Archive Files
-- `.zip` files
-- `.tar.gz` files
-- `.tgz` files
+The action will automatically extract metadata from `app.manifest.json` when present.
 
 ## Troubleshooting
 
@@ -200,7 +221,7 @@ dist/
 - Verify `working-directory` is set properly
 
 **"Invalid environment"**
-- Use one of: dev, test, staging, prod, qa
+- Use one of: ci, tr, fprd, fqa, next
 - Check spelling and case sensitivity
 
 **"Missing authentication credentials"**
@@ -227,14 +248,19 @@ Add debug output to your workflow:
 
 ### Local Testing
 
-Test the validation script locally:
+Run the test suite to validate changes:
 
 ```bash
-# Test with token auth
-node validate.js dev ./dist "your-token" "" "" ""
+# Run all tests
+pnpm test
 
-# Test with SP auth  
-node validate.js prod ./dist "" "client-id" "tenant-id" "resource-id"
+# Run tests with coverage
+pnpm run test:coverage
+
+# Test individual validation scripts
+node scripts/validate-artifact.js
+node scripts/validate-env.js
+node scripts/validate-is-token-or-azure.js
 ```
 
 ### Contributing
@@ -242,8 +268,12 @@ node validate.js prod ./dist "" "client-id" "tenant-id" "resource-id"
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test with the validation script
-5. Submit a pull request
+4. Run the test suite: `pnpm test`
+5. Ensure 100% test coverage: `pnpm run test:coverage`
+6. Update documentation if needed
+7. Submit a pull request
+
+See [TESTING_SETUP.md](TESTING_SETUP.md) for testing infrastructure details.
 
 ## License
 
