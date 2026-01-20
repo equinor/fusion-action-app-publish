@@ -90,7 +90,8 @@ function validateIsTokenOrAzure() {
   };
   const authResult = detectAndValidateAuthType(credentials);
   if (!authResult.isValid) {
-    core__namespace.setFailed(authResult.error);
+    const message = authResult.error ?? "Authentication validation failed.";
+    core__namespace.setFailed(message);
     return;
   }
   core__namespace.setOutput("auth-type", authResult.authType);
@@ -99,7 +100,8 @@ function validateIsTokenOrAzure() {
   if (authResult.authType === AUTH_TYPES.TOKEN) {
     const tokenValidation = validateFusionToken(credentials.fusionToken);
     if (!tokenValidation.isValid) {
-      core__namespace.setFailed(tokenValidation.error);
+      const message = tokenValidation.error ?? "Invalid fusion token.";
+      core__namespace.setFailed(message);
       return;
     }
     core__namespace.info("Fusion token validation passed.");

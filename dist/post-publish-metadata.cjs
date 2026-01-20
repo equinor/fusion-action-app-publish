@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 "use strict";
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-const core = require("@actions/core");
-const github = require("@actions/github");
+const node_child_process = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 const node_util = require("node:util");
-const node_child_process = require("node:child_process");
+const core = require("@actions/core");
+const github = require("@actions/github");
 function _interopNamespaceDefault(e) {
   const n = Object.create(null, { [Symbol.toStringTag]: { value: "Module" } });
   if (e) {
@@ -23,18 +23,22 @@ function _interopNamespaceDefault(e) {
   n.default = e;
   return Object.freeze(n);
 }
-const core__namespace = /* @__PURE__ */ _interopNamespaceDefault(core);
-const github__namespace = /* @__PURE__ */ _interopNamespaceDefault(github);
 const fs__namespace = /* @__PURE__ */ _interopNamespaceDefault(fs);
 const path__namespace = /* @__PURE__ */ _interopNamespaceDefault(path);
+const core__namespace = /* @__PURE__ */ _interopNamespaceDefault(core);
+const github__namespace = /* @__PURE__ */ _interopNamespaceDefault(github);
 const exec = node_util.promisify(node_child_process.exec);
 async function extractAppMetadata(artifactPath) {
   try {
     const artifactExtension = path__namespace.extname(artifactPath).toLowerCase();
     if (artifactExtension !== ".zip") {
-      throw new Error(`Unsupported artifact format: ${artifactExtension}. Only .zip files are supported.`);
+      throw new Error(
+        `Unsupported artifact format: ${artifactExtension}. Only .zip files are supported.`
+      );
     }
-    const { stdout, stderr } = await exec(`unzip -p "${artifactPath}" "*/metadata.json"`);
+    const { stdout, stderr } = await exec(
+      `unzip -p "${artifactPath}" "*/metadata.json"`
+    );
     if (stderr) {
       core__namespace.warning(`Warning from unzip: ${stderr}`);
     }
@@ -47,10 +51,12 @@ async function extractAppMetadata(artifactPath) {
       metadata.key = metadata.name;
       return metadata;
     } catch (parseError) {
-      throw new Error(`Invalid JSON format in metadata.json: ${parseError.message}`);
+      const message = parseError instanceof Error ? parseError.message : "Unknown parse error";
+      throw new Error(`Invalid JSON format in metadata.json: ${message}`);
     }
   } catch (error) {
-    core__namespace.error(`Failed to extract app metadata: ${error.message}`);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    core__namespace.error(`Failed to extract app metadata: ${message}`);
     throw error;
   }
 }
@@ -60,13 +66,13 @@ function generateAppUrl(meta, env, tag) {
     throw new Error("App key not found in metadata");
   }
   const envUrls = {
-    "ci": "https://fusion.ci.fusion-dev.net",
-    "fqa": "https://fusion.fqa.fusion-dev.net",
-    "fprd": "https://fusion.equinor.com",
-    "tr": "https://fusion.tr.fusion-dev.net",
-    "next": "https://fusion.next.fusion-dev.net"
+    ci: "https://fusion.ci.fusion-dev.net",
+    fqa: "https://fusion.fqa.fusion-dev.net",
+    fprd: "https://fusion.equinor.com",
+    tr: "https://fusion.tr.fusion-dev.net",
+    next: "https://fusion.next.fusion-dev.net"
   };
-  const baseUrl = envUrls[env] || envUrls["fprd"];
+  const baseUrl = envUrls[env] || envUrls.fprd;
   if (!tag.startsWith("latest")) {
     return `${baseUrl}/apps/${appKey}?$tag=${tag}`;
   }
@@ -81,7 +87,7 @@ async function postPrComment(meta, env, tag, appUrl, appAdminUrl) {
     }
     const octokit = github__namespace.getOctokit(token);
     const context = github__namespace.context;
-    const prNumber = context.payload.pull_request?.number || (tag && tag.startsWith("pr-") ? parseInt(tag.replace("pr-", "")) : null);
+    const prNumber = context.payload.pull_request?.number || (tag?.startsWith("pr-") ? parseInt(tag.replace("pr-", ""), 10) : null);
     if (!prNumber) {
       core__namespace.info("Not a PR deployment, skipping PR comment");
       return;
@@ -89,29 +95,30 @@ async function postPrComment(meta, env, tag, appUrl, appAdminUrl) {
     const appName = meta.name;
     const appVersion = meta.version || "unknown";
     const appDescription = meta.description || "";
-    const commentBody = `## 🚀 Application Deployed Successfully
+    const commentBody = `<!-- fusion-app-publish-meta -->
+## 🚀 Application Deployed Successfully
 
-**Application:** ${appName}  
-**Version:** ${appVersion}  
-**Environment:** ${env.toUpperCase()}  
-**Tag:** ${tag}  
+  **Application:** ${appName}  
+  **Version:** ${appVersion}  
+  **Environment:** ${env.toUpperCase()}  
+  **Tag:** ${tag}  
 
-${appDescription ? `**Description:** ${appDescription}
+  ${appDescription ? `**Description:** ${appDescription}
 
 ` : ""}
 
-### 🔗 Access Links
-- **Application:** [Open ${appName}](${appUrl})
-- **Fusion App Admin:** [Manage in Fusion App Admin](${appAdminUrl})
-- **App Config:** [View app config](${appAdminUrl}/config)
+  ### 🔗 Access Links
+  - **Application:** [Open ${appName}](${appUrl})
+  - **Fusion App Admin:** [Manage in Fusion App Admin](${appAdminUrl})
+  - **App Config:** [View app config](${appAdminUrl}/config)
 
-### 📋 Deployment Details
-- **App Key:** \`${meta.key}\`
-- **Bundle:** ${meta.entry?.path || "Not specified"}
-- **Build Time:** ${(/* @__PURE__ */ new Date()).toISOString()}
+  ### 📋 Deployment Details
+  - **App Key:** \`${meta.key}\`
+  - **Bundle:** ${meta.entry?.path || "Not specified"}
+  - **Build Time:** ${(/* @__PURE__ */ new Date()).toISOString()}
 
----
-*Deployed via [fusion-action-app-publish](https://github.com/equinor/fusion-action-app-publish)*`;
+  ---
+  *Deployed via [fusion-action-app-publish](https://github.com/equinor/fusion-action-app-publish)*`;
     await octokit.rest.issues.createComment({
       owner: context.repo.owner,
       repo: context.repo.repo,
@@ -120,7 +127,8 @@ ${appDescription ? `**Description:** ${appDescription}
     });
     core__namespace.info(`Posted deployment comment to PR #${prNumber}`);
   } catch (error) {
-    core__namespace.warning(`Failed to post PR comment: ${error.message}`);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    core__namespace.warning(`Failed to post PR comment: ${message}`);
   }
 }
 async function postPublishMetadata() {
@@ -158,7 +166,8 @@ async function postPublishMetadata() {
     await postPrComment(meta, env, tag, appUrl, appAdminUrl);
     core__namespace.info("Post-publish metadata processing completed successfully");
   } catch (error) {
-    core__namespace.setFailed(`Post-publish metadata failed: ${error.message}`);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    core__namespace.setFailed(`Post-publish metadata failed: ${message}`);
   }
 }
 if (require.main === module) {
