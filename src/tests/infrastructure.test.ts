@@ -69,8 +69,8 @@ describe("Script Infrastructure Tests", () => {
       const filePath = path.join(coreDir, file);
       const content = await fs.readFile(filePath, "utf8");
 
-      // Check that @actions/core is imported
-      expect(content).toContain("'@actions/core'");
+      // Check that @actions/core is imported (single or double quotes)
+      expect(content).toMatch(/['"]@actions\/core['"]/);
 
       // Check that it has basic functionality
       expect(content.length).toBeGreaterThan(100);
