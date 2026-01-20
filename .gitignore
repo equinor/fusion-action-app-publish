@@ -86,7 +86,6 @@ ehthumbs.db
 Desktop.ini
 
 # Build outputs (common)
-dist/
 build/
 lib/
 out/

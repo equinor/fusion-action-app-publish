@@ -4,21 +4,18 @@
   "description": "GitHub Action to authenticate & publish Fusion apps using fusion-framework-cli",
   "main": "action.yml",
   "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:ci": "jest --ci --coverage --watchAll=false",
-    "test:auto": "bash scripts/validate-inputs.sh auto ./dist '' client-id tenant-id https://fusion.equinor.com pr",
-    "test:token": "bash scripts/validate-inputs.sh fqa ./dist token123 '' '' ''",
-    "test:install-cli": "bash scripts/install-cli.sh ^13.0.0",
-    "test:build": "bash scripts/build-app.sh .",
-    "test:metadata": "bash scripts/extract-metadata.sh .",
-    "test:resolve-env": "bash scripts/resolve-environment.sh ci pr",
-    "test:auth": "bash scripts/authenticate.sh '' client-id tenant-id https://fusion.equinor.com",
-    "test:publish-dry": "echo 'Dry run - would execute: bash scripts/publish-app.sh dist latest .'",
-    "test:orchestrator": "bash scripts/fusion-publish.sh --help",
-    "validate-example": "bash scripts/validate-inputs.sh fprd ./dist token123 '' '' ''",
-    "lint": "echo 'No linting configured yet'"
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "format": "biome format --write .",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "test:ci": "vitest --run --coverage",
+    "test:local": "ALLOW_LOCAL_TESTS=true vitest",
+    "lint": "biome check .",
+    "lint:fix": "biome check --apply .",
+    "changeset": "changeset",
+    "version": "changeset version && pnpm install --no-frozen-lockfile"
   },
   "repository": {
     "type": "git",
@@ -50,11 +47,18 @@
     "action.yml",
     "scripts/*.sh",
     "scripts/README.md",
+    "dist/",
     "README.md",
     "LICENSE"
   ],
   "devDependencies": {
-    "@types/jest": "^30.0.0",
-    "jest": "^30.2.0"
+    "@biomejs/biome": "^2.3.11",
+    "@changesets/cli": "^2.29.8",
+    "@testing-library/jest-dom": "^6.1.5",
+    "@types/node": "^22.10.5",
+    "@vitest/coverage-v8": "^2.1.8",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.11",
+    "vitest": "^2.1.8"
   }
 }

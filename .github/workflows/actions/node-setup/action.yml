@@ -1,0 +1,33 @@
+name: 'Setup Node and Install Dependencies'
+description: 'Setup Node.js and install pnpm dependencies'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+        
+    - name: Install pnpm
+      shell: bash
+      run: npm install -g pnpm
+      
+    - name: Get pnpm store directory
+      shell: bash
+      run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+      id: pnpm-cache
+      
+    - name: Setup pnpm cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+        
+    - name: Install dependencies
+      shell: bash
+      run: |
+        # Install dependencies for the workflow and action
+        pnpm install --frozen-lockfile

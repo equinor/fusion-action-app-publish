@@ -21,7 +21,6 @@ inputs:
   azure-resource-id:
     description: 'Fusion audience/resource ID (for token acquisition)'
     required: false
-    default: 'https://fusion.equinor.com'
 
   env:
     description: 'Target environment (ci/fqa/fprd/tr/next) or "ci" for PR-based selection'
@@ -73,6 +72,18 @@ outputs:
     description: 'Formatted publish information for PR comments'
     value: ${{ steps.metadata.outputs.publish-info }}
 
+  auth-type:
+    description: 'Authentication type used (token or service-principal)'
+    value: ${{ steps.validate-auth.outputs.auth-type }}
+    
+  is-token:
+    description: 'Whether fusion-token authentication was used (deprecated, use auth-type)'
+    value: ${{ steps.validate-auth.outputs.isToken }}
+    
+  is-service-principal:
+    description: 'Whether Azure Service Principal authentication was used'
+    value: ${{ steps.validate-auth.outputs.isServicePrincipal }}
+
 runs:
   using: 'composite'
   steps:
@@ -80,7 +91,7 @@ runs:
     - name: Validate Artifact
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: node ${{ github.action_path }}/scripts/validate-artifact.js
+      run: node ${{ github.action_path }}/dist/validate-artifact.cjs
       env:
         INPUT_ARTIFACT: ${{ inputs.artifact }}
 
@@ -88,7 +99,7 @@ runs:
       id: validate-env
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: node ${{ github.action_path }}/scripts/validate-env.js
+      run: node ${{ github.action_path }}/dist/validate-env.cjs
       env:
         INPUT_PRNR: ${{ inputs.prNR }}
         INPUT_ENV: ${{ inputs.env }}
@@ -100,14 +111,12 @@ runs:
     - name: Validate Is Token or Azure Auth Provided
       id: validate-auth
       shell: bash
-      run: node ${{ github.action_path }}/scripts/validate-is-token-or-azure.js
+      run: node ${{ github.action_path }}/dist/validate-is-token-or-azure.cjs
       env:
         INPUT_FUSION_TOKEN: ${{ inputs.fusion-token }}
         INPUT_AZURE_CLIENT_ID: ${{ inputs.azure-client-id }}
         INPUT_AZURE_TENANT_ID: ${{ inputs.azure-tenant-id }}
         INPUT_AZURE_RESOURCE_ID: ${{ inputs.azure-resource-id }}
-      outputs:
-        IS_TOKEN: ${{ steps.validate-auth.outputs.isToken }}
 
     - name: Azure Login (if SP)
       if: steps.validate-auth.outputs.isToken == 'false'
@@ -155,7 +164,7 @@ runs:
       id: metadata
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: node ${{ github.action_path }}/scripts/post-publish-metadata.js
+      run: node ${{ github.action_path }}/dist/post-publish-metadata.cjs
       env:
         INPUT_ARTIFACT: ${{ inputs.artifact }}
         INPUT_ENV: ${{ steps.validate-env.outputs.env }}

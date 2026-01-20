@@ -125,8 +125,25 @@ jobs:
 | `app-name` | Application name from manifest |
 | `app-version` | Application version from manifest |
 | `publish-info` | Formatted publish information for PR comments |
+| `auth-type` | Authentication type used (`token` or `service-principal`) |
+| `is-token` | Whether fusion-token authentication was used (deprecated, use `auth-type`) |
+| `is-service-principal` | Whether Azure Service Principal authentication was used |
 
 ## Authentication Methods
+
+The action provides two distinct functions for authentication validation:
+
+### `validateFusionToken(token)`
+Validates the format and structure of Fusion bearer tokens:
+- Ensures token is a non-empty string
+- Validates BEARER prefix format
+- Supports alphanumeric characters, dots, dashes, and underscores
+
+### `detectAndValidateAuthType(credentials)`
+Detects authentication type and validates Service Principal credentials:
+- Returns authentication type (`token` or `service-principal`)
+- Validates complete Azure Service Principal credential sets
+- Handles credential precedence when both types are provided
 
 ### Method 1: Pre-acquired Fusion Token
 
@@ -160,7 +177,7 @@ permissions:
     artifact: './app-bundle.zip'
 ```
 
-**Note**: You must provide **either** `fusion-token` **or** all three Azure SP credentials. Providing both or neither will result in a validation error.
+**Authentication Priority**: When both authentication methods are provided, the action prioritizes Azure Service Principal authentication over tokens. This allows for future extensibility and consistent behavior.
 
 ## Environment Setup
 

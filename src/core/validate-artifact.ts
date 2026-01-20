@@ -1,17 +1,19 @@
 /**
- * validate-artifact.js
+ * validate-artifact.ts
  * Validates the artifact input for the GitHub Action
  * Used as part of GitHub Action workflows to ensure correct artifact file is provided
  */
 
-const core = require('@actions/core');
-const fs = require('node:fs');
-const path = require('node:path');
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as core from "@actions/core";
 
-// Main function to validate the artifact input
-function validateArtifact() {
+/**
+ * Main function to validate the artifact input
+ */
+export function validateArtifact(): void {
   // Get the artifact input from GitHub Action inputs
-  const artifact = core.getInput('artifact');
+  const artifact = core.getInput("artifact");
 
   // Validate that the artifact input is provided
   if (!artifact) {
@@ -27,10 +29,12 @@ function validateArtifact() {
   }
 
   // Validate that the artifact is a .zip file (only zip format supported for now)
-  const validExtensions = ['.zip'];
+  const validExtensions = [".zip"];
   const artifactExtension = path.extname(artifactPath).toLowerCase();
   if (!validExtensions.includes(artifactExtension)) {
-    core.setFailed(`Artifact file must be one of the following types: ${validExtensions.join(', ')}`);
+    core.setFailed(
+      `Artifact file must be one of the following types: ${validExtensions.join(", ")}`,
+    );
     return;
   }
 
@@ -38,7 +42,10 @@ function validateArtifact() {
   core.info("Artifact validation passed.");
 
   // Set the artifact path as an output for use in subsequent steps
-  core.setOutput('artifact-path', artifactPath);
+  core.setOutput("artifact-path", artifactPath);
 }
 
-validateArtifact();
+// Execute if called directly
+if (require.main === module) {
+  validateArtifact();
+}
