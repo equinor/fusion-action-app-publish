@@ -48,10 +48,6 @@ describe("check-meta-comment.ts", () => {
 
     it("should return false when not a PR deployment (no PR number)", async () => {
       vi.mocked(core.getInput).mockReturnValue("latest");
-      const mockContext = {
-        payload: {},
-        repo: { owner: "equinor", repo: "fusion-action-app-publish" },
-      };
       vi.mocked(github.context as any).payload = {};
 
       const result = await checkMetaComment();
@@ -62,11 +58,7 @@ describe("check-meta-comment.ts", () => {
 
     it("should extract PR number from pull_request context", async () => {
       vi.mocked(core.getInput).mockReturnValue("latest");
-      const mockContext = {
-        payload: { pull_request: { number: 42 } },
-        repo: { owner: "equinor", repo: "fusion-action-app-publish" },
-      };
-      vi.mocked(github.context as any).payload = mockContext.payload;
+      vi.mocked(github.context as any).payload = { pull_request: { number: 42 } };
 
       const mockOctokit = {
         rest: {
