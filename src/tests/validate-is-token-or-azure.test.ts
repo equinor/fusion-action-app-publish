@@ -28,8 +28,8 @@ describe("validate-is-token-or-azure.ts", () => {
       expect(result.error).toBe("Input 'fusion-token' must be a non-empty string.");
     });
 
-      it("should return invalid for null token", () => {
-        const result = validateFusionToken(null as unknown as string);
+    it("should return invalid for null token", () => {
+      const result = validateFusionToken(null as unknown as string);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe("Input 'fusion-token' must be a non-empty string.");
     });

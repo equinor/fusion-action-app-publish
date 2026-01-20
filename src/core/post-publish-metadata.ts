@@ -133,7 +133,8 @@ export async function postPrComment(
     const appDescription = meta.description || "";
 
     // Create formatted comment with deployment details
-    const commentBody = `## 🚀 Application Deployed Successfully
+    const commentBody = `<!-- fusion-app-publish-meta -->
+## 🚀 Application Deployed Successfully
 
   **Application:** ${appName}  
   **Version:** ${appVersion}  

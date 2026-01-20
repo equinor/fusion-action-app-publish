@@ -1,35 +1,38 @@
 # Test Documentation
 
-This document describes the test suite for the fusion-action-app-publish GitHub Action scripts.
+This document describes the test suite for the fusion-action-app-publish GitHub Action.
 
 ## Test Framework
 
-We use **Jest** as our testing framework, which provides:
-- Test runner and assertion library
+We use **Vitest** as our testing framework, which provides:
+- Fast test runner with native ESM support
+- Compatible with Vite build tooling
+- Full TypeScript support
 - Mocking capabilities for external dependencies
-- Code coverage reporting
+- Code coverage reporting via v8
 - Watch mode for development
 
 ## Test Structure
 
 ### Test Files
 
-All tests are located in the `/tests` directory:
+All tests are located in `src/tests/`:
 
-- `tests/validate-artifact.test.js` - Tests for artifact validation script
-- `tests/validate-env.test.js` - Tests for environment validation script  
-- `tests/validate-is-token-or-azure.test.js` - Tests for token/Azure validation script
-- `tests/post-publish-metadata.test.js` - Tests for metadata extraction from metadata.json and PR commenting
-- `tests/setup.js` - Test environment setup
+- `src/tests/validate-artifact.test.ts` - Artifact validation (zip format)
+- `src/tests/validate-env.test.ts` - Environment validation (ci/tr/fprd/fqa/next)
+- `src/tests/validate-is-token-or-azure.test.ts` - Token/Azure credential validation
+- `src/tests/post-publish-metadata.test.ts` - Metadata extraction and PR commenting
+- `src/tests/infrastructure.test.ts` - Infrastructure validation tests
+- `src/tests/setup.js` - Global test setup (mocks console methods)
 
 ### Configuration Files
 
-- `jest.config.js` - Jest configuration
-- `tests/setup.js` - Global test setup (mocks console methods)
+- `vitest.config.ts` - Vitest configuration with coverage and setup
+- `src/tests/setup.js` - Global test setup
 
 ## Running Tests
 
-### Basic Test Commands
+### Test Commands
 
 ```bash
 # Run all tests
@@ -41,13 +44,16 @@ pnpm run test:watch
 # Run tests with coverage report
 pnpm run test:coverage
 
-# Run tests in CI mode (no watch, with coverage)
+# Run tests in CI mode (single run with coverage)
 pnpm run test:ci
+
+# Run tests locally (without GitHub Actions environment)
+pnpm run test:local
 ```
 
-### Legacy Test Commands
+## Local Testing
 
-The following bash-based test commands are still available for integration testing:
+Tests can run locally without requiring GitHub Actions environment by setting `ALLOW_LOCAL_TESTS=true`. The `test:local` script handles this automatically.
 
 ```bash
 # Test various input validation scenarios

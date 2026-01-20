@@ -11,6 +11,7 @@ describe("Script Infrastructure Tests", () => {
     const utilsDir = path.join(srcDir, "utils");
 
     const expectedCoreFiles = [
+      "check-meta-comment.ts",
       "validate-artifact.ts",
       "validate-env.ts",
       "validate-is-token-or-azure.ts",
@@ -102,6 +103,10 @@ describe("Script Infrastructure Tests", () => {
       {
         file: "post-publish-metadata.ts",
         keywords: ["metadata", "github", "postPrComment", "extractAppMetadata"],
+      },
+      {
+        file: "check-meta-comment.ts",
+        keywords: ["meta", "comment", "check", "pr"],
       },
     ];
 

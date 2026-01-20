@@ -1,6 +1,7 @@
 name: ci
 
 on:
+  pull_request:
   push:
     branches:
       - main
@@ -37,7 +38,7 @@ jobs:
 
       # Run tests to ensure quality before release
       - name: Run tests
-        run: pnpm test
+        run: pnpm run test:ci
 
       # Run linting to ensure code quality
       - name: Run linter

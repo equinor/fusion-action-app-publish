@@ -5,6 +5,7 @@ export default defineConfig({
   build: {
     lib: {
       entry: {
+        "check-meta-comment": resolve(__dirname, "src/core/check-meta-comment.ts"),
         "validate-artifact": resolve(__dirname, "src/core/validate-artifact.ts"),
         "validate-env": resolve(__dirname, "src/core/validate-env.ts"),
         "validate-is-token-or-azure": resolve(__dirname, "src/core/validate-is-token-or-azure.ts"),

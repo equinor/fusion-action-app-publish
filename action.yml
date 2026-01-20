@@ -160,8 +160,17 @@ runs:
           --tag "${{ steps.validate-env.outputs.tag }}" \
           "${{ inputs.artifact }}" \
 
+    - name: Check Meta Comment
+      id: check-meta
+      shell: bash
+      run: node ${{ github.action_path }}/dist/check-meta-comment.cjs
+      env:
+        INPUT_TAG: ${{ steps.validate-env.outputs.tag }}
+        GITHUB_TOKEN: ${{ github.token }}
+
     - name: Post Publish Metadata
       id: metadata
+      if: steps.check-meta.outputs.exists == 'false'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: node ${{ github.action_path }}/dist/post-publish-metadata.cjs
