@@ -15,6 +15,7 @@
     "lint": "biome check .",
     "lint:fix": "biome check --apply .",
     "changeset": "changeset",
+    "changeset:version": "changeset version && pnpm install --no-frozen-lockfile",
     "version": "changeset version && pnpm install --no-frozen-lockfile"
   },
   "repository": {
