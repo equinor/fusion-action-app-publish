@@ -13,7 +13,6 @@ permissions:
   contents: write      # Required for creating releases and pushing tags
   id-token: write      # Required for OIDC token generation
   pull-requests: write # Required for changesets action to create PRs
-  commit-status: write # Required for setting commit statuses
 
 jobs:
   release-action:
