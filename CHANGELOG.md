@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.6
+
+### Patch Changes
+
+- 2d04b4e: Release
+
 ## 0.1.5
 
 ### Patch Changes
