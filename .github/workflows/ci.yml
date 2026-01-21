@@ -24,7 +24,7 @@ jobs:
       hasChangesets: ${{ steps.changesets.outputs.hasChangesets }}
     steps:
       # Checkout repository with full history for changeset processing
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -78,6 +78,7 @@ jobs:
           createGithubReleases: true
           setupGitUser: false
           version: pnpm run changeset:version
+          baseBranch: main
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
