@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.5
+
+### Patch Changes
+
+- 14b6e94: Use stable (non-hashed) build output names so dist artifacts no longer churn between local and CI builds.
+- 14b6e94: Release
+
 ## 0.1.4
 
 ### Patch Changes
