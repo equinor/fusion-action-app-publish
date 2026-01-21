@@ -74,7 +74,7 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          title: '🤖 Release - Fusion Action App Change'
+          title: '🤖 Release - Fusion Action App Publish'
           createGithubReleases: true
           setupGitUser: false
           version: pnpm run changeset:version
