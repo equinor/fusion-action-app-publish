@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2
+
+### Patch Changes
+
+- b4e0d61: Fix invalid `outputs` block in action.yml step definition causing template validation error
+
 ## 0.1.1
 
 ### Patch Changes
