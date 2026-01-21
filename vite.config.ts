@@ -23,6 +23,9 @@ export default defineConfig({
       output: {
         banner: "#!/usr/bin/env node",
         preserveModules: false,
+        // Avoid content-hash filenames so dist artifacts stay stable across environments
+        chunkFileNames: "[name].js",
+        assetFileNames: "[name][extname]",
       },
     },
   },

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 "use strict";
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-const core = require("./core-BSWKbkEd.js");
+const core = require("./core.js");
 const AUTH_TYPES = {
   TOKEN: "token",
   SERVICE_PRINCIPAL: "service-principal"

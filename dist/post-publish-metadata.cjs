@@ -5,8 +5,8 @@ const node_child_process = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 const require$$1 = require("node:util");
-const core = require("./core-BSWKbkEd.js");
-const github = require("./github-ChO0qEhd.js");
+const core = require("./core.js");
+const github = require("./github.js");
 function _interopNamespaceDefault(e) {
   const n = Object.create(null, { [Symbol.toStringTag]: { value: "Module" } });
   if (e) {
