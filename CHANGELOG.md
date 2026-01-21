@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3
+
+### Patch Changes
+
+- 9129be7: Replace missing azure/logout action with explicit `az logout` cleanup step.
+
 ## 0.1.2
 
 ### Patch Changes
