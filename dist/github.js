@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 "use strict";
+const require$$1 = require("fs");
+const require$$0 = require("os");
+const require$$2$1 = require("http");
+const require$$1$1 = require("https");
 const core = require("./core.js");
 var github = {};
 var context = {};
@@ -9,8 +13,8 @@ function requireContext() {
   hasRequiredContext = 1;
   Object.defineProperty(context, "__esModule", { value: true });
   context.Context = void 0;
-  const fs_1 = core.require$$1;
-  const os_1 = core.require$$1;
+  const fs_1 = require$$1;
+  const os_1 = require$$0;
   class Context {
     /**
      * Hydrate the context from the environment
@@ -217,8 +221,8 @@ function requireLib() {
   lib.HttpClient = lib.HttpClientResponse = lib.HttpClientError = lib.MediaTypes = lib.Headers = lib.HttpCodes = void 0;
   lib.getProxyUrl = getProxyUrl;
   lib.isHttps = isHttps;
-  const http = __importStar(core.require$$1);
-  const https = __importStar(core.require$$1);
+  const http = __importStar(require$$2$1);
+  const https = __importStar(require$$1$1);
   const pm = __importStar(requireProxy());
   const tunnel = __importStar(core.requireTunnel());
   const undici_1 = core.requireUndici();
