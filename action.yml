@@ -181,4 +181,5 @@ runs:
 
     - name: Azure Logout (cleanup)
       if: ${{ always() && steps.validate-auth.outputs.isToken == 'false' }}
-      uses: azure/logout@v2
+      shell: bash
+      run: az logout
