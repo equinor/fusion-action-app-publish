@@ -1,7 +1,15 @@
 /**
  * validate-artifact.ts
+ *
  * Validates the artifact input for the GitHub Action
- * Used as part of GitHub Action workflows to ensure correct artifact file is provided
+ *
+ * This module handles validation of the artifact file provided by the user, ensuring:
+ * - The artifact file path is provided and not empty
+ * - The artifact file exists on the filesystem
+ * - The artifact is a .zip file (currently the only supported format)
+ *
+ * Used as part of GitHub Action workflows to ensure the correct artifact file is provided
+ * before attempting to publish the application.
  */
 
 import * as fs from "node:fs";
@@ -9,7 +17,22 @@ import * as path from "node:path";
 import * as core from "@actions/core";
 
 /**
- * Main function to validate the artifact input
+ * Validates the artifact file input for the GitHub Action
+ *
+ * Performs the following checks:
+ * 1. Artifact input is provided (required field)
+ * 2. File exists at the specified path
+ * 3. File has a .zip extension (only supported format)
+ *
+ * Sets GitHub Action outputs:
+ * - `artifact-path`: The resolved absolute path to the validated artifact (on success)
+ *
+ * Fails the GitHub Action with an error message if validation fails
+ *
+ * @throws Does not throw, but calls core.setFailed() on validation errors
+ * @example
+ * // In GitHub Action workflow
+ * validateArtifact(); // Validates artifact input and sets output for next step
  */
 export function validateArtifact(): void {
   // Get the artifact input from GitHub Action inputs

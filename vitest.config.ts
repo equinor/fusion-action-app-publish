@@ -18,7 +18,7 @@ export default defineConfig({
       exclude: ["node_modules/", "dist/", "src/tests/"],
     },
     include: ["src/tests/**/*.test.ts", "src/tests/**/*.test.js"],
-    setupFiles: ["src/tests/setup.js"],
+    setupFiles: ["src/tests/setup.ts"],
     testTimeout: 10000,
   },
   resolve: {

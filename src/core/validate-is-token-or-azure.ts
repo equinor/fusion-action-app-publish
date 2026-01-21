@@ -1,22 +1,48 @@
 /**
  * validate-is-token-or-azure.ts
- * Validates the token or Azure credentials input for the GitHub Action
- * Used as part of GitHub Action workflows to ensure correct authentication is provided
+ *
+ * Validates and detects the authentication method for the GitHub Action
+ *
+ * This module provides authentication validation for two methods:
+ * 1. **Direct Token**: User provides pre-acquired Fusion API token
+ * 2. **Azure Service Principal (OIDC)**: User provides Azure AD credentials for OIDC flow
+ *
+ * The module handles:
+ * - Token format validation (must start with 'BEARER ')
+ * - Azure credential detection and validation (requires all 3 fields)
+ * - Authentication type prioritization when both methods provided
+ *
+ * Used as part of GitHub Action workflows to ensure authentication credentials
+ * are valid before attempting to publish the application.
  */
 
 import * as core from "@actions/core";
 import type { AuthDetectionResult, AuthType, Credentials, ValidationResult } from "../types/auth";
 
-// Authentication types enum
+/**
+ * Enumeration of supported authentication types
+ * Used to identify which authentication method is being used
+ * @example
+ * if (authType === AUTH_TYPES.TOKEN) { ... }
+ */
 export const AUTH_TYPES = {
   TOKEN: "token",
   SERVICE_PRINCIPAL: "service-principal",
 } as const satisfies Record<string, AuthType>;
 
 /**
- * Validates fusion token format and structure
- * @param token - The fusion token to validate
- * @returns Validation result with isValid boolean and error message if any
+ * Validates Fusion token format and structure
+ *
+ * Checks that the token:
+ * - Is a non-empty string
+ * - Starts with 'BEARER ' (case-sensitive)
+ * - Contains only valid token characters after the prefix (alphanumeric, ., _, -)
+ *
+ * @param token - The Fusion token to validate
+ * @returns ValidationResult with isValid flag and error message if validation fails
+ * @example
+ * const result = validateFusionToken('BEARER abc123-._');
+ * if (result.isValid) { ... }
  */
 export function validateFusionToken(token: string): ValidationResult {
   // Validate that the fusion-token is a non-empty string
@@ -44,9 +70,25 @@ export function validateFusionToken(token: string): ValidationResult {
 }
 
 /**
- * Detects authentication type and validates Service Principal credentials
- * @param credentials - Object containing all credential inputs
- * @returns Detection result with authType, isValid boolean, and error message if any
+ * Detects the authentication type and validates credentials
+ *
+ * Detection logic (in order of precedence):
+ * 1. If both token and complete Azure credentials provided: Use Service Principal (prefers SP)
+ * 2. If only token provided: Use token authentication
+ * 3. If complete Azure credentials provided: Use Service Principal
+ * 4. If partial Azure credentials: Error (all 3 required)
+ * 5. No credentials: Error
+ *
+ * @param credentials - Object containing all potential credential inputs
+ * @returns AuthDetectionResult with detected authType, isValid flag, and error message
+ * @example
+ * const result = detectAndValidateAuthType({
+ *   fusionToken: 'BEARER abc123',
+ *   azureClientId: '',
+ *   azureTenantId: '',
+ *   azureResourceId: ''
+ * });
+ * // Returns: { authType: 'token', isValid: true, error: null }
  */
 export function detectAndValidateAuthType(credentials: Credentials): AuthDetectionResult {
   const { fusionToken, azureClientId, azureTenantId, azureResourceId } = credentials;
@@ -105,6 +147,20 @@ export function detectAndValidateAuthType(credentials: Credentials): AuthDetecti
 
 /**
  * Main function to validate the authentication inputs
+ *
+ * This is the primary entry point for authentication validation:
+ * 1. Collects all authentication inputs from GitHub Action environment
+ * 2. Calls detectAndValidateAuthType to determine auth method and validate
+ * 3. Sets GitHub Action outputs for downstream reference:
+ *    - auth-type: The authentication method used (token or service-principal)
+ *    - isToken: Boolean indicating token authentication
+ *    - isServicePrincipal: Boolean indicating SP authentication
+ * 4. Fails the action if validation fails
+ *
+ * This function is typically called directly as the entry point when the module
+ * is executed in a GitHub Action workflow.
+ *
+ * @throws Does not throw, but calls core.setFailed() on validation errors
  */
 export function validateIsTokenOrAzure(): void {
   // Get all authentication inputs from GitHub Action

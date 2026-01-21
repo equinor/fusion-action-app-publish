@@ -1,6 +1,19 @@
 /**
  * check-meta-comment.ts
+ *
  * Checks if a meta comment already exists on the PR to avoid duplicate comments
+ *
+ * This module is used to detect existing deployment comments before posting a new one,
+ * preventing duplicate comments when the action runs multiple times (e.g., on retries).
+ *
+ * Uses GitHub's Issues API to:
+ * - List all comments on the PR
+ * - Search for meta-comment identifier (HTML comment)
+ * - Report existence back to caller
+ *
+ * This enables workflows to conditionally post comments:
+ * - Skip posting if comment already exists
+ * - Post fresh comment on first deployment
  */
 
 import * as core from "@actions/core";
@@ -8,7 +21,28 @@ import * as github from "@actions/github";
 
 /**
  * Checks if a meta comment already exists on the PR
- * @returns true if meta comment exists, false otherwise
+ *
+ * Detection:
+ * - Requires GITHUB_TOKEN environment variable (for API access)
+ * - Determines PR number from GitHub context or tag (pr-{number} format)
+ * - Queries GitHub API for all comments on the issue
+ * - Searches for meta-comment identifier: `<!-- fusion-app-publish-meta -->`
+ *
+ * Sets GitHub Action output:
+ * - `exists`: 'true' if comment found, 'false' otherwise
+ *
+ * Gracefully handles:
+ * - Missing GITHUB_TOKEN (returns false, logs info)
+ * - Non-PR context (returns false, logs info)
+ * - API errors (logs warning, returns false, continues)
+ *
+ * @returns Promise resolving to true if meta comment exists, false otherwise
+ * @throws Only throws after calling core.setFailed() on unexpected errors
+ * @example
+ * const exists = await checkMetaComment();
+ * if (!exists) {
+ *   await postPrComment(meta, env, tag, appUrl, appAdminUrl);
+ * }
  */
 export async function checkMetaComment(): Promise<boolean> {
   try {

@@ -1,3 +1,13 @@
+/**
+ * Main entry point for the Fusion Action App Publish library
+ *
+ * This module exports all public functions used for validating and publishing Fusion applications
+ * through GitHub Actions. It provides a clean API for:
+ * - Validating inputs (artifact, environment, authentication)
+ * - Extracting and processing application metadata
+ * - Posting deployment information to GitHub PRs
+ */
+
 export { checkMetaComment } from "./core/check-meta-comment";
 export {
   extractAppMetadata,

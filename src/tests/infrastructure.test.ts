@@ -8,7 +8,6 @@ describe("Script Infrastructure Tests", () => {
     const srcDir = path.join(repoRoot, "src");
     const coreDir = path.join(srcDir, "core");
     const typesDir = path.join(srcDir, "types");
-    const utilsDir = path.join(srcDir, "utils");
 
     const expectedCoreFiles = [
       "check-meta-comment.ts",
@@ -24,7 +23,6 @@ describe("Script Infrastructure Tests", () => {
       { target: srcDir, label: "src directory" },
       { target: coreDir, label: "core directory" },
       { target: typesDir, label: "types directory" },
-      { target: utilsDir, label: "utils directory" },
       { target: path.join(srcDir, "index.ts"), label: "src/index.ts" },
     ];
 

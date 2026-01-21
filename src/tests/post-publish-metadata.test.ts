@@ -33,10 +33,9 @@ describe("post-publish-metadata.ts", () => {
       },
     };
 
-    vi.mocked(github.getOctokit).mockReturnValue(mockOctokit);
+    vi.mocked(github.getOctokit).mockReturnValue(mockOctokit as any);
 
     // Reset context for each test
-    github.context.repo = { owner: "test-owner", repo: "test-repo" };
     github.context.payload = {};
 
     delete process.env.GITHUB_TOKEN;
