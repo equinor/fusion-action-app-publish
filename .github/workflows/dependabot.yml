@@ -4,7 +4,7 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 50
+    open-pull-requests-limit: 5
     versioning-strategy: increase-if-necessary
     groups:
       vite:
@@ -17,3 +17,4 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 5
