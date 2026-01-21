@@ -104,9 +104,6 @@ runs:
         INPUT_PRNR: ${{ inputs.prNR }}
         INPUT_ENV: ${{ inputs.env }}
         INPUT_TAG: ${{ inputs.tag }}
-      outputs:
-        ENV: ${{ steps.validate-env.outputs.env }}
-        TAG: ${{ steps.validate-env.outputs.tag }}
         
     - name: Validate Is Token or Azure Auth Provided
       id: validate-auth
