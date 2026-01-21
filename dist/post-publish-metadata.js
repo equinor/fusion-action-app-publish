@@ -1,34 +1,13 @@
-#!/usr/bin/env node
-"use strict";
-Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-const node_child_process = require("node:child_process");
-const fs = require("node:fs");
-const path = require("node:path");
-const require$$1 = require("node:util");
-const core = require("./core.js");
-const github = require("./github.js");
-function _interopNamespaceDefault(e) {
-  const n = Object.create(null, { [Symbol.toStringTag]: { value: "Module" } });
-  if (e) {
-    for (const k in e) {
-      if (k !== "default") {
-        const d = Object.getOwnPropertyDescriptor(e, k);
-        Object.defineProperty(n, k, d.get ? d : {
-          enumerable: true,
-          get: () => e[k]
-        });
-      }
-    }
-  }
-  n.default = e;
-  return Object.freeze(n);
-}
-const fs__namespace = /* @__PURE__ */ _interopNamespaceDefault(fs);
-const path__namespace = /* @__PURE__ */ _interopNamespaceDefault(path);
-const exec = require$$1.promisify(node_child_process.exec);
+import { exec as exec$1 } from "node:child_process";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { promisify } from "node:util";
+import { c as coreExports } from "./core.js";
+import { g as githubExports } from "./github.js";
+const exec = promisify(exec$1);
 async function extractAppMetadata(artifactPath) {
   try {
-    const artifactExtension = path__namespace.extname(artifactPath).toLowerCase();
+    const artifactExtension = path.extname(artifactPath).toLowerCase();
     if (artifactExtension !== ".zip") {
       throw new Error(
         `Unsupported artifact format: ${artifactExtension}. Only .zip files are supported.`
@@ -38,7 +17,7 @@ async function extractAppMetadata(artifactPath) {
       `unzip -p "${artifactPath}" "*/metadata.json"`
     );
     if (stderr) {
-      core.coreExports.warning(`Warning from unzip: ${stderr}`);
+      coreExports.warning(`Warning from unzip: ${stderr}`);
     }
     const metadataContent = stdout.trim();
     if (!metadataContent) {
@@ -54,7 +33,7 @@ async function extractAppMetadata(artifactPath) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    core.coreExports.error(`Failed to extract app metadata: ${message}`);
+    coreExports.error(`Failed to extract app metadata: ${message}`);
     throw error;
   }
 }
@@ -80,14 +59,14 @@ async function postPrComment(meta, env, tag, appUrl, appAdminUrl) {
   try {
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
-      core.coreExports.info("GITHUB_TOKEN not available, skipping PR comment");
+      coreExports.info("GITHUB_TOKEN not available, skipping PR comment");
       return;
     }
-    const octokit = github.githubExports.getOctokit(token);
-    const context = github.githubExports.context;
+    const octokit = githubExports.getOctokit(token);
+    const context = githubExports.context;
     const prNumber = context.payload.pull_request?.number || (tag?.startsWith("pr-") ? parseInt(tag.replace("pr-", ""), 10) : null);
     if (!prNumber) {
-      core.coreExports.info("Not a PR deployment, skipping PR comment");
+      coreExports.info("Not a PR deployment, skipping PR comment");
       return;
     }
     const appName = meta.name;
@@ -123,56 +102,58 @@ async function postPrComment(meta, env, tag, appUrl, appAdminUrl) {
       issue_number: prNumber,
       body: commentBody
     });
-    core.coreExports.info(`Posted deployment comment to PR #${prNumber}`);
+    coreExports.info(`Posted deployment comment to PR #${prNumber}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    core.coreExports.warning(`Failed to post PR comment: ${message}`);
+    coreExports.warning(`Failed to post PR comment: ${message}`);
   }
 }
 async function postPublishMetadata() {
   try {
-    const artifact = core.coreExports.getInput("artifact");
-    const env = core.coreExports.getInput("env");
-    const tag = core.coreExports.getInput("tag");
-    const workingDirectory = core.coreExports.getInput("working-directory") || ".";
-    core.coreExports.info(`Processing artifact: ${artifact}`);
-    core.coreExports.info(`Environment: ${env}`);
-    core.coreExports.info(`Tag: ${tag}`);
-    const artifactPath = path__namespace.resolve(workingDirectory, artifact);
-    if (!fs__namespace.existsSync(artifactPath)) {
+    const artifact = coreExports.getInput("artifact");
+    const env = coreExports.getInput("env");
+    const tag = coreExports.getInput("tag");
+    const workingDirectory = coreExports.getInput("working-directory") || ".";
+    coreExports.info(`Processing artifact: ${artifact}`);
+    coreExports.info(`Environment: ${env}`);
+    coreExports.info(`Tag: ${tag}`);
+    const artifactPath = path.resolve(workingDirectory, artifact);
+    if (!fs.existsSync(artifactPath)) {
       throw new Error(`Artifact not found: ${artifactPath}`);
     }
     const meta = await extractAppMetadata(artifactPath);
     const appName = meta.name;
     const appVersion = meta.version || "unknown";
     const appKey = meta.key;
-    core.coreExports.info(`App Name: ${appName}`);
-    core.coreExports.info(`App Version: ${appVersion}`);
-    core.coreExports.info(`App Key: ${appKey}`);
+    coreExports.info(`App Name: ${appName}`);
+    coreExports.info(`App Version: ${appVersion}`);
+    coreExports.info(`App Key: ${appKey}`);
     const appUrl = generateAppUrl(meta, env, tag);
-    core.coreExports.info(`App URL: ${appUrl}`);
-    core.coreExports.setOutput("app-name", appName);
-    core.coreExports.setOutput("app-version", appVersion);
-    core.coreExports.setOutput("app-key", appKey);
-    core.coreExports.setOutput("app-url", appUrl);
+    coreExports.info(`App URL: ${appUrl}`);
+    coreExports.setOutput("app-name", appName);
+    coreExports.setOutput("app-version", appVersion);
+    coreExports.setOutput("app-key", appKey);
+    coreExports.setOutput("app-url", appUrl);
     const appAdminBaseUrl = appUrl.split("/apps/")[0];
     const appAdminUrl = `${appAdminBaseUrl}/apps/app-admin/apps/${appKey}`;
-    core.coreExports.setOutput("app-admin-url", appAdminUrl);
+    coreExports.setOutput("app-admin-url", appAdminUrl);
     const publishInfo = `🚀 **${appName}** v${appVersion} deployed to **${env.toUpperCase()}**
 [Open Application](${appUrl})`;
-    core.coreExports.setOutput("publish-info", publishInfo);
+    coreExports.setOutput("publish-info", publishInfo);
     await postPrComment(meta, env, tag, appUrl, appAdminUrl);
-    core.coreExports.info("Post-publish metadata processing completed successfully");
+    coreExports.info("Post-publish metadata processing completed successfully");
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    core.coreExports.setFailed(`Post-publish metadata failed: ${message}`);
+    coreExports.setFailed(`Post-publish metadata failed: ${message}`);
   }
 }
 if (require.main === module) {
   postPublishMetadata();
 }
-exports.extractAppMetadata = extractAppMetadata;
-exports.generateAppUrl = generateAppUrl;
-exports.postPrComment = postPrComment;
-exports.postPublishMetadata = postPublishMetadata;
-//# sourceMappingURL=post-publish-metadata.cjs.map
+export {
+  extractAppMetadata,
+  generateAppUrl,
+  postPrComment,
+  postPublishMetadata
+};
+//# sourceMappingURL=post-publish-metadata.js.map

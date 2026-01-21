@@ -13,6 +13,7 @@ permissions:
   contents: write      # Required for creating releases and pushing tags
   id-token: write      # Required for OIDC token generation
   pull-requests: write # Required for changesets action to create PRs
+  commit-status: write # Required for setting commit statuses
 
 jobs:
   release-action:
@@ -65,6 +66,15 @@ jobs:
         run: gh pr ready ${{ steps.changesets.outputs.pullRequestNumber }} --undo
         env:
           GH_TOKEN: ${{ github.token }}
+
+      # Commit built action files on release
+      - name: Add built action on release
+        if: steps.changesets.outputs.hasChangesets == 'false' && steps.changesets.outputs.pullRequestNumber == ''
+        run: |
+          git add dist
+          git commit -m "chore: build action for release" || echo "No changes to commit"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       # Create git tags for GitHub Action versioning (v1, v1.2, v1.2.3)
       - name: Create/Update Action Tags

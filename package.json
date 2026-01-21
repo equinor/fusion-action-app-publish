@@ -3,6 +3,7 @@
   "version": "0.1.5",
   "description": "GitHub Action to authenticate & publish Fusion apps using fusion-framework-cli",
   "main": "action.yml",
+  "type": "module",
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
@@ -56,6 +57,7 @@
     "@biomejs/biome": "^2.3.11",
     "@changesets/cli": "^2.29.8",
     "@testing-library/jest-dom": "^6.1.5",
+    "@rollup/plugin-node-resolve": "^16.0.3",
     "@types/node": "^25.0.9",
     "@vitest/coverage-v8": "^4.0.0",
     "typescript": "^5.7.3",
