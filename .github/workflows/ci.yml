@@ -47,21 +47,6 @@ jobs:
       - name: Build and package action
         run: pnpm run build
 
-      # Auto-commit dist if out of sync
-      - name: Auto-commit dist changes
-        id: dist-changes
-        run: |
-          if [[ -n $(git status --porcelain dist/) ]]; then
-            echo "📦 dist/ files changed after build, auto-committing..."
-            git status --short dist/
-            git add dist/
-            git commit -m "build: update dist files [skip ci]"
-            git push
-            echo "✅ dist/ files committed and pushed"
-          else
-            echo "✅ dist/ files are up to date"
-          fi
-
       # Process changesets: create version PR or create GitHub releases
       - name: Create Release Pull Request or Create GitHub Release
         id: changesets
