@@ -1,20 +1,28 @@
-version: 2
-updates:
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
-    versioning-strategy: increase-if-necessary
-    groups:
-      vite:
-        applies-to: version-updates
-        patterns:
-          - "vi*"
-  - package-ecosystem: "github-actions"
-    # Workflow files stored in the
-    # default location of `.github/workflows`
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
+name: dependabot
+
+on: 
+  pull_request:
+
+jobs:
+  auto-approve-patch:
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2.4.0
+        with:
+          github-token: "${{ github.token }}"
+          
+      - name: Enable auto-merge for Dependabot PRs
+        if: ${{ steps.metadata.outputs.update-type == 'version-update:semver-patch'}}
+        run: |
+          gh pr review --approve "$PR_URL"
+          gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ github.token }}
+
