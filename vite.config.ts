@@ -19,14 +19,7 @@ export default defineConfig({
     minify: false,
     sourcemap: true,
     rollupOptions: {
-      external: [
-        "@actions/core",
-        "@actions/github",
-        "node:fs",
-        "node:path",
-        "node:util",
-        "node:child_process",
-      ],
+      external: ["node:fs", "node:path", "node:util", "node:child_process"],
       output: {
         banner: "#!/usr/bin/env node",
         preserveModules: false,

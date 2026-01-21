@@ -1,24 +1,7 @@
 #!/usr/bin/env node
 "use strict";
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-const core = require("@actions/core");
-function _interopNamespaceDefault(e) {
-  const n = Object.create(null, { [Symbol.toStringTag]: { value: "Module" } });
-  if (e) {
-    for (const k in e) {
-      if (k !== "default") {
-        const d = Object.getOwnPropertyDescriptor(e, k);
-        Object.defineProperty(n, k, d.get ? d : {
-          enumerable: true,
-          get: () => e[k]
-        });
-      }
-    }
-  }
-  n.default = e;
-  return Object.freeze(n);
-}
-const core__namespace = /* @__PURE__ */ _interopNamespaceDefault(core);
+const core = require("./core-BSWKbkEd.js");
 const AUTH_TYPES = {
   TOKEN: "token",
   SERVICE_PRINCIPAL: "service-principal"
@@ -47,7 +30,7 @@ function detectAndValidateAuthType(credentials) {
   const hasAzureCredentials = azureClientId && azureTenantId && azureResourceId;
   const hasPartialAzureCredentials = azureClientId || azureTenantId || azureResourceId;
   if (fusionToken && hasAzureCredentials) {
-    core__namespace.info("Both token and Azure credentials provided. Using Service Principal authentication.");
+    core.coreExports.info("Both token and Azure credentials provided. Using Service Principal authentication.");
     return {
       authType: AUTH_TYPES.SERVICE_PRINCIPAL,
       isValid: true,
@@ -83,30 +66,30 @@ function detectAndValidateAuthType(credentials) {
 }
 function validateIsTokenOrAzure() {
   const credentials = {
-    fusionToken: core__namespace.getInput("fusion-token"),
-    azureClientId: core__namespace.getInput("azure-client-id"),
-    azureTenantId: core__namespace.getInput("azure-tenant-id"),
-    azureResourceId: core__namespace.getInput("azure-resource-id")
+    fusionToken: core.coreExports.getInput("fusion-token"),
+    azureClientId: core.coreExports.getInput("azure-client-id"),
+    azureTenantId: core.coreExports.getInput("azure-tenant-id"),
+    azureResourceId: core.coreExports.getInput("azure-resource-id")
   };
   const authResult = detectAndValidateAuthType(credentials);
   if (!authResult.isValid) {
     const message = authResult.error ?? "Authentication validation failed.";
-    core__namespace.setFailed(message);
+    core.coreExports.setFailed(message);
     return;
   }
-  core__namespace.setOutput("auth-type", authResult.authType);
-  core__namespace.setOutput("isToken", authResult.authType === AUTH_TYPES.TOKEN);
-  core__namespace.setOutput("isServicePrincipal", authResult.authType === AUTH_TYPES.SERVICE_PRINCIPAL);
+  core.coreExports.setOutput("auth-type", authResult.authType);
+  core.coreExports.setOutput("isToken", authResult.authType === AUTH_TYPES.TOKEN);
+  core.coreExports.setOutput("isServicePrincipal", authResult.authType === AUTH_TYPES.SERVICE_PRINCIPAL);
   if (authResult.authType === AUTH_TYPES.TOKEN) {
     const tokenValidation = validateFusionToken(credentials.fusionToken);
     if (!tokenValidation.isValid) {
       const message = tokenValidation.error ?? "Invalid fusion token.";
-      core__namespace.setFailed(message);
+      core.coreExports.setFailed(message);
       return;
     }
-    core__namespace.info("Fusion token validation passed.");
+    core.coreExports.info("Fusion token validation passed.");
   } else if (authResult.authType === AUTH_TYPES.SERVICE_PRINCIPAL) {
-    core__namespace.info("Azure Service Principal credentials validated.");
+    core.coreExports.info("Azure Service Principal credentials validated.");
   }
 }
 if (require.main === module) {

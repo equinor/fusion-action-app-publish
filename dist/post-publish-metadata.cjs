@@ -4,9 +4,9 @@ Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 const node_child_process = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
-const node_util = require("node:util");
-const core = require("@actions/core");
-const github = require("@actions/github");
+const require$$1 = require("node:util");
+const core = require("./core-BSWKbkEd.js");
+const github = require("./github-ChO0qEhd.js");
 function _interopNamespaceDefault(e) {
   const n = Object.create(null, { [Symbol.toStringTag]: { value: "Module" } });
   if (e) {
@@ -25,9 +25,7 @@ function _interopNamespaceDefault(e) {
 }
 const fs__namespace = /* @__PURE__ */ _interopNamespaceDefault(fs);
 const path__namespace = /* @__PURE__ */ _interopNamespaceDefault(path);
-const core__namespace = /* @__PURE__ */ _interopNamespaceDefault(core);
-const github__namespace = /* @__PURE__ */ _interopNamespaceDefault(github);
-const exec = node_util.promisify(node_child_process.exec);
+const exec = require$$1.promisify(node_child_process.exec);
 async function extractAppMetadata(artifactPath) {
   try {
     const artifactExtension = path__namespace.extname(artifactPath).toLowerCase();
@@ -40,7 +38,7 @@ async function extractAppMetadata(artifactPath) {
       `unzip -p "${artifactPath}" "*/metadata.json"`
     );
     if (stderr) {
-      core__namespace.warning(`Warning from unzip: ${stderr}`);
+      core.coreExports.warning(`Warning from unzip: ${stderr}`);
     }
     const metadataContent = stdout.trim();
     if (!metadataContent) {
@@ -56,7 +54,7 @@ async function extractAppMetadata(artifactPath) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    core__namespace.error(`Failed to extract app metadata: ${message}`);
+    core.coreExports.error(`Failed to extract app metadata: ${message}`);
     throw error;
   }
 }
@@ -82,14 +80,14 @@ async function postPrComment(meta, env, tag, appUrl, appAdminUrl) {
   try {
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
-      core__namespace.info("GITHUB_TOKEN not available, skipping PR comment");
+      core.coreExports.info("GITHUB_TOKEN not available, skipping PR comment");
       return;
     }
-    const octokit = github__namespace.getOctokit(token);
-    const context = github__namespace.context;
+    const octokit = github.githubExports.getOctokit(token);
+    const context = github.githubExports.context;
     const prNumber = context.payload.pull_request?.number || (tag?.startsWith("pr-") ? parseInt(tag.replace("pr-", ""), 10) : null);
     if (!prNumber) {
-      core__namespace.info("Not a PR deployment, skipping PR comment");
+      core.coreExports.info("Not a PR deployment, skipping PR comment");
       return;
     }
     const appName = meta.name;
@@ -125,21 +123,21 @@ async function postPrComment(meta, env, tag, appUrl, appAdminUrl) {
       issue_number: prNumber,
       body: commentBody
     });
-    core__namespace.info(`Posted deployment comment to PR #${prNumber}`);
+    core.coreExports.info(`Posted deployment comment to PR #${prNumber}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    core__namespace.warning(`Failed to post PR comment: ${message}`);
+    core.coreExports.warning(`Failed to post PR comment: ${message}`);
   }
 }
 async function postPublishMetadata() {
   try {
-    const artifact = core__namespace.getInput("artifact");
-    const env = core__namespace.getInput("env");
-    const tag = core__namespace.getInput("tag");
-    const workingDirectory = core__namespace.getInput("working-directory") || ".";
-    core__namespace.info(`Processing artifact: ${artifact}`);
-    core__namespace.info(`Environment: ${env}`);
-    core__namespace.info(`Tag: ${tag}`);
+    const artifact = core.coreExports.getInput("artifact");
+    const env = core.coreExports.getInput("env");
+    const tag = core.coreExports.getInput("tag");
+    const workingDirectory = core.coreExports.getInput("working-directory") || ".";
+    core.coreExports.info(`Processing artifact: ${artifact}`);
+    core.coreExports.info(`Environment: ${env}`);
+    core.coreExports.info(`Tag: ${tag}`);
     const artifactPath = path__namespace.resolve(workingDirectory, artifact);
     if (!fs__namespace.existsSync(artifactPath)) {
       throw new Error(`Artifact not found: ${artifactPath}`);
@@ -148,26 +146,26 @@ async function postPublishMetadata() {
     const appName = meta.name;
     const appVersion = meta.version || "unknown";
     const appKey = meta.key;
-    core__namespace.info(`App Name: ${appName}`);
-    core__namespace.info(`App Version: ${appVersion}`);
-    core__namespace.info(`App Key: ${appKey}`);
+    core.coreExports.info(`App Name: ${appName}`);
+    core.coreExports.info(`App Version: ${appVersion}`);
+    core.coreExports.info(`App Key: ${appKey}`);
     const appUrl = generateAppUrl(meta, env, tag);
-    core__namespace.info(`App URL: ${appUrl}`);
-    core__namespace.setOutput("app-name", appName);
-    core__namespace.setOutput("app-version", appVersion);
-    core__namespace.setOutput("app-key", appKey);
-    core__namespace.setOutput("app-url", appUrl);
+    core.coreExports.info(`App URL: ${appUrl}`);
+    core.coreExports.setOutput("app-name", appName);
+    core.coreExports.setOutput("app-version", appVersion);
+    core.coreExports.setOutput("app-key", appKey);
+    core.coreExports.setOutput("app-url", appUrl);
     const appAdminBaseUrl = appUrl.split("/apps/")[0];
     const appAdminUrl = `${appAdminBaseUrl}/apps/app-admin/apps/${appKey}`;
-    core__namespace.setOutput("app-admin-url", appAdminUrl);
+    core.coreExports.setOutput("app-admin-url", appAdminUrl);
     const publishInfo = `🚀 **${appName}** v${appVersion} deployed to **${env.toUpperCase()}**
 [Open Application](${appUrl})`;
-    core__namespace.setOutput("publish-info", publishInfo);
+    core.coreExports.setOutput("publish-info", publishInfo);
     await postPrComment(meta, env, tag, appUrl, appAdminUrl);
-    core__namespace.info("Post-publish metadata processing completed successfully");
+    core.coreExports.info("Post-publish metadata processing completed successfully");
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    core__namespace.setFailed(`Post-publish metadata failed: ${message}`);
+    core.coreExports.setFailed(`Post-publish metadata failed: ${message}`);
   }
 }
 if (require.main === module) {

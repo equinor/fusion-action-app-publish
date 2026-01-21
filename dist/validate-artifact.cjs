@@ -3,7 +3,7 @@
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 const fs = require("node:fs");
 const path = require("node:path");
-const core = require("@actions/core");
+const core = require("./core-BSWKbkEd.js");
 function _interopNamespaceDefault(e) {
   const n = Object.create(null, { [Symbol.toStringTag]: { value: "Module" } });
   if (e) {
@@ -22,28 +22,27 @@ function _interopNamespaceDefault(e) {
 }
 const fs__namespace = /* @__PURE__ */ _interopNamespaceDefault(fs);
 const path__namespace = /* @__PURE__ */ _interopNamespaceDefault(path);
-const core__namespace = /* @__PURE__ */ _interopNamespaceDefault(core);
 function validateArtifact() {
-  const artifact = core__namespace.getInput("artifact");
+  const artifact = core.coreExports.getInput("artifact");
   if (!artifact) {
-    core__namespace.setFailed("Input 'artifact' is required.");
+    core.coreExports.setFailed("Input 'artifact' is required.");
     return;
   }
   const artifactPath = path__namespace.resolve(artifact);
   if (!fs__namespace.existsSync(artifactPath)) {
-    core__namespace.setFailed(`Artifact file does not exist at path: ${artifactPath}`);
+    core.coreExports.setFailed(`Artifact file does not exist at path: ${artifactPath}`);
     return;
   }
   const validExtensions = [".zip"];
   const artifactExtension = path__namespace.extname(artifactPath).toLowerCase();
   if (!validExtensions.includes(artifactExtension)) {
-    core__namespace.setFailed(
+    core.coreExports.setFailed(
       `Artifact file must be one of the following types: ${validExtensions.join(", ")}`
     );
     return;
   }
-  core__namespace.info("Artifact validation passed.");
-  core__namespace.setOutput("artifact-path", artifactPath);
+  core.coreExports.info("Artifact validation passed.");
+  core.coreExports.setOutput("artifact-path", artifactPath);
 }
 if (require.main === module) {
   validateArtifact();
