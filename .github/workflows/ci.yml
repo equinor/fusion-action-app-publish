@@ -70,7 +70,6 @@ jobs:
 
       # Process changesets: create version PR or create GitHub releases
       - name: Create Release Pull Request or Create GitHub Release
-        if: github.actor != 'dependabot[bot]'
         id: changesets
         uses: changesets/action@v1
         with:
