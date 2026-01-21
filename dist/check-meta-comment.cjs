@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 "use strict";
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-const core = require("./core-BSWKbkEd.js");
-const github = require("./github-ChO0qEhd.js");
+const core = require("./core.js");
+const github = require("./github.js");
 async function checkMetaComment() {
   try {
     const token = process.env.GITHUB_TOKEN;

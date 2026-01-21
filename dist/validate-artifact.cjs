@@ -3,7 +3,7 @@
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 const fs = require("node:fs");
 const path = require("node:path");
-const core = require("./core-BSWKbkEd.js");
+const core = require("./core.js");
 function _interopNamespaceDefault(e) {
   const n = Object.create(null, { [Symbol.toStringTag]: { value: "Module" } });
   if (e) {

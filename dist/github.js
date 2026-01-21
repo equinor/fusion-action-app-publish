@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 "use strict";
-const core = require("./core-BSWKbkEd.js");
+const core = require("./core.js");
 var github = {};
 var context = {};
 var hasRequiredContext;
@@ -4621,4 +4621,4 @@ function requireGithub() {
 }
 var githubExports = requireGithub();
 exports.githubExports = githubExports;
-//# sourceMappingURL=github-ChO0qEhd.js.map
+//# sourceMappingURL=github.js.map
