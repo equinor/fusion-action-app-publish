@@ -24,3 +24,25 @@ jobs:
 
       - name: Run test suite
         run: pnpm run test:ci
+
+  dist-sync:
+    name: Dist files up to date
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node and install dependencies
+        uses: ./.github/workflows/actions/node-setup
+
+      - name: Build dist
+        run: pnpm run build
+
+      - name: Ensure dist has no drift
+        run: |
+          if [[ -n $(git status --porcelain dist/) ]]; then
+            echo "dist/ files are out of date. Run 'pnpm run build' and commit the results."
+            git status --short dist/
+            exit 1
+          fi

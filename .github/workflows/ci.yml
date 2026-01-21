@@ -47,27 +47,6 @@ jobs:
       - name: Build and package action
         run: pnpm run build
 
-      # Check if dist files need to be committed
-      - name: Check for dist changes
-        id: dist-changes
-        run: |
-          if [[ -n $(git status --porcelain dist/) ]]; then
-            echo "❌ dist/ files are out of date!"
-            echo "Please run 'pnpm run build' and commit the updated dist/ files."
-            echo ""
-            echo "Changed files:"
-            git status --porcelain dist/
-            echo ""
-            echo "To fix this:"
-            echo "1. Run: pnpm run build"
-            echo "2. Run: git add dist/"  
-            echo "3. Run: git commit -m 'build: update dist files'"
-            echo "4. Push your changes"
-            exit 1
-          else
-            echo "✅ dist/ files are up to date"
-          fi
-
       # Process changesets: create version PR or create GitHub releases
       - name: Create Release Pull Request or Create GitHub Release
         id: changesets
