@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import { c as coreExports } from "./core.js";
 function validateArtifact() {
   const artifact = coreExports.getInput("artifact");
@@ -23,7 +24,8 @@ function validateArtifact() {
   coreExports.info("Artifact validation passed.");
   coreExports.setOutput("artifact-path", artifactPath);
 }
-if (require.main === module) {
+const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectExecution) {
   validateArtifact();
 }
 export {

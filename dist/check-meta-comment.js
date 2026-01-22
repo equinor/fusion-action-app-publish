@@ -1,5 +1,7 @@
 import { c as coreExports } from "./core.js";
 import { g as githubExports } from "./github.js";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 async function checkMetaComment() {
   try {
     const token = process.env.GITHUB_TOKEN;
@@ -43,7 +45,8 @@ async function checkMetaComment() {
     throw error;
   }
 }
-if (require.main === module) {
+const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectExecution) {
   checkMetaComment();
 }
 export {

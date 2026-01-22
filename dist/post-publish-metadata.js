@@ -1,6 +1,7 @@
 import { exec as exec$1 } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { c as coreExports } from "./core.js";
 import { g as githubExports } from "./github.js";
@@ -147,7 +148,8 @@ async function postPublishMetadata() {
     coreExports.setFailed(`Post-publish metadata failed: ${message}`);
   }
 }
-if (require.main === module) {
+const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectExecution) {
   postPublishMetadata();
 }
 export {

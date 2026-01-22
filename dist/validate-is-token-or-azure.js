@@ -1,4 +1,6 @@
 import { c as coreExports } from "./core.js";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 const AUTH_TYPES = {
   TOKEN: "token",
   SERVICE_PRINCIPAL: "service-principal"
@@ -89,7 +91,8 @@ function validateIsTokenOrAzure() {
     coreExports.info("Azure Service Principal credentials validated.");
   }
 }
-if (require.main === module) {
+const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectExecution) {
   validateIsTokenOrAzure();
 }
 export {

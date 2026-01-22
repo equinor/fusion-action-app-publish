@@ -1,6 +1,9 @@
+import { builtinModules } from "node:module";
 import { resolve } from "node:path";
 import nodeResolve from "@rollup/plugin-node-resolve";
 import { defineConfig } from "vite";
+
+const nodeBuiltins = [...builtinModules, ...builtinModules.map((m) => `node:${m}`)];
 
 export default defineConfig({
   build: {
@@ -20,7 +23,7 @@ export default defineConfig({
     minify: false,
     sourcemap: true,
     rollupOptions: {
-      external: [/^node:/],
+      external: [...nodeBuiltins],
       output: {
         esModule: true,
         format: "es",

@@ -14,6 +14,7 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import * as core from "@actions/core";
 
 /**
@@ -69,6 +70,9 @@ export function validateArtifact(): void {
 }
 
 // Execute if called directly
-if (require.main === module) {
+const isDirectExecution =
+  process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isDirectExecution) {
   validateArtifact();
 }

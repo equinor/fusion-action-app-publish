@@ -1,4 +1,6 @@
 import { c as coreExports } from "./core.js";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 const PR_TAG_PREFIX = "pr-";
 function validateEnv() {
   const prNR = coreExports.getInput("prNR");
@@ -27,7 +29,8 @@ function validateEnv() {
   coreExports.setOutput("env", env);
   coreExports.setOutput("tag", tag);
 }
-if (require.main === module) {
+const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectExecution) {
   validateEnv();
 }
 export {

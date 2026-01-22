@@ -1,4 +1,6 @@
-import { r as require$$1, a as requireLib, b as requireUndici, g as getDefaultExportFromCjs, d as getAugmentedNamespace } from "./core.js";
+import require$$1 from "fs";
+import require$$0 from "os";
+import { r as requireLib, a as requireUndici, g as getDefaultExportFromCjs, b as getAugmentedNamespace } from "./core.js";
 var github = {};
 var context = {};
 var hasRequiredContext;
@@ -8,7 +10,7 @@ function requireContext() {
   Object.defineProperty(context, "__esModule", { value: true });
   context.Context = void 0;
   const fs_1 = require$$1;
-  const os_1 = require$$1;
+  const os_1 = require$$0;
   class Context {
     /**
      * Hydrate the context from the environment
