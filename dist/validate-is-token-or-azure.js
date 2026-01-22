@@ -68,12 +68,32 @@ function detectAndValidateAuthType(credentials) {
   };
 }
 function validateIsTokenOrAzure() {
+  let fusionToken = coreExports.getInput("fusion-token");
+  let azureClientId = coreExports.getInput("azure-client-id");
+  let azureTenantId = coreExports.getInput("azure-tenant-id");
+  let azureResourceId = coreExports.getInput("azure-resource-id");
+  if (!fusionToken) {
+    fusionToken = process.env.INPUT_FUSION_TOKEN ?? "";
+  }
+  if (!azureClientId) {
+    azureClientId = process.env.INPUT_AZURE_CLIENT_ID ?? "";
+  }
+  if (!azureTenantId) {
+    azureTenantId = process.env.INPUT_AZURE_TENANT_ID ?? "";
+  }
+  if (!azureResourceId) {
+    azureResourceId = process.env.INPUT_AZURE_RESOURCE_ID ?? "";
+  }
   const credentials = {
-    fusionToken: coreExports.getInput("fusion-token"),
-    azureClientId: coreExports.getInput("azure-client-id"),
-    azureTenantId: coreExports.getInput("azure-tenant-id"),
-    azureResourceId: coreExports.getInput("azure-resource-id")
+    fusionToken,
+    azureClientId,
+    azureTenantId,
+    azureResourceId
   };
+  coreExports.debug(`Azure Client ID provided: ${!!azureClientId}`);
+  coreExports.debug(`Azure Tenant ID provided: ${!!azureTenantId}`);
+  coreExports.debug(`Azure Resource ID provided: ${!!azureResourceId}`);
+  coreExports.debug(`Fusion Token provided: ${!!fusionToken}`);
   const authResult = detectAndValidateAuthType(credentials);
   if (!authResult.isValid) {
     const message = authResult.error ?? "Authentication validation failed.";

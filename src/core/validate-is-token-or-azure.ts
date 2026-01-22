@@ -174,12 +174,39 @@ export function detectAndValidateAuthType(credentials: Credentials): AuthDetecti
  */
 export function validateIsTokenOrAzure(): void {
   // Get all authentication inputs from GitHub Action
+  // Using core.getInput with hyphenated names - it automatically converts to INPUT_* env vars
+  let fusionToken = core.getInput("fusion-token");
+  let azureClientId = core.getInput("azure-client-id");
+  let azureTenantId = core.getInput("azure-tenant-id");
+  let azureResourceId = core.getInput("azure-resource-id");
+
+  // Fallback to direct environment variables if core.getInput returns empty
+  // This handles cases where input names might not be resolved correctly
+  if (!fusionToken) {
+    fusionToken = process.env.INPUT_FUSION_TOKEN ?? "";
+  }
+  if (!azureClientId) {
+    azureClientId = process.env.INPUT_AZURE_CLIENT_ID ?? "";
+  }
+  if (!azureTenantId) {
+    azureTenantId = process.env.INPUT_AZURE_TENANT_ID ?? "";
+  }
+  if (!azureResourceId) {
+    azureResourceId = process.env.INPUT_AZURE_RESOURCE_ID ?? "";
+  }
+
   const credentials: Credentials = {
-    fusionToken: core.getInput("fusion-token"),
-    azureClientId: core.getInput("azure-client-id"),
-    azureTenantId: core.getInput("azure-tenant-id"),
-    azureResourceId: core.getInput("azure-resource-id"),
+    fusionToken,
+    azureClientId,
+    azureTenantId,
+    azureResourceId,
   };
+
+  // Log for debugging (will appear in GitHub Action logs)
+  core.debug(`Azure Client ID provided: ${!!azureClientId}`);
+  core.debug(`Azure Tenant ID provided: ${!!azureTenantId}`);
+  core.debug(`Azure Resource ID provided: ${!!azureResourceId}`);
+  core.debug(`Fusion Token provided: ${!!fusionToken}`);
 
   // Detect authentication type and validate credentials
   const authResult = detectAndValidateAuthType(credentials);

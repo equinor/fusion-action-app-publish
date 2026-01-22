@@ -223,5 +223,25 @@ describe("validate-is-token-or-azure.ts", () => {
       expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("isServicePrincipal", true);
       expect(vi.mocked(core.setFailed)).not.toHaveBeenCalled();
     });
+
+    it("should fallback to environment variables when core.getInput returns empty", () => {
+      vi.mocked(core.getInput).mockImplementation(() => ""); // Simulate core.getInput returning empty
+
+      // Mock environment variables as fallback
+      process.env.INPUT_AZURE_CLIENT_ID = "client-123";
+      process.env.INPUT_AZURE_TENANT_ID = "tenant-456";
+      process.env.INPUT_AZURE_RESOURCE_ID = "resource-789";
+
+      validateIsTokenOrAzure();
+
+      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("auth-type", "service-principal");
+      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("isServicePrincipal", true);
+      expect(vi.mocked(core.setFailed)).not.toHaveBeenCalled();
+
+      // Cleanup
+      delete process.env.INPUT_AZURE_CLIENT_ID;
+      delete process.env.INPUT_AZURE_TENANT_ID;
+      delete process.env.INPUT_AZURE_RESOURCE_ID;
+    });
   });
 });
