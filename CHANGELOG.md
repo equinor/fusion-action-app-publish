@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.8
+
+### Patch Changes
+
+- 78208fd: - fix bundling to keep Node built-ins external (no browser shims)
+  - replace require.main guards with ESM-safe entry checks for action scripts
+
 ## 0.1.7
 
 ### Patch Changes
