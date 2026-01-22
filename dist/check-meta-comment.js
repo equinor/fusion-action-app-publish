@@ -1,7 +1,7 @@
-import { c as coreExports } from "./core.js";
-import { g as githubExports } from "./github.js";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import { c as coreExports } from "./core.js";
+import { g as githubExports } from "./github.js";
 async function checkMetaComment() {
   try {
     const token = process.env.GITHUB_TOKEN;
