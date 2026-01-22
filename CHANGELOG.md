@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.9
+
+### Patch Changes
+
+- 4096a27: Fix authentication validation to properly handle empty/whitespace credentials. Trim all credential inputs before validation to ensure empty strings and whitespace are correctly identified as missing credentials.
+
 ## 0.1.8
 
 ### Patch Changes
