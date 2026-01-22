@@ -52,8 +52,6 @@ export function validateEnv(): void {
   const env = core.getInput("env");
   const tag = core.getInput("tag");
 
-  core.info(`Validating environment with prNR: ${prNR}, env: ${env}, tag: ${tag}`);
-
   // If prNR is provided, set the tag output accordingly
   if (prNR) {
     core.info(`prNR provided: ${prNR}`);
