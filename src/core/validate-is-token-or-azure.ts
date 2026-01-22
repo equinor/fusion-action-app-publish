@@ -95,12 +95,20 @@ export function validateFusionToken(token: string): ValidationResult {
 export function detectAndValidateAuthType(credentials: Credentials): AuthDetectionResult {
   const { fusionToken, azureClientId, azureTenantId, azureResourceId } = credentials;
 
+  // Trim and check for non-empty credentials
+  const trimmedFusionToken = fusionToken?.trim() ?? "";
+  const trimmedAzureClientId = azureClientId?.trim() ?? "";
+  const trimmedAzureTenantId = azureTenantId?.trim() ?? "";
+  const trimmedAzureResourceId = azureResourceId?.trim() ?? "";
+
   // Check if Azure Service Principal credentials are provided
-  const hasAzureCredentials = azureClientId && azureTenantId && azureResourceId;
-  const hasPartialAzureCredentials = azureClientId || azureTenantId || azureResourceId;
+  const hasAzureCredentials =
+    trimmedAzureClientId && trimmedAzureTenantId && trimmedAzureResourceId;
+  const hasPartialAzureCredentials =
+    trimmedAzureClientId || trimmedAzureTenantId || trimmedAzureResourceId;
 
   // If we have both token and Azure credentials
-  if (fusionToken && hasAzureCredentials) {
+  if (trimmedFusionToken && hasAzureCredentials) {
     // Prefer Service Principal when both are provided
     core.info("Both token and Azure credentials provided. Using Service Principal authentication.");
     return {
@@ -111,7 +119,7 @@ export function detectAndValidateAuthType(credentials: Credentials): AuthDetecti
   }
 
   // If we have a token and no Azure credentials
-  if (fusionToken && !hasPartialAzureCredentials) {
+  if (trimmedFusionToken && !hasPartialAzureCredentials) {
     return {
       authType: AUTH_TYPES.TOKEN,
       isValid: true,
@@ -189,7 +197,7 @@ export function validateIsTokenOrAzure(): void {
 
   // If using token authentication, validate the token format
   if (authResult.authType === AUTH_TYPES.TOKEN) {
-    const tokenValidation = validateFusionToken(credentials.fusionToken);
+    const tokenValidation = validateFusionToken(credentials.fusionToken.trim());
 
     if (!tokenValidation.isValid) {
       const message = tokenValidation.error ?? "Invalid fusion token.";
