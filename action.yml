@@ -1,5 +1,5 @@
 name: 'Fusion App Publish'
-description: 'Authenticate & publish Fusion app using fusion-framework-cli'
+description: 'Authenticate & publish Fusion app using @equinor/fusion-framework-cli'
 author: 'Equinor Fusion Core'
 branding:
   icon: 'upload-cloud'
@@ -153,7 +153,7 @@ runs:
         FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
         INPUT_ARTIFACT: ${{ inputs.artifact }}
       run: |
-        npx fusion-framework-cli app publish \
+        npx -y -p @equinor/fusion-framework-cli ffc app publish \
           --env "${{ steps.validate-env.outputs.env }}" \
           --tag "${{ steps.validate-env.outputs.tag }}" \
           "${{ inputs.artifact }}" \
