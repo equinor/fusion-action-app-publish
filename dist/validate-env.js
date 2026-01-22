@@ -1,6 +1,6 @@
-import { c as coreExports } from "./core.js";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import { c as coreExports } from "./core.js";
 const PR_TAG_PREFIX = "pr-";
 function validateEnv() {
   const prNR = coreExports.getInput("prNR");

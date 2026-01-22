@@ -1,6 +1,6 @@
-import { c as coreExports } from "./core.js";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import { c as coreExports } from "./core.js";
 const AUTH_TYPES = {
   TOKEN: "token",
   SERVICE_PRINCIPAL: "service-principal"
@@ -26,9 +26,13 @@ function validateFusionToken(token) {
 }
 function detectAndValidateAuthType(credentials) {
   const { fusionToken, azureClientId, azureTenantId, azureResourceId } = credentials;
-  const hasAzureCredentials = azureClientId && azureTenantId && azureResourceId;
-  const hasPartialAzureCredentials = azureClientId || azureTenantId || azureResourceId;
-  if (fusionToken && hasAzureCredentials) {
+  const trimmedFusionToken = fusionToken?.trim() ?? "";
+  const trimmedAzureClientId = azureClientId?.trim() ?? "";
+  const trimmedAzureTenantId = azureTenantId?.trim() ?? "";
+  const trimmedAzureResourceId = azureResourceId?.trim() ?? "";
+  const hasAzureCredentials = trimmedAzureClientId && trimmedAzureTenantId && trimmedAzureResourceId;
+  const hasPartialAzureCredentials = trimmedAzureClientId || trimmedAzureTenantId || trimmedAzureResourceId;
+  if (trimmedFusionToken && hasAzureCredentials) {
     coreExports.info("Both token and Azure credentials provided. Using Service Principal authentication.");
     return {
       authType: AUTH_TYPES.SERVICE_PRINCIPAL,
@@ -36,7 +40,7 @@ function detectAndValidateAuthType(credentials) {
       error: null
     };
   }
-  if (fusionToken && !hasPartialAzureCredentials) {
+  if (trimmedFusionToken && !hasPartialAzureCredentials) {
     return {
       authType: AUTH_TYPES.TOKEN,
       isValid: true,
@@ -80,7 +84,7 @@ function validateIsTokenOrAzure() {
   coreExports.setOutput("isToken", authResult.authType === AUTH_TYPES.TOKEN);
   coreExports.setOutput("isServicePrincipal", authResult.authType === AUTH_TYPES.SERVICE_PRINCIPAL);
   if (authResult.authType === AUTH_TYPES.TOKEN) {
-    const tokenValidation = validateFusionToken(credentials.fusionToken);
+    const tokenValidation = validateFusionToken(credentials.fusionToken.trim());
     if (!tokenValidation.isValid) {
       const message = tokenValidation.error ?? "Invalid fusion token.";
       coreExports.setFailed(message);
