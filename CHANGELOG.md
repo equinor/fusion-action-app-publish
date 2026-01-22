@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.10
+
+### Patch Changes
+
+- be876e6: update dist files
+
 ## 0.1.9
 
 ### Patch Changes
