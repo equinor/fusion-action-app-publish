@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.7
+
+### Patch Changes
+
+- d1f74ed: fix from cjs to js and move some files to doc folder
+
 ## 0.1.6
 
 ### Patch Changes
