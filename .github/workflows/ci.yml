@@ -66,22 +66,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      # Commit built action files on release
-      - name: Add built action on release
-        if: steps.changesets.outputs.hasChangesets == 'false' && steps.changesets.outputs.pullRequestNumber == ''
-        run: |
-          git add dist
-          git commit -m "chore: build action for release" || echo "No changes to commit"
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-
       # Create git tags for GitHub Action versioning (v1, v1.2, v1.2.3)
+      # Only create tags when there are no pending changesets and dist files are committed
       - name: Create/Update Action Tags
-        if: steps.changesets.outputs.hasChangesets == 'false' && steps.changesets.outputs.pullRequestNumber == ''
+        if: steps.changesets.outputs.hasChangesets == 'false' && steps.changesets.outputs.pullRequestNumber == '' && steps.changesets.outputs.published == 'false'
         run: |
           # Get the latest version from package.json
           VERSION=$(node -p "require('./package.json').version")
-          echo "Published version: $VERSION"
+          echo "Creating tags for version: $VERSION"
           
           # Create version tags for GitHub Actions marketplace
           git tag -f "v${VERSION}"
@@ -98,3 +90,4 @@ jobs:
           git push origin --tags --force
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          
