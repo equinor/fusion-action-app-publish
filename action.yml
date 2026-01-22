@@ -91,7 +91,7 @@ runs:
     - name: Validate Artifact
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: node ${{ github.action_path }}/dist/validate-artifact.cjs
+      run: node ${{ github.action_path }}/dist/validate-artifact.js
       env:
         INPUT_ARTIFACT: ${{ inputs.artifact }}
 
@@ -99,7 +99,7 @@ runs:
       id: validate-env
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: node ${{ github.action_path }}/dist/validate-env.cjs
+      run: node ${{ github.action_path }}/dist/validate-env.js
       env:
         INPUT_PRNR: ${{ inputs.prNR }}
         INPUT_ENV: ${{ inputs.env }}
@@ -108,7 +108,7 @@ runs:
     - name: Validate Is Token or Azure Auth Provided
       id: validate-auth
       shell: bash
-      run: node ${{ github.action_path }}/dist/validate-is-token-or-azure.cjs
+      run: node ${{ github.action_path }}/dist/validate-is-token-or-azure.js
       env:
         INPUT_FUSION_TOKEN: ${{ inputs.fusion-token }}
         INPUT_AZURE_CLIENT_ID: ${{ inputs.azure-client-id }}
@@ -161,7 +161,7 @@ runs:
     - name: Check Meta Comment
       id: check-meta
       shell: bash
-      run: node ${{ github.action_path }}/dist/check-meta-comment.cjs
+      run: node ${{ github.action_path }}/dist/check-meta-comment.js
       env:
         INPUT_TAG: ${{ steps.validate-env.outputs.tag }}
         GITHUB_TOKEN: ${{ github.token }}
@@ -171,7 +171,7 @@ runs:
       if: steps.check-meta.outputs.exists == 'false'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: node ${{ github.action_path }}/dist/post-publish-metadata.cjs
+      run: node ${{ github.action_path }}/dist/post-publish-metadata.js
       env:
         INPUT_ARTIFACT: ${{ inputs.artifact }}
         INPUT_ENV: ${{ steps.validate-env.outputs.env }}
