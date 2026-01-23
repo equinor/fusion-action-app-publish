@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.15
+
+### Patch Changes
+
+- f5d6b4e: add validate-working-dir
+
 ## 0.1.14
 
 ### Patch Changes
