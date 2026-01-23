@@ -14,6 +14,7 @@ export default defineConfig({
         "validate-env": resolve(__dirname, "src/core/validate-env.ts"),
         "validate-is-token-or-azure": resolve(__dirname, "src/core/validate-is-token-or-azure.ts"),
         "post-publish-metadata": resolve(__dirname, "src/core/post-publish-metadata.ts"),
+        "validate-working-dir": resolve(__dirname, "src/core/validate-working-dir.ts"),
       },
       formats: ["es"],
       fileName: (_format, entryName) => `${entryName}.js`,
