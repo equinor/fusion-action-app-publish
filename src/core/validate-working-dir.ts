@@ -86,7 +86,8 @@ export function isFusionApp(packageJson: PackageJson): boolean {
 }
 
 export function testIsFusionApp() {
-  const workingDirectory = core.getInput("working-directory") || ".";
+  const workingDirectory =
+    core.getInput("working-directory") || process.env.INPUT_WORKING_DIRECTORY || ".";
   const result = findFusionApp(workingDirectory);
 
   if (result.isValid && result.app) {
