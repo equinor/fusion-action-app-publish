@@ -51,7 +51,7 @@ function isFusionApp(packageJson) {
   return hasCli || hasReactApp || hasAppScripts || hasAppConfig;
 }
 function testIsFusionApp() {
-  const workingDirectory = coreExports.getInput("working-directory") || ".";
+  const workingDirectory = coreExports.getInput("working-directory") || process.env.INPUT_WORKING_DIRECTORY || ".";
   const result = findFusionApp(workingDirectory);
   if (result.isValid && result.app) {
     coreExports.info(

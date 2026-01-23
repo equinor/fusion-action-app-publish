@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.16
+
+### Patch Changes
+
+- 1b0c564: enhance working directory input handling in testIsFusionApp function
+
 ## 0.1.15
 
 ### Patch Changes
