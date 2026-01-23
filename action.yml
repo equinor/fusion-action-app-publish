@@ -87,6 +87,12 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Validate Working Directory has Fusion App
+      id: validate-working-dir
+      shell: bash
+      run:  node ${{ github.action_path }}/dist/validate-working-dir.js
+      env:
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
 
     - name: Validate Artifact
       shell: bash
