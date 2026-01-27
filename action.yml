@@ -164,7 +164,6 @@ runs:
     - name: Publish config (if provided)
       id: publish-config
       if: ${{ inputs.config != '' }}
-      needs: upload
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
