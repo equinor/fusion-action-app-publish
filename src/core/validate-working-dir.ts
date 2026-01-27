@@ -95,7 +95,7 @@ export function testIsFusionApp() {
       `✅ Found Fusion app: ${result.app.name} at ${result.app.path} (version: ${result.app.version || "N/A"})`,
     );
   } else {
-    core.error(`❌ No valid Fusion app found in directory: ${workingDirectory}`);
+    core.warning(`❌ No valid Fusion app found in directory: ${workingDirectory}`);
   }
 }
 

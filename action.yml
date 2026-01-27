@@ -36,6 +36,10 @@ inputs:
     required: false
     default: './app-bundle.zip'
 
+  config:
+    description: 'Path to fusion app config file (optional)'
+    required: false
+
   tag:
     description: 'Tag to apply to the deployment'
     required: false
