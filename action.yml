@@ -91,13 +91,6 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Validate Working Directory has Fusion App
-      id: validate-working-dir
-      shell: bash
-      run:  node ${{ github.action_path }}/dist/validate-working-dir.js
-      env:
-        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
-
     - name: Validate Artifact
       shell: bash
       working-directory: ${{ inputs.working-directory }}
@@ -155,18 +148,32 @@ runs:
         node-version: '24'
         package-manager-cache: false
 
-    - name: Publish
-      id: publish
+    - name: upload App Bundle
+      id: upload
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
         FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
         INPUT_ARTIFACT: ${{ inputs.artifact }}
       run: |
-        npx -y -p @equinor/fusion-framework-cli ffc app publish \
+        npx -y -p @equinor/fusion-framework-cli ffc app upload \
           --env "${{ steps.validate-env.outputs.env }}" \
           --tag "${{ steps.validate-env.outputs.tag }}" \
           "${{ inputs.artifact }}" \
+
+    - name: Publish config (if provided)
+      id: publish-config
+      if: ${{ inputs.config != '' }}
+      needs: upload
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
+        INPUT_CONFIG: ${{ inputs.config }}
+      run: |
+        npx -y -p @equinor/fusion-framework-cli ffc app config \
+          --publish \
+          "${{ inputs.config }}" \
 
     - name: Check Meta Comment
       id: check-meta
