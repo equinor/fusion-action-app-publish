@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.19
+
+### Patch Changes
+
+- 669dd4b: remove unnecessary dependency on upload step for publish config
+
 ## 0.1.18
 
 ### Patch Changes
