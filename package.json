@@ -1,6 +1,6 @@
 {
   "name": "fusion-action-app-publish",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "description": "GitHub Action to authenticate & publish Fusion apps using fusion-framework-cli",
   "main": "action.yml",
   "type": "module",
