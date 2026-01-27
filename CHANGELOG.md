@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.18
+
+### Patch Changes
+
+- fef018e: remove validate-working-dir script and update action.yml for app upload
+
 ## 0.1.17
 
 ### Patch Changes
