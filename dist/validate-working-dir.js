@@ -58,7 +58,7 @@ function testIsFusionApp() {
       `✅ Found Fusion app: ${result.app.name} at ${result.app.path} (version: ${result.app.version || "N/A"})`
     );
   } else {
-    coreExports.error(`❌ No valid Fusion app found in directory: ${workingDirectory}`);
+    coreExports.warning(`❌ No valid Fusion app found in directory: ${workingDirectory}`);
   }
 }
 const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);

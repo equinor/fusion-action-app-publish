@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.17
+
+### Patch Changes
+
+- d30e05e: update error handling in testIsFusionApp to use setFailed for invalid Fusion app
+
 ## 0.1.16
 
 ### Patch Changes
