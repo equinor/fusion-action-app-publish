@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.20
+
+### Patch Changes
+
+- fc06d75: improve error message for missing artifact input and update upload step to publish
+
 ## 0.1.19
 
 ### Patch Changes
