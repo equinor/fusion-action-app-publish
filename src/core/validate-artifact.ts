@@ -41,7 +41,7 @@ export function validateArtifact(): void {
 
   // Validate that the artifact input is provided
   if (!artifact) {
-    core.setFailed("Input 'artifact' is required.");
+    core.setFailed("Input 'artifact' is required. Pllease provide the path to the artifact file.");
     return;
   }
 

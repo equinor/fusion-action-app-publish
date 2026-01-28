@@ -148,15 +148,15 @@ runs:
         node-version: '24'
         package-manager-cache: false
 
-    - name: upload App Bundle
-      id: upload
+    - name: Publish App Bundle
+      id: publish
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
         FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
         INPUT_ARTIFACT: ${{ inputs.artifact }}
       run: |
-        npx -y -p @equinor/fusion-framework-cli ffc app upload \
+        npx -y -p @equinor/fusion-framework-cli ffc app publish \
           --env "${{ steps.validate-env.outputs.env }}" \
           --tag "${{ steps.validate-env.outputs.tag }}" \
           "${{ inputs.artifact }}" \
