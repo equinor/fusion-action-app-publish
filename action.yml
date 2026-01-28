@@ -172,6 +172,7 @@ runs:
       run: |
         npx -y -p @equinor/fusion-framework-cli ffc app config \
           --publish \
+          --env "${{ steps.validate-env.outputs.env }}" \
           "${{ inputs.config }}" \
 
     - name: Check Meta Comment
