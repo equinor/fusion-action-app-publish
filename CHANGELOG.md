@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.21
+
+### Patch Changes
+
+- 8d7e337: add environment variable to publish command for improved configuration
+
 ## 0.1.20
 
 ### Patch Changes
