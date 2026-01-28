@@ -30,7 +30,9 @@ describe("validate-artifact.ts", () => {
       validateArtifact();
 
       expect(core.getInput).toHaveBeenCalledWith("artifact");
-      expect(core.setFailed).toHaveBeenCalledWith("Input 'artifact' is required.");
+      expect(core.setFailed).toHaveBeenCalledWith(
+        "Input 'artifact' is required. Please provide the path to the artifact file.",
+      );
     });
 
     it("should fail when artifact input is undefined", () => {
@@ -38,7 +40,9 @@ describe("validate-artifact.ts", () => {
 
       validateArtifact();
 
-      expect(core.setFailed).toHaveBeenCalledWith("Input 'artifact' is required.");
+      expect(core.setFailed).toHaveBeenCalledWith(
+        "Input 'artifact' is required. Please provide the path to the artifact file.",
+      );
     });
 
     it("should fail when artifact input is null", () => {
@@ -46,7 +50,9 @@ describe("validate-artifact.ts", () => {
 
       validateArtifact();
 
-      expect(core.setFailed).toHaveBeenCalledWith("Input 'artifact' is required.");
+      expect(core.setFailed).toHaveBeenCalledWith(
+        "Input 'artifact' is required. Please provide the path to the artifact file.",
+      );
     });
   });
 
