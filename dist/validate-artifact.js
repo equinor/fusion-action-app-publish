@@ -5,7 +5,7 @@ import { c as coreExports } from "./core.js";
 function validateArtifact() {
   const artifact = coreExports.getInput("artifact");
   if (!artifact) {
-    coreExports.setFailed("Input 'artifact' is required.");
+    coreExports.setFailed("Input 'artifact' is required. Please provide the path to the artifact file.");
     return;
   }
   const artifactPath = path.resolve(artifact);
