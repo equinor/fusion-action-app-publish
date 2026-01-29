@@ -91,6 +91,12 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Setup Node
+      uses: actions/setup-node@v6
+      with:
+        node-version: '24'
+        package-manager-cache: false
+
     - name: Validate Artifact
       shell: bash
       working-directory: ${{ inputs.working-directory }}
@@ -107,6 +113,14 @@ runs:
         INPUT_PRNR: ${{ inputs.prNR }}
         INPUT_ENV: ${{ inputs.env }}
         INPUT_TAG: ${{ inputs.tag }}
+
+    - name: Extract App Manifest
+      id: manifest
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: node ${{ github.action_path }}/dist/extract-manifest.js > ./app.manifest.json
+      env:
+        INPUT_ARTIFACT: ${{ inputs.artifact }}
         
     - name: Validate Is Token or Azure Auth Provided
       id: validate-auth
@@ -142,12 +156,6 @@ runs:
         echo "FUSION_TOKEN=${{ inputs.fusion-token }}" >> $GITHUB_ENV
         echo "::add-mask::${{ inputs.fusion-token }}"
 
-    - name: Setup Node
-      uses: actions/setup-node@v6
-      with:
-        node-version: '24'
-        package-manager-cache: false
-
     - name: Publish App Bundle
       id: publish
       shell: bash
@@ -161,13 +169,6 @@ runs:
           --tag "${{ steps.validate-env.outputs.tag }}" \
           "${{ inputs.artifact }}" \
 
-    - name: Extract App Manifest
-      id: manifest
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: node ${{ github.action_path }}/dist/extract-manifest.js > ./app.manifest.json
-      env:
-        INPUT_ARTIFACT: ${{ inputs.artifact }}
 
     - name: Publish config (if provided)
       id: publish-config
