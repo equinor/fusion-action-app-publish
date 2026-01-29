@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.1
+
+### Patch Changes
+
+- d7d442e: Align PR comment tests with current comment format and update action script.
+- fdfba06: Add explicit npm registry to fusion-framework-cli npx commands to prevent package resolution errors. Without specifying `--registry https://registry.npmjs.org`, npx may fail to resolve or execute the CLI package correctly, causing minified code errors and execution failures in GitHub Actions runners.
+- de13348: Improve formatting of deployment comment in postPrComment function.
+
 ## 2.0.0
 
 ### Major Changes
