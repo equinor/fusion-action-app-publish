@@ -26,16 +26,6 @@ const setZipRawData = (rawData: string) => {
   zipState.shouldThrowOnGetData = false;
 };
 
-const setZipError = (errorType: "init" | "getEntry" | "getData") => {
-  if (errorType === "init") {
-    zipState.shouldThrowOnInit = true;
-  } else if (errorType === "getEntry") {
-    zipState.shouldThrowOnGetEntry = true;
-  } else if (errorType === "getData") {
-    zipState.shouldThrowOnGetData = true;
-  }
-};
-
 vi.mock("@actions/core", () => ({
   getInput: vi.fn(),
   setOutput: vi.fn(),

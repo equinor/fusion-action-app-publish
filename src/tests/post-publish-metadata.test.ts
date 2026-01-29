@@ -103,7 +103,7 @@ describe("post-publish-metadata.ts", () => {
       );
 
       expect(generateAppUrl(manifest, "next", tag)).toBe(
-        "https://fusion.next.fusion-dev.net/apps/test-app",
+        "https://next.fusion.ci.fusion-dev.net/apps/test-app",
       );
     });
 
