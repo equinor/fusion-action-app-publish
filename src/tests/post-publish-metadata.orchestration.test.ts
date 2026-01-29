@@ -156,14 +156,12 @@ describe("post-publish-metadata orchestration", () => {
       await postPublish.postPublishMetadata();
 
       const expectedAppUrl = "https://fusion.equinor.com/apps/demo-app";
-      const expectedAdminUrl = "https://fusion.equinor.com/apps/app-admin/apps/demo-app";
 
       expect(zipState.zipPath).toBe(path.resolve("./", "release.zip"));
       expect(core.setOutput).toHaveBeenCalledWith("app-name", "demo-app");
       expect(core.setOutput).toHaveBeenCalledWith("app-version", "2.0.0");
       expect(core.setOutput).toHaveBeenCalledWith("app-key", "demo-app");
       expect(core.setOutput).toHaveBeenCalledWith("app-url", expectedAppUrl);
-      expect(core.setOutput).toHaveBeenCalledWith("app-admin-url", expectedAdminUrl);
       expect(core.setOutput).toHaveBeenCalledWith(
         "publish-info",
         "🚀 **demo-app** v2.0.0 deployed to **FPRD**\n[Open Application](https://fusion.equinor.com/apps/demo-app)",
