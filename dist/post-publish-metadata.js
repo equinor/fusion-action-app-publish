@@ -60,7 +60,10 @@ async function postPrComment(meta, tag, appUrl) {
       return;
     }
     const appName = meta.name;
-    const commentBody = `## 🚀 ${appName}@${tag} - Deployed<br/>Preview [application](${appUrl}) in Fusion PR Portal.`;
+    const commentBody = `
+    ### 🚀 ${tag.toLocaleUpperCase()} Deployed
+    Preview [${appName}](${appUrl}) in Fusion PR Portal.
+    `;
     await octokit.rest.issues.createComment({
       owner: context.repo.owner,
       repo: context.repo.repo,
