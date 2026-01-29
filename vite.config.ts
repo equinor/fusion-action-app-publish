@@ -13,6 +13,10 @@ export default defineConfig({
         "validate-artifact": resolve(__dirname, "src/core/validate-artifact.ts"),
         "validate-env": resolve(__dirname, "src/core/validate-env.ts"),
         "validate-is-token-or-azure": resolve(__dirname, "src/core/validate-is-token-or-azure.ts"),
+        "validate-config-and-manifest": resolve(
+          __dirname,
+          "src/core/validate-config-and-manifest.ts",
+        ),
         "post-publish-metadata": resolve(__dirname, "src/core/post-publish-metadata.ts"),
         "extract-manifest": resolve(__dirname, "src/core/extract-manifest.ts"),
         "extract-metadata": resolve(__dirname, "src/core/extract-metadata.ts"),

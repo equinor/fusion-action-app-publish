@@ -121,6 +121,14 @@ runs:
       run: node ${{ github.action_path }}/dist/extract-manifest.js > ./app.manifest.json
       env:
         INPUT_ARTIFACT: ${{ inputs.artifact }}
+
+    - name: Validate Config and Manifest
+      id: validate-config-manifest
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: node ${{ github.action_path }}/dist/validate-config-and-manifest.js
+      env:
+        INPUT_CONFIG: ${{ inputs.config }}
         
     - name: Validate Is Token or Azure Auth Provided
       id: validate-auth
