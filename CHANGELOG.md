@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+### Patch Changes
+
+- e22e0b8: Add explicit npm registry to fusion-framework-cli npx commands to prevent package resolution errors. Without specifying `--registry https://registry.npmjs.org`, npx may fail to resolve or execute the CLI package correctly, causing minified code errors and execution failures in GitHub Actions runners.
 
 ## 1.0.0
 
