@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { c as coreExports } from "./core.js";
 import { A as AdmZip } from "./adm-zip.js";
 const loadManifest = (bundle) => {
-  const manifestEntry = bundle.getEntry("app.manifest.json") ?? bundle.getEntries().find((entry) => entry.entryName.endsWith("/app.manifest.json"));
+  const manifestEntry = bundle.getEntry("app-manifest.json") ?? bundle.getEntries().find((entry) => entry.entryName.endsWith("/app-manifest.json"));
   if (!manifestEntry) {
     throw new Error("Manifest file not found in bundle");
   }
@@ -13,7 +13,6 @@ const loadManifest = (bundle) => {
         return reject(new Error("Failed to read manifest file", { cause: err }));
       }
       try {
-        console.log(JSON.parse(String(data)));
         return resolve(JSON.parse(String(data)));
       } catch (error) {
         reject(new Error("Failed to parse manifest file", { cause: error }));

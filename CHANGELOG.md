@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.23
+
+### Patch Changes
+
+- f187a11: move Node setup step and extract manifest in action workflow and fix app-maniifest extraction
+
 ## 0.1.22
 
 ### Patch Changes
