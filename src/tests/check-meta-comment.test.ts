@@ -115,7 +115,10 @@ describe("check-meta-comment.ts", () => {
     it("should return true when meta comment exists", async () => {
       const mockComments = [
         { id: 1, body: "Some comment" },
-        { id: 2, body: "## 🚀 my-app@latest - Deployed\nPreview [application](https://example.com) in Fusion PR Portal." },
+        {
+          id: 2,
+          body: "## 🚀 my-app@latest - Deployed\nPreview [application](https://example.com) in Fusion PR Portal.",
+        },
       ];
 
       const mockOctokit = {
