@@ -4,22 +4,19 @@
  * Used as part of GitHub Action workflows to provide publish information
  */
 
-import { exec as execCallback } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { promisify } from "node:util";
 
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-
-import type { AppMetadata, ExecResult } from "../types/metadata";
-
-const exec = promisify(execCallback);
+import AdmZip from "adm-zip";
+import type { AppMetadata } from "../types/metadata";
+import { loadMetadata } from "./extract-metadata";
 
 /**
  * Extracts app metadata from the artifact
- * Uses `unzip -p` to read the metadata directly from the zip file
+ * Uses AdmZip library to read the metadata directly from the zip file
  * without extracting to temporary files for better performance and security
  * @param artifactPath - Path to the artifact
  * @returns Parsed app metadata with mapped fields
@@ -33,27 +30,17 @@ export async function extractAppMetadata(artifactPath: string): Promise<AppMetad
       );
     }
 
-    const { stdout, stderr }: ExecResult = await exec(
-      `unzip -p "${artifactPath}" "*/metadata.json"`,
-    );
+    const zip = new AdmZip(artifactPath);
+    const metadata = await loadMetadata(zip);
 
-    if (stderr) {
-      core.warning(`Warning from unzip: ${stderr}`);
-    }
+    // Map the metadata to AppMetadata format
+    const appMetadata: AppMetadata = {
+      name: metadata.name,
+      version: metadata.version,
+      key: metadata.appKey || metadata.name,
+    };
 
-    const metadataContent = stdout.trim();
-    if (!metadataContent) {
-      throw new Error("metadata.json not found in artifact");
-    }
-
-    try {
-      const metadata: AppMetadata = JSON.parse(metadataContent);
-      metadata.key = metadata.name;
-      return metadata;
-    } catch (parseError: unknown) {
-      const message = parseError instanceof Error ? parseError.message : "Unknown parse error";
-      throw new Error(`Invalid JSON format in metadata.json: ${message}`);
-    }
+    return appMetadata;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
     core.error(`Failed to extract app metadata: ${message}`);
@@ -63,21 +50,21 @@ export async function extractAppMetadata(artifactPath: string): Promise<AppMetad
 
 /**
  * Generates application URL based on environment and app info
- * 
+ *
  * URLs are constructed based on the environment:
  * - ci: https://fusion.ci.fusion-dev.net
  * - fqa: https://fusion.fqa.fusion-dev.net
  * - fprd: https://fusion.equinor.com (production)
  * - tr: https://fusion.tr.fusion-dev.net
- * - next: https://fusion.next.fusion-dev.net
- * 
+ * - next: https://next.fusion.ci.fusion-dev.net
+ *
  * For non-latest tags, includes tag as query parameter for version tracking
- * 
+ *
  * @param meta - App metadata containing application key
  * @param env - Deployment environment (ci, fqa, fprd, tr, next)
  * @param tag - Deployment tag/version identifier
  * @returns Full application URL to access the deployed application
-n * @throws Error if app key is not found in metadata
+ * @throws Error if app key is not found in metadata
  * @example
  * const url = generateAppUrl(meta, 'fprd', 'v1.0.0');
  * // Returns: https://fusion.equinor.com/apps/my-app?$tag=v1.0.0
@@ -95,7 +82,7 @@ export function generateAppUrl(meta: AppMetadata, env: string, tag: string): str
     fqa: "https://fusion.fqa.fusion-dev.net",
     fprd: "https://fusion.equinor.com",
     tr: "https://fusion.tr.fusion-dev.net",
-    next: "https://fusion.next.fusion-dev.net",
+    next: "https://next.fusion.ci.fusion-dev.net",
   };
 
   const baseUrl = envUrls[env] || envUrls.fprd;
@@ -141,7 +128,7 @@ export async function postPrComment(
     const appDescription = meta.description || "";
 
     // Create formatted comment with deployment details
-    const commentBody = `<!-- fusion-app-publish-meta -->
+    const commentBody = `
 ## 🚀 Application Deployed Successfully
 
   **Application:** ${appName}  
@@ -162,7 +149,8 @@ export async function postPrComment(
   - **Build Time:** ${new Date().toISOString()}
 
   ---
-  *Deployed via [fusion-action-app-publish](https://github.com/equinor/fusion-action-app-publish)*`;
+  *Deployed via [fusion-action-app-publish](https://github.com/equinor/fusion-action-app-publish)*
+  <!-- fusion-app-publish-meta -->`;
 
     await octokit.rest.issues.createComment({
       owner: context.repo.owner,

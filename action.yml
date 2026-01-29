@@ -161,6 +161,14 @@ runs:
           --tag "${{ steps.validate-env.outputs.tag }}" \
           "${{ inputs.artifact }}" \
 
+    - name: Extract App Manifest
+      id: manifest
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: node ${{ github.action_path }}/dist/extract-manifest.js > ./app.manifest.json
+      env:
+        INPUT_ARTIFACT: ${{ inputs.artifact }}
+
     - name: Publish config (if provided)
       id: publish-config
       if: ${{ inputs.config != '' }}
@@ -173,6 +181,7 @@ runs:
         npx -y -p @equinor/fusion-framework-cli ffc app config \
           --publish \
           --env "${{ steps.validate-env.outputs.env }}" \
+          --manifest ./app.manifest.json \
           "${{ inputs.config }}" \
 
     - name: Check Meta Comment

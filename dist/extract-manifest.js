@@ -1,0 +1,39 @@
+import path__default from "node:path";
+import { fileURLToPath } from "node:url";
+import { c as coreExports } from "./core.js";
+import { A as AdmZip } from "./adm-zip.js";
+const loadManifest = (bundle) => {
+  const manifestEntry = bundle.getEntry("app.manifest.json") ?? bundle.getEntries().find((entry) => entry.entryName.endsWith("/app.manifest.json"));
+  if (!manifestEntry) {
+    throw new Error("Manifest file not found in bundle");
+  }
+  return new Promise((resolve, reject) => {
+    manifestEntry.getDataAsync((data, err) => {
+      if (err) {
+        return reject(new Error("Failed to read manifest file", { cause: err }));
+      }
+      try {
+        console.log(JSON.parse(String(data)));
+        return resolve(JSON.parse(String(data)));
+      } catch (error) {
+        reject(new Error("Failed to parse manifest file", { cause: error }));
+      }
+    });
+  });
+};
+const isDirectExecution = process.argv[1] && path__default.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectExecution) {
+  try {
+    const zipPath = process.env.INPUT_ARTIFACT || coreExports.getInput("artifact");
+    const bundle = new AdmZip(zipPath);
+    loadManifest(bundle).then((manifest) => console.log(manifest)).catch((error) => console.error(error));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error(`Failed to load manifest: ${message}`);
+    throw error;
+  }
+}
+export {
+  loadManifest
+};
+//# sourceMappingURL=extract-manifest.js.map

@@ -1,11 +1,10 @@
-import { exec as exec$1 } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { promisify } from "node:util";
 import { c as coreExports } from "./core.js";
 import { g as githubExports } from "./github.js";
-const exec = promisify(exec$1);
+import { A as AdmZip } from "./adm-zip.js";
+import { loadMetadata } from "./extract-metadata.js";
 async function extractAppMetadata(artifactPath) {
   try {
     const artifactExtension = path.extname(artifactPath).toLowerCase();
@@ -14,24 +13,14 @@ async function extractAppMetadata(artifactPath) {
         `Unsupported artifact format: ${artifactExtension}. Only .zip files are supported.`
       );
     }
-    const { stdout, stderr } = await exec(
-      `unzip -p "${artifactPath}" "*/metadata.json"`
-    );
-    if (stderr) {
-      coreExports.warning(`Warning from unzip: ${stderr}`);
-    }
-    const metadataContent = stdout.trim();
-    if (!metadataContent) {
-      throw new Error("metadata.json not found in artifact");
-    }
-    try {
-      const metadata = JSON.parse(metadataContent);
-      metadata.key = metadata.name;
-      return metadata;
-    } catch (parseError) {
-      const message = parseError instanceof Error ? parseError.message : "Unknown parse error";
-      throw new Error(`Invalid JSON format in metadata.json: ${message}`);
-    }
+    const zip = new AdmZip(artifactPath);
+    const metadata = await loadMetadata(zip);
+    const appMetadata = {
+      name: metadata.name,
+      version: metadata.version,
+      key: metadata.appKey || metadata.name
+    };
+    return appMetadata;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     coreExports.error(`Failed to extract app metadata: ${message}`);
@@ -48,7 +37,7 @@ function generateAppUrl(meta, env, tag) {
     fqa: "https://fusion.fqa.fusion-dev.net",
     fprd: "https://fusion.equinor.com",
     tr: "https://fusion.tr.fusion-dev.net",
-    next: "https://fusion.next.fusion-dev.net"
+    next: "https://next.fusion.ci.fusion-dev.net"
   };
   const baseUrl = envUrls[env] || envUrls.fprd;
   if (!tag.startsWith("latest")) {
@@ -73,7 +62,7 @@ async function postPrComment(meta, env, tag, appUrl, appAdminUrl) {
     const appName = meta.name;
     const appVersion = meta.version || "unknown";
     const appDescription = meta.description || "";
-    const commentBody = `<!-- fusion-app-publish-meta -->
+    const commentBody = `
 ## 🚀 Application Deployed Successfully
 
   **Application:** ${appName}  
@@ -96,7 +85,8 @@ async function postPrComment(meta, env, tag, appUrl, appAdminUrl) {
   - **Build Time:** ${(/* @__PURE__ */ new Date()).toISOString()}
 
   ---
-  *Deployed via [fusion-action-app-publish](https://github.com/equinor/fusion-action-app-publish)*`;
+  *Deployed via [fusion-action-app-publish](https://github.com/equinor/fusion-action-app-publish)*
+  <!-- fusion-app-publish-meta -->`;
     await octokit.rest.issues.createComment({
       owner: context.repo.owner,
       repo: context.repo.repo,

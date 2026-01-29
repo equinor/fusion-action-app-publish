@@ -1,16 +1,39 @@
 import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const execState = vi.hoisted(() => ({
-  stdout: "",
-  stderr: "",
-  lastCommand: "",
+const zipState = vi.hoisted(() => ({
+  metadata: null as any,
+  rawData: null as string | null,
+  shouldThrowOnInit: false,
+  shouldThrowOnGetEntry: false,
+  shouldThrowOnGetData: false,
+  zipPath: "",
 }));
 
-const setExecResult = (stdout: string, stderr = "") => {
-  execState.stdout = stdout;
-  execState.stderr = stderr;
-  execState.lastCommand = "";
+const setZipMetadata = (metadata: any) => {
+  zipState.metadata = metadata;
+  zipState.rawData = null;
+  zipState.shouldThrowOnInit = false;
+  zipState.shouldThrowOnGetEntry = false;
+  zipState.shouldThrowOnGetData = false;
+};
+
+const setZipRawData = (rawData: string) => {
+  zipState.metadata = null;
+  zipState.rawData = rawData;
+  zipState.shouldThrowOnInit = false;
+  zipState.shouldThrowOnGetEntry = false;
+  zipState.shouldThrowOnGetData = false;
+};
+
+const setZipError = (errorType: "init" | "getEntry" | "getData") => {
+  if (errorType === "init") {
+    zipState.shouldThrowOnInit = true;
+  } else if (errorType === "getEntry") {
+    zipState.shouldThrowOnGetEntry = true;
+  } else if (errorType === "getData") {
+    zipState.shouldThrowOnGetData = true;
+  }
 };
 
 vi.mock("@actions/core", () => ({
@@ -26,21 +49,46 @@ vi.mock("node:fs", () => ({
   existsSync: vi.fn(),
 }));
 
-vi.mock("node:child_process", () => {
-  const execMock = vi.fn(async (command: string) => {
-    execState.lastCommand = command;
-    return { stdout: execState.stdout, stderr: execState.stderr };
+vi.mock("adm-zip", () => {
+  const buildEntry = () => ({
+    entryName: "metadata.json",
+    getDataAsync: vi.fn((callback: (data: Buffer, err?: Error) => void) => {
+      if (zipState.shouldThrowOnGetData) {
+        callback(Buffer.from(""), new Error("Failed to read"));
+        return;
+      }
+      const payload = zipState.rawData ?? JSON.stringify(zipState.metadata ?? {});
+      callback(Buffer.from(payload));
+    }),
   });
 
-  const promisifySym = Symbol.for("nodejs.util.promisify.custom");
-  if (!(promisifySym in execMock)) {
-    Reflect.defineProperty(execMock, promisifySym, {
-      value: execMock,
-      configurable: true,
-    });
+  class AdmZipMock {
+    constructor(filepath: string) {
+      zipState.zipPath = filepath;
+
+      if (zipState.shouldThrowOnInit) {
+        throw new Error("ADM-ZIP: Invalid filename");
+      }
+    }
+
+    getEntry() {
+      if (zipState.shouldThrowOnGetEntry || (!zipState.metadata && !zipState.rawData)) {
+        return null;
+      }
+      return buildEntry();
+    }
+
+    getEntries() {
+      if (zipState.shouldThrowOnGetEntry || (!zipState.metadata && !zipState.rawData)) {
+        return [];
+      }
+      return [buildEntry()];
+    }
   }
 
-  return { exec: execMock };
+  return {
+    default: AdmZipMock,
+  };
 });
 
 import * as fs from "node:fs";
@@ -55,13 +103,14 @@ describe("post-publish-metadata orchestration", () => {
 
   describe("extractAppMetadata", () => {
     it("extracts metadata from zip and maps key", async () => {
-      setExecResult(JSON.stringify({ name: "my-app", version: "1.0.0" }));
+      setZipMetadata({ name: "my-app", version: "1.0.0", appKey: "my-app" });
 
       const result = await postPublish.extractAppMetadata("/tmp/app.zip");
 
       expect(result.name).toBe("my-app");
       expect(result.version).toBe("1.0.0");
       expect(result.key).toBe("my-app");
+      expect(zipState.zipPath).toBe("/tmp/app.zip");
     });
 
     it("throws for non-zip artifacts", async () => {
@@ -71,18 +120,18 @@ describe("post-publish-metadata orchestration", () => {
     });
 
     it("throws when metadata.json is missing", async () => {
-      setExecResult("");
+      setZipMetadata(null);
 
       await expect(postPublish.extractAppMetadata("/tmp/app.zip")).rejects.toThrow(
-        "metadata.json not found in artifact",
+        "Metadata file not found in bundle",
       );
     });
 
     it("throws when metadata.json is invalid", async () => {
-      setExecResult("not-json");
+      setZipRawData("not-json");
 
       await expect(postPublish.extractAppMetadata("/tmp/app.zip")).rejects.toThrow(
-        "Invalid JSON format in metadata.json",
+        "Failed to parse metadata file",
       );
     });
   });
@@ -112,14 +161,14 @@ describe("post-publish-metadata orchestration", () => {
       mockInputs();
       vi.mocked(fs.existsSync).mockReturnValue(true);
 
-      setExecResult(JSON.stringify(meta));
+      setZipMetadata({ name: meta.name, version: meta.version, appKey: meta.key });
 
       await postPublish.postPublishMetadata();
 
       const expectedAppUrl = "https://fusion.equinor.com/apps/demo-app";
       const expectedAdminUrl = "https://fusion.equinor.com/apps/app-admin/apps/demo-app";
 
-      expect(execState.lastCommand).toContain(path.resolve("./", "release.zip"));
+      expect(zipState.zipPath).toBe(path.resolve("./", "release.zip"));
       expect(core.setOutput).toHaveBeenCalledWith("app-name", "demo-app");
       expect(core.setOutput).toHaveBeenCalledWith("app-version", "2.0.0");
       expect(core.setOutput).toHaveBeenCalledWith("app-key", "demo-app");
@@ -135,11 +184,11 @@ describe("post-publish-metadata orchestration", () => {
       mockInputs({ "working-directory": "dist", tag: "v1.2.3" });
       vi.mocked(fs.existsSync).mockReturnValue(true);
 
-      setExecResult(JSON.stringify(meta));
+      setZipMetadata({ name: meta.name, version: meta.version, appKey: meta.key });
 
       await postPublish.postPublishMetadata();
 
-      expect(execState.lastCommand).toContain(path.resolve("dist", "release.zip"));
+      expect(zipState.zipPath).toBe(path.resolve("dist", "release.zip"));
     });
 
     it("fails when artifact is missing", async () => {
@@ -156,12 +205,12 @@ describe("post-publish-metadata orchestration", () => {
     it("fails when metadata extraction errors", async () => {
       mockInputs();
       vi.mocked(fs.existsSync).mockReturnValue(true);
-      setExecResult("not-json");
+      setZipRawData("not-json");
 
       await postPublish.postPublishMetadata();
 
       expect(core.setFailed).toHaveBeenCalledWith(
-        expect.stringContaining("Invalid JSON format in metadata.json"),
+        expect.stringContaining("Failed to parse metadata file"),
       );
     });
   });
