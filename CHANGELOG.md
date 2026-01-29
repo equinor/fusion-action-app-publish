@@ -1,45 +1,5 @@
 # Changelog
 
-## 2.0.1
-
-### Patch Changes
-
-- d7d442e: Align PR comment tests with current comment format and update action script.
-- fdfba06: Add explicit npm registry to fusion-framework-cli npx commands to prevent package resolution errors. Without specifying `--registry https://registry.npmjs.org`, npx may fail to resolve or execute the CLI package correctly, causing minified code errors and execution failures in GitHub Actions runners.
-- de13348: Improve formatting of deployment comment in postPrComment function.
-
-## 2.0.0
-
-### Major Changes
-
-- 8051b77: Official v1.0.0 Release - Stable Production Ready
-
-  This is the first major release of `fusion-action-app-publish`, marking a stable and production-ready version of the GitHub Action for authenticating and publishing Fusion applications.
-
-  ## Major Features
-
-  - **Flexible Authentication**: Support for both direct Fusion bearer tokens and Azure Service Principal authentication (including OIDC)
-  - **Multi-Environment Deployment**: Support for ci, tr, fprd, fqa, and next environments with automatic PR-based preview deployments
-  - **Comprehensive Validation**: Full input validation, artifact format verification, and authentication method checking
-  - **Rich Metadata Extraction**: Extracts app information from package.json and metadata.json, automatically posts deployment summaries to PR comments
-  - **Production Grade**: 100% test coverage with comprehensive unit and integration tests
-  - **Well Documented**: Complete usage examples, architecture documentation, and contribution guidelines
-
-  ## Key Capabilities
-
-  - Direct zip archive publishing without temporary file extraction
-  - Automatic environment resolution for pull requests
-  - Detailed logging and error messages for debugging
-  - Outputs include app URL, portal URL, app name, version, and deployment information
-  - Support for custom app configuration files and deployment tags
-
-  ## Breaking Changes
-
-  None - this is the initial major release establishing the stable API.
-
-  ## Migration Guide
-
-  No migration needed if upgrading from pre-1.0 versions. Simply update your workflows to reference `v1` tag instead of specific version numbers.
 
 ## 1.0.0
 
