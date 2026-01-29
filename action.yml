@@ -179,6 +179,33 @@ runs:
           "${{ inputs.artifact }}" \
 
 
+    - name: Debug - Check files before config publish
+      if: ${{ inputs.config != '' }}
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "=== Current directory ==="
+        pwd
+        echo "=== Files in directory ==="
+        ls -la
+        echo "=== Check manifest file ==="
+        if [ -f "./app.manifest.json" ]; then
+          echo "✅ app.manifest.json exists"
+          echo "Content preview:"
+          head -5 ./app.manifest.json
+        else
+          echo "❌ app.manifest.json missing"
+        fi
+        echo "=== Check config file ==="
+        if [ -f "${{ inputs.config }}" ]; then
+          echo "✅ Config file exists: ${{ inputs.config }}"
+        else
+          echo "❌ Config file missing: ${{ inputs.config }}"
+        fi
+        echo "=== Environment variables ==="
+        echo "FUSION_TOKEN is set: $([[ -n "$FUSION_TOKEN" ]] && echo "YES" || echo "NO")"
+
+
     - name: Publish config (if provided)
       id: publish-config
       if: ${{ inputs.config != '' }}
