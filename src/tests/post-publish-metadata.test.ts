@@ -160,12 +160,11 @@ describe("post-publish-metadata.ts", () => {
         owner: "test-owner",
         repo: "test-repo",
         issue_number: 123,
-        body: expect.stringContaining("🚀 Test App@v1.0.0 - Deployed"),
+        body: expect.stringContaining("### 🚀 V1.0.0 Deployed"),
       });
 
       const calledWith = mockOctokit.rest.issues.createComment.mock.calls[0][0];
-      expect(calledWith.body).toContain("Test App");
-      expect(calledWith.body).toContain("v1.0.0");
+      expect(calledWith.body).toContain("### 🚀 V1.0.0 Deployed");
       expect(calledWith.body).toContain("https://fusion.equinor.com/apps/test-app");
     });
 
@@ -220,8 +219,8 @@ describe("post-publish-metadata.ts", () => {
       await postPrComment(meta, "v1.0.0", "https://app.url");
 
       const calledWith = mockOctokit.rest.issues.createComment.mock.calls[0][0];
-      expect(calledWith.body).toContain("test-app@v1.0.0");
-      expect(calledWith.body).toContain("Deployed");
+      expect(calledWith.body).toContain("### 🚀 V1.0.0 Deployed");
+      expect(calledWith.body).toContain("Preview [test-app]");
       expect(calledWith.body).toContain("https://app.url");
     });
 
@@ -239,9 +238,9 @@ describe("post-publish-metadata.ts", () => {
       const calledWith = mockOctokit.rest.issues.createComment.mock.calls[0][0];
       const body = calledWith.body;
 
-      expect(body).toContain("🚀 Test App@v1.0.0 - Deployed");
+      expect(body).toContain("### 🚀 V1.0.0 Deployed");
       expect(body).toContain("Preview");
-      expect(body).toContain("application");
+      expect(body).toContain("Test App");
       expect(body).toContain("https://fusion.equinor.com/apps/test-app");
       expect(body).toContain("Fusion PR Portal");
     });

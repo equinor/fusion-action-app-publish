@@ -164,7 +164,7 @@ runs:
         FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
         INPUT_ARTIFACT: ${{ inputs.artifact }}
       run: |
-        npx -y -p @equinor/fusion-framework-cli ffc app publish \
+        npx --registry https://registry.npmjs.org -y -p @equinor/fusion-framework-cli ffc app publish \
           --env "${{ steps.validate-env.outputs.env }}" \
           --tag "${{ steps.validate-env.outputs.tag }}" \
           "${{ inputs.artifact }}" \
@@ -179,7 +179,7 @@ runs:
         FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
         INPUT_CONFIG: ${{ inputs.config }}
       run: |
-        npx -y -p @equinor/fusion-framework-cli ffc app config \
+        npx --registry https://registry.npmjs.org -y -p @equinor/fusion-framework-cli ffc app config \
           --publish \
           --env "${{ steps.validate-env.outputs.env }}" \
           --manifest ./app.manifest.json \

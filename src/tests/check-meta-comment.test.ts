@@ -117,7 +117,7 @@ describe("check-meta-comment.ts", () => {
         { id: 1, body: "Some comment" },
         {
           id: 2,
-          body: "## 🚀 my-app@latest - Deployed\nPreview [application](https://example.com) in Fusion PR Portal.",
+          body: "### 🚀 LATEST Deployed\nPreview [application](https://example.com) in Fusion PR Portal.",
         },
       ];
 
