@@ -94,7 +94,7 @@ runs:
     - name: Setup Node
       uses: actions/setup-node@v6
       with:
-        node-version: '20'
+        node-version: '24'
         package-manager-cache: false
 
     - name: Validate Artifact
@@ -164,6 +164,14 @@ runs:
         echo "FUSION_TOKEN=${{ inputs.fusion-token }}" >> $GITHUB_ENV
         echo "::add-mask::${{ inputs.fusion-token }}"
 
+    - name: Install Fusion CLI
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        NPM_CONFIG_REGISTRY: https://registry.npmjs.org
+      run: |
+        npm install --no-save @equinor/fusion-framework-cli@13.2.0
+
     - name: Publish App Bundle
       id: publish
       shell: bash
@@ -171,9 +179,8 @@ runs:
       env:
         FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
         INPUT_ARTIFACT: ${{ inputs.artifact }}
-        NPM_CONFIG_REGISTRY: https://registry.npmjs.org
       run: |
-        npx -y -p @equinor/fusion-framework-cli ffc app publish \
+        ./node_modules/.bin/ffc app publish \
           --env "${{ steps.validate-env.outputs.env }}" \
           --tag "${{ steps.validate-env.outputs.tag }}" \
           "${{ inputs.artifact }}" \
@@ -214,9 +221,8 @@ runs:
       env:
         FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
         INPUT_CONFIG: ${{ inputs.config }}
-        NPM_CONFIG_REGISTRY: https://registry.npmjs.org
       run: |
-        npx -y -p @equinor/fusion-framework-cli ffc app config \
+        ./node_modules/.bin/ffc app config \
           --publish \
           --env "${{ steps.validate-env.outputs.env }}" \
           --manifest ./app.manifest.json \
