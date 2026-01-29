@@ -1,3 +1,15 @@
+/**
+ * extract-manifest.ts
+ *
+ * Loads application manifest from a Fusion application bundle (zip) file
+ *
+ * This module extracts the app-manifest.json file from the bundle to retrieve
+ * the application configuration, particularly the appKey which is essential for
+ * deployment and identification purposes.
+ *
+ * The manifest loading is performant as it uses AdmZip to read directly from
+ * the zip without extracting to temporary files.
+ */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as core from "@actions/core";
@@ -48,11 +60,17 @@ if (isDirectExecution) {
     const bundle = new AdmZip(zipPath);
 
     loadManifest(bundle)
-      .then((manifest) => console.log(manifest))
-      .catch((error) => console.error(error));
+      .then((manifest) => {
+        console.log(JSON.stringify(manifest));
+      })
+      .catch((error) => {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        core.error(`Failed to load manifest: ${message}`);
+        process.exit(1);
+      });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error(`Failed to load manifest: ${message}`);
-    throw error;
+    core.error(`Failed to load manifest: ${message}`);
+    process.exit(1);
   }
 }

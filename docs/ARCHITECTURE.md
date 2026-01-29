@@ -156,13 +156,11 @@ Extracts application information from the artifact and posts deployment details.
     - `tr` → `https://fusion.tr.fusion-dev.net`
     - `next` → `https://fusion.next.fusion-dev.net`
 
-- **`postPrComment(meta, env, tag, appUrl, appAdminUrl)`**
+- **`postPrComment(meta, tag, appUrl)`**
   - Posts formatted Markdown comment to PR with:
-    - Application details (name, version, description)
-    - Environment and tag information
+    - Application name and deployed tag
     - Direct link to deployed application
-    - Fusion App Admin link for management
-    - Deployment metadata (timestamp, app key)
+    - Deployment metadata for tracking
   - Includes meta-comment identifier for deduplication checks
   - Silently skips if not in PR context
 
@@ -172,14 +170,14 @@ Extracts application information from the artifact and posts deployment details.
   - Sets multiple outputs for downstream steps:
     - `app-name`: Application name
     - `app-version`: Version from metadata
-    - `app-key`: Unique application identifier
     - `app-url`: Generated application URL
-    - `app-admin-url`: App admin panel URL
+    - `portal-url`: Fusion portal URL for app management
+    - `target-env`: Resolved target environment
     - `publish-info`: Formatted summary for notifications
 
 **GitHub Action Integration:**
 - Reads inputs: `artifact`, `env`, `tag`, `working-directory`
-- Sets outputs: `app-name`, `app-version`, `app-key`, `app-url`, `app-admin-url`, `publish-info`
+- Sets outputs: `app-name`, `app-version`, `app-url`, `portal-url`, `target-env`, `publish-info`
 
 ---
 
@@ -225,6 +223,25 @@ interface Credentials {
   azureClientId: string;
   azureTenantId: string;
   azureResourceId: string;
+}
+```
+
+#### `fusion-app.ts`
+Type definitions for Fusion applications and package metadata:
+```typescript
+interface FusionApp {
+  name: string;
+  path: string;
+  version?: string;
+}
+
+interface PackageJson {
+  name?: string;
+  version?: string;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  scripts?: Record<string, string>;
+  [key: string]: unknown;
 }
 ```
 

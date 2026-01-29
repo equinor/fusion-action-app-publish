@@ -39,7 +39,7 @@
   },
   "homepage": "https://github.com/equinor/fusion-action-app-publish#readme",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=24.0.0"
   },
   "dependencies": {
     "@actions/core": "^2.0.2",

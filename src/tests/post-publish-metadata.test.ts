@@ -154,39 +154,26 @@ describe("post-publish-metadata.ts", () => {
 
       github.context.payload = { pull_request: { number: 123 } };
 
-      await postPrComment(
-        meta,
-        "fprd",
-        "v1.0.0",
-        "https://fusion.equinor.com/apps/test-app",
-        "https://fusion.equinor.com/admin/test-app",
-      );
+      await postPrComment(meta, "v1.0.0", "https://fusion.equinor.com/apps/test-app");
 
       expect(mockOctokit.rest.issues.createComment).toHaveBeenCalledWith({
         owner: "test-owner",
         repo: "test-repo",
         issue_number: 123,
-        body: expect.stringContaining("🚀 Application Deployed Successfully"),
+        body: expect.stringContaining("🚀 Test App@v1.0.0 - Deployed"),
       });
 
       const calledWith = mockOctokit.rest.issues.createComment.mock.calls[0][0];
       expect(calledWith.body).toContain("Test App");
-      expect(calledWith.body).toContain("1.0.0");
-      expect(calledWith.body).toContain("FPRD");
-      expect(calledWith.body).toContain("A test application");
+      expect(calledWith.body).toContain("v1.0.0");
+      expect(calledWith.body).toContain("https://fusion.equinor.com/apps/test-app");
     });
 
     it("should extract PR number from pr- tag", async () => {
       const meta = { name: "Test App", key: "test-app", version: "1.0.0" };
       github.context.payload = {}; // No PR in payload
 
-      await postPrComment(
-        meta,
-        "ci",
-        "pr-456",
-        "https://fusion.ci.fusion-dev.net/apps/test-app",
-        "https://admin.url",
-      );
+      await postPrComment(meta, "pr-456", "https://fusion.ci.fusion-dev.net/apps/test-app");
 
       expect(mockOctokit.rest.issues.createComment).toHaveBeenCalledWith(
         expect.objectContaining({ issue_number: 456 }),
@@ -197,7 +184,7 @@ describe("post-publish-metadata.ts", () => {
       const meta = { name: "Test App", key: "test-app", version: "1.0.0" };
       github.context.payload = {}; // No PR context
 
-      await postPrComment(meta, "fprd", "v1.0.0", "https://app.url", "https://admin.url");
+      await postPrComment(meta, "v1.0.0", "https://app.url");
 
       expect(mockOctokit.rest.issues.createComment).not.toHaveBeenCalled();
       expect(vi.mocked(core.info)).toHaveBeenCalledWith("Not a PR deployment, skipping PR comment");
@@ -207,7 +194,7 @@ describe("post-publish-metadata.ts", () => {
       delete process.env.GITHUB_TOKEN;
       const meta = { name: "Test App", key: "test-app", version: "1.0.0" };
 
-      await postPrComment(meta, "fprd", "v1.0.0", "https://app.url", "https://admin.url");
+      await postPrComment(meta, "v1.0.0", "https://app.url");
 
       expect(vi.mocked(core.info)).toHaveBeenCalledWith(
         "GITHUB_TOKEN not available, skipping PR comment",
@@ -221,7 +208,7 @@ describe("post-publish-metadata.ts", () => {
 
       mockOctokit.rest.issues.createComment.mockRejectedValue(new Error("API Error"));
 
-      await postPrComment(meta, "fprd", "v1.0.0", "https://app.url", "https://admin.url");
+      await postPrComment(meta, "v1.0.0", "https://app.url");
 
       expect(vi.mocked(core.warning)).toHaveBeenCalledWith("Failed to post PR comment: API Error");
     });
@@ -230,12 +217,12 @@ describe("post-publish-metadata.ts", () => {
       const meta = { name: "test-app", key: "test-app" }; // Missing version, description
       github.context.payload = { pull_request: { number: 123 } };
 
-      await postPrComment(meta, "fprd", "v1.0.0", "https://app.url", "https://admin.url");
+      await postPrComment(meta, "v1.0.0", "https://app.url");
 
       const calledWith = mockOctokit.rest.issues.createComment.mock.calls[0][0];
-      expect(calledWith.body).toContain("**Application:** test-app");
-      expect(calledWith.body).toContain("**Version:** unknown");
-      expect(calledWith.body).not.toContain("**Description:**");
+      expect(calledWith.body).toContain("test-app@v1.0.0");
+      expect(calledWith.body).toContain("Deployed");
+      expect(calledWith.body).toContain("https://app.url");
     });
 
     it("should include all required sections in comment body", async () => {
@@ -247,22 +234,16 @@ describe("post-publish-metadata.ts", () => {
       };
       github.context.payload = { pull_request: { number: 123 } };
 
-      await postPrComment(
-        meta,
-        "fprd",
-        "v1.0.0",
-        "https://fusion.equinor.com/apps/test-app",
-        "https://admin.url",
-      );
+      await postPrComment(meta, "v1.0.0", "https://fusion.equinor.com/apps/test-app");
 
       const calledWith = mockOctokit.rest.issues.createComment.mock.calls[0][0];
       const body = calledWith.body;
 
-      expect(body).toContain("🚀 Application Deployed Successfully");
-      expect(body).toContain("🔗 Access Links");
-      expect(body).toContain("📋 Deployment Details");
-      expect(body).toContain("Bundle:** ./bundle.js");
-      expect(body).toContain("fusion-action-app-publish");
+      expect(body).toContain("🚀 Test App@v1.0.0 - Deployed");
+      expect(body).toContain("Preview");
+      expect(body).toContain("application");
+      expect(body).toContain("https://fusion.equinor.com/apps/test-app");
+      expect(body).toContain("Fusion PR Portal");
     });
   });
 });

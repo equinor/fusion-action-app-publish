@@ -108,10 +108,10 @@ jobs:
 | `fusion-token` | Pre-acquired Fusion bearer token | No | - |
 | `azure-client-id` | Azure Service Principal Client ID | No | - |
 | `azure-tenant-id` | Azure Tenant ID | No | - |
-| `azure-resource-id` | Fusion audience/resource ID for token acquisition | No | `https://fusion.equinor.com` |
+| `azure-resource-id` | Fusion audience/resource ID for token acquisition | No | - |
 | `env` | Target environment (ci/tr/fprd/fqa/next) | No | `ci` |
 | `prNR` | Pull Request number (used with env=ci) | No | - |
-| `artifact` | Path to built artifact file or directory | No | `./app-bundle.zip` |
+| `artifact` | Path to built artifact file (.zip) | No | `./app-bundle.zip` |
 | `tag` | Tag to apply to the deployment | No | `latest` |
 | `working-directory` | Working directory for commands | No | `.` |
 
@@ -122,11 +122,11 @@ jobs:
 | `app-url` | Direct URL to the published application |
 | `portal-url` | Fusion portal URL for managing the application |
 | `target-env` | Resolved target environment |
-| `app-name` | Application name from manifest |
-| `app-version` | Application version from manifest |
+| `app-name` | Application name from metadata |
+| `app-version` | Application version from metadata |
 | `publish-info` | Formatted publish information for PR comments |
 | `auth-type` | Authentication type used (`token` or `service-principal`) |
-| `is-token` | Whether fusion-token authentication was used (deprecated, use `auth-type`) |
+| `is-token` | Whether fusion-token authentication was used |
 | `is-service-principal` | Whether Azure Service Principal authentication was used |
 
 ## Authentication Methods
@@ -299,7 +299,7 @@ node scripts/validate-is-token-or-azure.js
 6. Update documentation if needed
 7. Submit a pull request
 
-See [TESTING_SETUP.md](TESTING_SETUP.md) for testing infrastructure details.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guide.
 
 ## License
 

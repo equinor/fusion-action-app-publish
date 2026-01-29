@@ -76,9 +76,7 @@ export async function checkMetaComment(): Promise<boolean> {
         issue_number: prNumber,
       });
 
-      const exists = comments.data.some((comment) =>
-        comment.body?.includes("<!-- fusion-app-publish-meta -->"),
-      );
+      const exists = comments.data.some((comment) => comment.body?.includes(`@${tag} - Deployed`));
 
       if (exists) {
         core.info(`Meta comment already exists on PR #${prNumber}, will skip posting`);

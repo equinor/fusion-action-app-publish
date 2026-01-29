@@ -45,7 +45,7 @@ function generateAppUrl(meta, env, tag) {
   }
   return `${baseUrl}/apps/${appKey}`;
 }
-async function postPrComment(meta, env, tag, appUrl, appAdminUrl) {
+async function postPrComment(meta, tag, appUrl) {
   try {
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
@@ -60,33 +60,7 @@ async function postPrComment(meta, env, tag, appUrl, appAdminUrl) {
       return;
     }
     const appName = meta.name;
-    const appVersion = meta.version || "unknown";
-    const appDescription = meta.description || "";
-    const commentBody = `
-## 🚀 Application Deployed Successfully
-
-  **Application:** ${appName}  
-  **Version:** ${appVersion}  
-  **Environment:** ${env.toUpperCase()}  
-  **Tag:** ${tag}  
-
-  ${appDescription ? `**Description:** ${appDescription}
-
-` : ""}
-
-  ### 🔗 Access Links
-  - **Application:** [Open ${appName}](${appUrl})
-  - **Fusion App Admin:** [Manage in Fusion App Admin](${appAdminUrl})
-  - **App Config:** [View app config](${appAdminUrl}/config)
-
-  ### 📋 Deployment Details
-  - **App Key:** \`${meta.key}\`
-  - **Bundle:** ${meta.entry?.path || "Not specified"}
-  - **Build Time:** ${(/* @__PURE__ */ new Date()).toISOString()}
-
-  ---
-  *Deployed via [fusion-action-app-publish](https://github.com/equinor/fusion-action-app-publish)*
-  <!-- fusion-app-publish-meta -->`;
+    const commentBody = `## 🚀 ${appName}@${tag} - Deployed<br/>Preview [application](${appUrl}) in Fusion PR Portal.`;
     await octokit.rest.issues.createComment({
       owner: context.repo.owner,
       repo: context.repo.repo,
@@ -125,13 +99,10 @@ async function postPublishMetadata() {
     coreExports.setOutput("app-version", appVersion);
     coreExports.setOutput("app-key", appKey);
     coreExports.setOutput("app-url", appUrl);
-    const appAdminBaseUrl = appUrl.split("/apps/")[0];
-    const appAdminUrl = `${appAdminBaseUrl}/apps/app-admin/apps/${appKey}`;
-    coreExports.setOutput("app-admin-url", appAdminUrl);
     const publishInfo = `🚀 **${appName}** v${appVersion} deployed to **${env.toUpperCase()}**
 [Open Application](${appUrl})`;
     coreExports.setOutput("publish-info", publishInfo);
-    await postPrComment(meta, env, tag, appUrl, appAdminUrl);
+    await postPrComment(meta, tag, appUrl);
     coreExports.info("Post-publish metadata processing completed successfully");
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";

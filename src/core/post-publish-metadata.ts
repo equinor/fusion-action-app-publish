@@ -95,14 +95,27 @@ export function generateAppUrl(meta: AppMetadata, env: string, tag: string): str
   return `${baseUrl}/apps/${appKey}`;
 }
 
-/**\n * Posts a comment to the PR with the application URL and deployment info\n * \n * This function:\n * - Checks for GITHUB_TOKEN availability (required for posting comments)\n * - Detects PR number from GitHub context or tag (for pr-{number} format)\n * - Creates a formatted Markdown comment with:\n *   - Application name, version, environment, tag\n *   - Direct links to the deployed application\n *   - Fusion App Admin panel for management\n *   - Deployment metadata for tracking\n * - Uses meta comment identifier to allow checking for existing comments\n * \n * If not in a PR context (no PR number available), this function silently returns\n * without posting.\n * \n * @param meta - App metadata object\n * @param env - Deployment environment\n * @param tag - Deployment tag/version\n * @param appUrl - Generated application URL\n * @param appAdminUrl - Generated app admin panel URL\n * @throws Does not throw, but logs warnings on failure\n */
-export async function postPrComment(
-  meta: AppMetadata,
-  env: string,
-  tag: string,
-  appUrl: string,
-  appAdminUrl: string,
-): Promise<void> {
+/**
+ * Posts a comment to the PR with the application URL and deployment info
+ *
+ * This function:
+ * - Checks for GITHUB_TOKEN availability (required for posting comments)
+ * - Detects PR number from GitHub context or tag (for pr-{number} format)
+ * - Creates a formatted Markdown comment with:
+ *   - Application name, version, environment, tag
+ *   - Direct links to the deployed application
+ *   - Deployment metadata for tracking
+ * - Uses meta comment identifier to allow checking for existing comments
+ *
+ * If not in a PR context (no PR number available), this function silently returns
+ * without posting.
+ *
+ * @param meta - App metadata object
+ * @param tag - Deployment tag/version
+ * @param appUrl - Generated application URL
+ * @throws Does not throw, but logs warnings on failure
+ */
+export async function postPrComment(meta: AppMetadata, tag: string, appUrl: string): Promise<void> {
   try {
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
@@ -124,33 +137,9 @@ export async function postPrComment(
     }
 
     const appName = meta.name;
-    const appVersion = meta.version || "unknown";
-    const appDescription = meta.description || "";
 
     // Create formatted comment with deployment details
-    const commentBody = `
-## 🚀 Application Deployed Successfully
-
-  **Application:** ${appName}  
-  **Version:** ${appVersion}  
-  **Environment:** ${env.toUpperCase()}  
-  **Tag:** ${tag}  
-
-  ${appDescription ? `**Description:** ${appDescription}\n\n` : ""}
-
-  ### 🔗 Access Links
-  - **Application:** [Open ${appName}](${appUrl})
-  - **Fusion App Admin:** [Manage in Fusion App Admin](${appAdminUrl})
-  - **App Config:** [View app config](${appAdminUrl}/config)
-
-  ### 📋 Deployment Details
-  - **App Key:** \`${meta.key}\`
-  - **Bundle:** ${meta.entry?.path || "Not specified"}
-  - **Build Time:** ${new Date().toISOString()}
-
-  ---
-  *Deployed via [fusion-action-app-publish](https://github.com/equinor/fusion-action-app-publish)*
-  <!-- fusion-app-publish-meta -->`;
+    const commentBody = `## 🚀 ${appName}@${tag} - Deployed<br/>Preview [application](${appUrl}) in Fusion PR Portal.`;
 
     await octokit.rest.issues.createComment({
       owner: context.repo.owner,
@@ -227,17 +216,12 @@ export async function postPublishMetadata(): Promise<void> {
     core.setOutput("app-key", appKey);
     core.setOutput("app-url", appUrl);
 
-    // Generate app admin URL
-    const appAdminBaseUrl = appUrl.split("/apps/")[0];
-    const appAdminUrl = `${appAdminBaseUrl}/apps/app-admin/apps/${appKey}`;
-    core.setOutput("app-admin-url", appAdminUrl);
-
     // Create formatted publish info for PR comments
     const publishInfo = `🚀 **${appName}** v${appVersion} deployed to **${env.toUpperCase()}**\n[Open Application](${appUrl})`;
     core.setOutput("publish-info", publishInfo);
 
     // Post comment to PR if applicable
-    await postPrComment(meta, env, tag, appUrl, appAdminUrl);
+    await postPrComment(meta, tag, appUrl);
 
     core.info("Post-publish metadata processing completed successfully");
   } catch (error: unknown) {

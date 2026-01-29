@@ -9,7 +9,6 @@ const loadMetadata = (bundle) => {
         return reject(new Error("Failed to read metadata file", { cause: err }));
       }
       try {
-        console.log(JSON.parse(String(data)));
         return resolve(JSON.parse(String(data)));
       } catch (error) {
         reject(new Error("Failed to parse metadata file", { cause: error }));

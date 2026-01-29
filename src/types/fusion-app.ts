@@ -1,4 +1,14 @@
 /**
+ * fusion-app.ts
+ *
+ * Type definitions for Fusion applications and related structures
+ *
+ * This module provides TypeScript interfaces for:
+ * - FusionApp: Application representation with metadata
+ * - PackageJson: Type-safe package.json structure
+ */
+
+/**
  * Represents a Fusion application with its metadata
  */
 export interface FusionApp {

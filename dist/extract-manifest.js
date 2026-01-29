@@ -25,11 +25,17 @@ if (isDirectExecution) {
   try {
     const zipPath = process.env.INPUT_ARTIFACT || coreExports.getInput("artifact");
     const bundle = new AdmZip(zipPath);
-    loadManifest(bundle).then((manifest) => console.log(manifest)).catch((error) => console.error(error));
+    loadManifest(bundle).then((manifest) => {
+      console.log(JSON.stringify(manifest));
+    }).catch((error) => {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      coreExports.error(`Failed to load manifest: ${message}`);
+      process.exit(1);
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error(`Failed to load manifest: ${message}`);
-    throw error;
+    coreExports.error(`Failed to load manifest: ${message}`);
+    process.exit(1);
   }
 }
 export {

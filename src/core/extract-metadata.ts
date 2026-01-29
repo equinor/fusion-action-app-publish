@@ -1,5 +1,13 @@
-// Loads the metadata (name and version) from a bundle zip file.
-// Throws an error if the metadata.json file is missing or invalid.
+/**
+ * extract-metadata.ts
+ *
+ * Loads metadata from a Fusion application bundle (zip) file
+ *
+ * This module extracts application metadata (name, version, appKey) from the bundle's
+ * metadata.json file. The metadata is used for deployment tracking and URL generation.
+ *
+ * Throws an error if the metadata.json file is missing or cannot be parsed.
+ */
 import type AdmZip from "adm-zip";
 
 /**
@@ -34,7 +42,6 @@ export const loadMetadata = (bundle: AdmZip): Promise<BundleMetadata> => {
         return reject(new Error("Failed to read metadata file", { cause: err }));
       }
       try {
-        console.log(JSON.parse(String(data)));
         // Parse the metadata as JSON and resolve
         return resolve(JSON.parse(String(data)));
       } catch (error) {
