@@ -97,6 +97,10 @@ runs:
         node-version: '24'
         package-manager-cache: false
 
+    - name: Install Fusion CLI
+      shell: bash
+      run: npm install -g @equinor/fusion-framework-cli
+
     - name: Validate Artifact
       shell: bash
       working-directory: ${{ inputs.working-directory }}
@@ -163,15 +167,6 @@ runs:
       run: |
         echo "FUSION_TOKEN=${{ inputs.fusion-token }}" >> $GITHUB_ENV
         echo "::add-mask::${{ inputs.fusion-token }}"
-
-    - name: Install Fusion CLI
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      env:
-        NPM_CONFIG_REGISTRY: https://registry.npmjs.org
-      run: |
-        npm install --no-save @equinor/fusion-framework-cli@13.2.0
-
     - name: Publish App Bundle
       id: publish
       shell: bash
@@ -180,38 +175,10 @@ runs:
         FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
         INPUT_ARTIFACT: ${{ inputs.artifact }}
       run: |
-        ./node_modules/.bin/ffc app publish \
+        ffc app publish \
           --env "${{ steps.validate-env.outputs.env }}" \
           --tag "${{ steps.validate-env.outputs.tag }}" \
-          "${{ inputs.artifact }}" \
-
-
-    - name: Debug - Check files before config publish
-      if: ${{ inputs.config != '' }}
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        echo "=== Current directory ==="
-        pwd
-        echo "=== Files in directory ==="
-        ls -la
-        echo "=== Check manifest file ==="
-        if [ -f "./app.manifest.json" ]; then
-          echo "✅ app.manifest.json exists"
-          echo "Content preview:"
-          head -5 ./app.manifest.json
-        else
-          echo "❌ app.manifest.json missing"
-        fi
-        echo "=== Check config file ==="
-        if [ -f "${{ inputs.config }}" ]; then
-          echo "✅ Config file exists: ${{ inputs.config }}"
-        else
-          echo "❌ Config file missing: ${{ inputs.config }}"
-        fi
-        echo "=== Environment variables ==="
-        echo "FUSION_TOKEN is set: $([[ -n "$FUSION_TOKEN" ]] && echo "YES" || echo "NO")"
-
+          "${{ inputs.artifact }}"
 
     - name: Publish config (if provided)
       id: publish-config
@@ -222,11 +189,11 @@ runs:
         FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
         INPUT_CONFIG: ${{ inputs.config }}
       run: |
-        ./node_modules/.bin/ffc app config \
+        ffc app config \
           --publish \
           --env "${{ steps.validate-env.outputs.env }}" \
           --manifest ./app.manifest.json \
-          "${{ inputs.config }}" \
+          "${{ inputs.config }}"
 
     - name: Check Meta Comment
       id: check-meta
