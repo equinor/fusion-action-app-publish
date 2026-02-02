@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.6
+
+### Patch Changes
+
+- db0709b: Fix indentation in PR comment template
+
 ## 1.0.5
 
 ### Patch Changes
