@@ -97,10 +97,6 @@ runs:
         node-version: '24'
         package-manager-cache: false
 
-    - name: Install Fusion CLI
-      shell: bash
-      run: npm install -g @equinor/fusion-framework-cli
-
     - name: Validate Artifact
       shell: bash
       working-directory: ${{ inputs.working-directory }}
@@ -167,6 +163,7 @@ runs:
       run: |
         echo "FUSION_TOKEN=${{ inputs.fusion-token }}" >> $GITHUB_ENV
         echo "::add-mask::${{ inputs.fusion-token }}"
+
     - name: Publish App Bundle
       id: publish
       shell: bash
@@ -175,12 +172,12 @@ runs:
         FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
         INPUT_ARTIFACT: ${{ inputs.artifact }}
       run: |
-        ffc app publish \
+        npx -y -p @equinor/fusion-framework-cli ffc app publish \
           --env "${{ steps.validate-env.outputs.env }}" \
           --tag "${{ steps.validate-env.outputs.tag }}" \
           "${{ inputs.artifact }}"
 
-    - name: Publish config (if provided)
+    - name: Publish with config (if provided)
       id: publish-config
       if: ${{ inputs.config != '' }}
       shell: bash
@@ -188,12 +185,13 @@ runs:
       env:
         FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
         INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_ARTIFACT: ${{ inputs.artifact }}
       run: |
-        ffc app config \
-          --publish \
+        npx -y -p @equinor/fusion-framework-cli ffc app publish \
           --env "${{ steps.validate-env.outputs.env }}" \
-          --manifest ./app.manifest.json \
-          "${{ inputs.config }}"
+          --tag "${{ steps.validate-env.outputs.tag }}" \
+          --config ${{ inputs.config }} \
+          "${{ inputs.artifact }}"
 
     - name: Check Meta Comment
       id: check-meta
