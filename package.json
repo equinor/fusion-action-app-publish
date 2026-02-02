@@ -42,7 +42,7 @@
     "node": ">=24.0.0"
   },
   "dependencies": {
-    "@actions/core": "^2.0.2",
+    "@actions/core": "^3.0.0",
     "@actions/github": "^7.0.0",
     "adm-zip": "^0.5.16"
   },
