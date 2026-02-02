@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.5
+
+### Patch Changes
+
+- d715927: Add condition to publishing when no config is provided
+
 ## 1.0.4
 
 ### Patch Changes
