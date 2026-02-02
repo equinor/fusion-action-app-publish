@@ -140,8 +140,8 @@ export async function postPrComment(meta: AppMetadata, tag: string, appUrl: stri
 
     // Create formatted comment with deployment details
     const commentBody = `
-    ### 🚀 ${tag.toLocaleUpperCase()} Deployed
-    Preview [${appName}](${appUrl}) in Fusion PR Portal.
+### 🚀 ${tag.toLocaleUpperCase()} Deployed
+Preview [${appName}](${appUrl}) in Fusion PR Portal.
     `;
 
     await octokit.rest.issues.createComment({
