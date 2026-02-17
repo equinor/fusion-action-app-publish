@@ -52,6 +52,11 @@ export function validateEnv(): void {
   const env = core.getInput("env");
   const tag = core.getInput("tag");
 
+  if (prNR && env) {
+    core.setFailed("Inputs 'prNR' and 'env' cannot be used together.");
+    return;
+  }
+
   // If prNR is provided, set the tag output accordingly
   if (prNR) {
     core.info(`prNR provided: ${prNR}`);

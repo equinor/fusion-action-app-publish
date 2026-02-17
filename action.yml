@@ -28,7 +28,7 @@ inputs:
     required: false
 
   prNR:
-    description: 'Pull Request number (used if env is "ci")'
+    description: 'Pull Request number (When used, env will be set to "ci")'
     required: false
 
   artifact:
