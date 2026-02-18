@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.3
+
+### Patch Changes
+
+- 895de77: fix shall in workflow summary
+
 ## 1.2.2
 
 ### Patch Changes
