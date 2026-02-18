@@ -283,6 +283,9 @@ export function validateIsTokenOrAzure(): void {
   core.setOutput("auth-type", authResult.authType);
   core.setOutput("isToken", authResult.authType === AUTH_TYPES.TOKEN);
   core.setOutput("isServicePrincipal", authResult.authType === AUTH_TYPES.SERVICE_PRINCIPAL);
+  core.setOutput("azureClientId", credentials.azureClientId);
+  core.setOutput("azureTenantId", credentials.azureTenantId);
+  core.setOutput("azureResourceId", credentials.azureResourceId);
 
   // If using token authentication, validate the token format
   if (authResult.authType === AUTH_TYPES.TOKEN) {
