@@ -5,7 +5,7 @@ import * as core from "@actions/core";
 /**
  * Validates that both the manifest file and config file (if provided) exist and are valid JSON
  */
-async function validateConfigAndManifest(): Promise<void> {
+export async function validateConfigAndManifest(): Promise<void> {
   try {
     const config = process.env.INPUT_CONFIG;
     const manifestFile = "./app.manifest.json";

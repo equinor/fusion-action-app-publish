@@ -18,26 +18,35 @@ graph TD
     C["Artifact Validation<br/>validateArtifact()"]
     D["Environment Validation<br/>validateEnv()"]
     E["Auth Validation<br/>validateIsTokenOrAzure()"]
-    F["Metadata & Publishing<br/>(src/core/post-publish-metadata.ts)"]
-    G["Extract Metadata<br/>extractAppMetadata()"]
-    H["Generate URLs<br/>generateAppUrl()"]
-    I["Post PR Comment<br/>postPrComment()"]
-    J["Check Meta Comment<br/>checkMetaComment()"]
-    K["fusion-framework-cli<br/>(External tool)<br/>Performs publishing"]
+    F["Configuration Validation<br/>validateConfigAndManifest()"]
+    G["Bundle Processing Layer<br/>(src/core/extract-*.ts)"]
+    H["Extract Manifest<br/>loadManifest()"]
+    O["fusion-framework-cli<br/>(External tool)<br/>Performs publishing"]
+    J["Metadata & Publishing<br/>(src/core/post-publish-metadata.ts)"]
+    K["Extract App Metadata<br/>extractAppMetadata()"]
+    L["Generate URLs<br/>generateAppUrl()"]
+    M["Post PR Comment<br/>postPrComment()"]
+    N["Check Meta Comment<br/>checkMetaComment()"]
     
     A --> B
     B --> C
     B --> D
-    B --> E
-    C --> F
-    D --> F
-    E --> F
-    F --> G
+    C --> G
     G --> H
-    H --> I
-    H --> J
-    I --> K
+    H --> F
+    F --> E
+    
+    %% All validation outputs feed into CLI publishing
+    C --> O
+    D --> O
+    E --> O
+    
+    %% After publishing, metadata processing happens
+    O --> N
+    O --> J
     J --> K
+    K --> L
+    L --> M
 ```
 
 ## Module Structure
@@ -48,10 +57,15 @@ graph TD
 Exports the public API of the library. All validation and publishing functions are re-exported here for clean module access.
 
 ```typescript
+export { checkMetaComment };
+export { loadManifest };
+export { loadMetadata };
+export { extractAppMetadata, generateAppUrl, postPrComment, postPublishMetadata };
 export { validateArtifact };
+export { validateConfigAndManifest };  
 export { validateEnv };
 export { validateIsTokenOrAzure };
-export { extractAppMetadata, generateAppUrl, postPrComment };
+export * from "./types";
 ```
 
 ### `/src/core/` - Core Business Logic
@@ -201,6 +215,129 @@ Prevents duplicate PR comments when action runs multiple times:
 
 ---
 
+#### `extract-manifest.ts`
+**Application Manifest Extraction**
+
+Extracts and loads the `app-manifest.json` file from Fusion application bundles. The manifest contains essential deployment configuration including the `appKey` used for identifying and configuring the application in the Fusion platform.
+
+**Key Functions:**
+- `loadManifest(bundle: AdmZip): Promise<Manifest>`
+  - Reads `app-manifest.json` from zip bundle using AdmZip
+  - Parses JSON and validates structure
+  - Returns manifest object with `appKey` and other configuration
+  - Throws error if manifest file is missing or malformed
+
+**Integration Notes:**
+- **Now Exported**: Available as public API from main index.ts
+- Used by publishing pipeline for deployment configuration  
+- Performant: Direct zip reading without temporary file extraction
+- Essential for proper Fusion app registration and routing
+- **Library Usage**: `import { loadManifest } from '@equinor/fusion-action-app-publish'`
+
+**Bundle Structure Requirements:**
+```
+app-bundle.zip
+├── app-manifest.json     # Required: App configuration
+├── metadata.json         # Required: App metadata  
+└── ...                  # Other app files
+```
+
+**Manifest Type Definition:**
+```typescript
+type Manifest = {
+  appKey: string;           // Required: Unique app identifier
+} & Record<string, unknown>; // Additional configuration properties
+```
+
+---
+
+#### `extract-metadata.ts`
+**Application Metadata Extraction**
+
+Extracts application metadata (name, version, appKey) from the `metadata.json` file within Fusion application bundles. This metadata is used for deployment tracking, URL generation, and PR comment information.
+
+**Key Functions:**
+- `loadMetadata(bundle: AdmZip): Promise<BundleMetadata>`
+  - Reads `metadata.json` from zip bundle using AdmZip
+  - Parses JSON and extracts name, version fields
+  - Maps name to appKey for URL generation
+  - Throws error if metadata file missing or lacks required fields
+
+**Integration Notes:**
+- **Now Exported**: Available as public API from main index.ts
+- Core dependency for `extractAppMetadata()` in post-publish-metadata.ts
+- Used for generating deployment URLs and tracking information
+- Direct zip access prevents temporary file creation
+- **Library Usage**: `import { loadMetadata } from '@equinor/fusion-action-app-publish'`
+
+**Metadata Type Definition:**
+```typescript
+type BundleMetadata = {
+  appKey: string;   // Mapped from name field
+  name: string;     // Required: Application name
+  version: string;  // Required: Semantic version
+};
+```
+
+**Expected metadata.json Structure:**
+```json
+{
+  "name": "my-fusion-app",     
+  "version": "1.2.3",          
+  "description": "App description (optional)"
+}
+```
+
+---
+
+#### `validate-config-and-manifest.ts`
+**Local Configuration File Validation**
+
+Validates the existence and structure of local configuration files, including both the application manifest and optional fusion app config files. This function ensures all required configuration files are present and contain valid JSON before deployment.
+
+**Key Functions:**
+- `validateConfigAndManifest(): Promise<void>`
+  - Validates `./app.manifest.json` exists and contains valid JSON
+  - Validates optional config file (from `INPUT_CONFIG` environment variable) if provided
+  - Logs validation success messages using `core.info()`
+  - Throws descriptive errors if files missing or JSON invalid
+
+**Validation Flow:**
+1. **Manifest Validation**
+   - Checks `./app.manifest.json` exists in current working directory
+   - Validates JSON parsing without syntax errors
+   - Logs success message for valid files
+
+2. **Config File Validation** (optional)
+   - Checks config file path from `config` input parameter
+   - Validates file exists and contains parseable JSON
+   - Skips validation if no config file specified
+
+**Integration Notes:**
+- **Now Exported**: Available as public API from main index.ts  
+- Runs early in deployment pipeline before bundle processing
+- Provides fast-fail validation for malformed configuration files
+- Uses GitHub Actions core logging for user feedback
+- **Library Usage**: `import { validateConfigAndManifest } from '@equinor/fusion-action-app-publish'`
+
+**Environment Dependencies:**
+- `INPUT_CONFIG`: Path to optional config file (from action inputs)
+- `process.cwd()`: Current working directory for manifest file lookup
+
+**Error Handling:**
+```typescript
+// Manifest file missing
+throw new Error(`Manifest file not found: ${path.join(cwd, manifestFile)}`);
+
+// Invalid JSON syntax  
+throw new Error(`Manifest file is not valid JSON: ${error.message}`);
+
+// Config file missing (when specified)
+throw new Error(`Config file not found: ${configPath}`);
+```
+
+---
+
 ### `/src/types/` - Type Definitions
 
 #### `auth.ts`
@@ -266,6 +403,65 @@ interface ExecResult {
 
 ---
 
+## Complete End-to-End Flow
+
+### Full Deployment Sequence Diagram
+```mermaid
+sequenceDiagram
+    participant User as Developer
+    participant GH as GitHub Actions
+    participant Val as Validation Layer
+    participant Auth as Auth Handler
+    participant Azure as Azure OIDC
+    participant Ext as Bundle Extractor
+    participant CLI as fusion-framework-cli
+    participant Fusion as Fusion Platform
+    participant PR as GitHub PR
+    
+    User->>GH: Push code / Create PR
+    GH->>Val: validateArtifact()
+    Val-->>GH: artifact-path set
+    
+    GH->>Val: validateEnv()
+    Val->>Val: Check prNR vs env/tag
+    Val-->>GH: env, tag resolved
+    
+    GH->>Auth: validateIsTokenOrAzure()
+    Auth->>Auth: Detect auth method
+    
+    alt Token Authentication
+        Auth->>Auth: validateFusionToken()
+        Auth-->>GH: token validated
+    else Azure Service Principal
+        Auth-->>GH: SP credentials validated
+        GH->>Azure: Request OIDC token
+        Azure-->>GH: Access token
+    end
+    
+    GH->>Ext: Extract manifest to app.manifest.json
+    GH->>Val: validateConfigAndManifest()
+    Val-->>GH: Config files validated
+    
+    GH->>CLI: Publish with credentials
+    CLI->>Fusion: Deploy application
+    Fusion-->>CLI: Deployment success
+    CLI-->>GH: Publish complete
+    
+    GH->>GH: checkMetaComment()
+    
+    alt No existing comment
+        GH->>Ext: extractAppMetadata()
+        Ext-->>GH: App name, version, key
+        GH->>GH: generateAppUrl()
+        GH->>PR: postPrComment()
+        PR-->>GH: Comment posted
+    else Comment exists
+        GH->>GH: Skip posting
+    end
+    
+    GH-->>User: Deployment complete with outputs
+```
+
 ## Data Flow
 
 ### Validation Phase
@@ -293,7 +489,19 @@ graph LR
 graph TD
     A["artifact-path"]
     B["extractAppMetadata()"]
-   mermaid
+    C["App metadata"]
+    D["generateAppUrl()"]
+    E["App URL + Portal URL"]
+    F["postPrComment()"]
+    G["GitHub PR Comment"]
+    
+    A --> B --> C
+    C --> D --> E
+    E --> F --> G
+```
+
+### Token Authentication Flow
+```mermaid
 sequenceDiagram
     participant User
     participant Action as GitHub Action
@@ -309,7 +517,7 @@ sequenceDiagram
     CLI->>CLI: Publish application
 ```
 
-### Azure Service Principal (OIDC)
+### Azure Service Principal (OIDC) Flow
 ```mermaid
 sequenceDiagram
     participant User
@@ -326,9 +534,10 @@ sequenceDiagram
     Azure->>Action: Return access token
     Action->>CLI: Pass credentials to CLI
     CLI->>CLI: Publish application
-Pass to fusion-framework-cli for publishing
 ```
-mermaid
+
+### Standard Production Deployment
+```mermaid
 graph TD
     A["User Input<br/>env='fprd'<br/>tag='v1.0.0'"]
     B["generateAppUrl()"]
@@ -353,7 +562,7 @@ graph TD
     
     A --> B --> C
     C --> D --> E
-    E --> F --> Grk-cli
+    E --> F --> G
 ```
 
 ---
@@ -397,24 +606,223 @@ This ensures:
 
 ---
 
-## Testing Strategy
+## Build & Distribution Architecture
 
-The project maintains **100% test coverage** with comprehensive unit tests:
+### Build Configuration (vite.config.ts)
 
-- **Validation Tests**: Verify correct acceptance/rejection of inputs
-- **Integration Tests**: Test interaction between modules
-- **Error Handling**: Ensure proper error messages and exit codes
-- **Mock GitHub API**: Mock GitHub Actions context and API calls
+The project uses **Vite** for building individual executable modules rather than a single bundle. This approach enables the GitHub Action to execute specific functionality as separate Node.js scripts.
 
-Test files mirror source structure:
+**Build Strategy:**
+```typescript
+// Each core module becomes a standalone executable
+entry: {
+  "check-meta-comment": "src/core/check-meta-comment.ts",
+  "validate-artifact": "src/core/validate-artifact.ts", 
+  "validate-env": "src/core/validate-env.ts",
+  // ... etc
+}
 ```
-src/
-├── core/
-│   ├── validate-artifact.ts
-│   └── validate-artifact.test.ts
-├── types/
-│   └── auth.ts  (types tested implicitly)
+
+**Key Build Features:**
+- **Individual Entry Points**: Each validation/processing step is a separate executable
+- **ES Module Format**: Modern JavaScript modules for Node.js 24+
+- **External Node.js Built-ins**: Reduces bundle size by excluding Node.js modules
+- **Stable Filenames**: No content hashing for predictable GitHub Action execution
+- **Source Maps**: Enabled for debugging in production
+- **No Minification**: Preserves readable stack traces
+
+**Distribution Structure:**
 ```
+dist/
+├── check-meta-comment.js
+├── validate-artifact.js
+├── validate-env.js
+├── validate-is-token-or-azure.js
+├── validate-config-and-manifest.js
+├── post-publish-metadata.js
+├── extract-manifest.js
+└── extract-metadata.js
+```
+
+**GitHub Action Integration:**
+```yaml
+# Each step executes a specific built module
+- name: Validate Environment
+  run: node ${{ github.action_path }}/dist/validate-env.js
+```
+
+**Benefits:**
+- **Faster Execution**: Only loads required functionality per step
+- **Better Error Isolation**: Failures are contained to specific steps
+- **Parallel Execution**: Multiple validation steps can run simultaneously
+- **Clear Separation**: Each step has single responsibility
+
+---
+
+## Testing Architecture
+
+The project maintains **100% test coverage** with a comprehensive testing strategy built on **Vitest**.
+
+### Testing Framework Configuration
+
+**Test Environment Setup** (vitest.config.ts):
+```typescript
+// CI-First Testing: Prevents accidental local runs
+const allowLocal = process.env.ALLOW_LOCAL_TESTS === "true" || process.env.CI === "true";
+
+// Node.js environment with V8 coverage
+environment: "node",
+coverage: {
+  provider: "v8",
+  reporter: ["text", "json", "html", "lcov"]
+}
+```
+
+### Testing Patterns & Strategies
+
+#### 1. **Unit Testing Pattern**
+```typescript
+// Example: validate-env.test.ts
+describe("validate-env.ts", () => {
+  beforeEach(() => {
+    vi.clearAllMocks(); // Reset all mocks between tests
+  });
+
+  // GitHub Actions core module mocking
+  vi.mock("@actions/core");
+  
+  // Input/output validation testing
+  it("should set tag and env outputs when prNR is provided", () => {
+    vi.mocked(core.getInput).mockImplementation((input: string) => {
+      // Mock specific GitHub Action inputs
+    });
+    
+    validateEnv();
+    
+    // Verify correct outputs set
+    expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("tag", "pr-123");
+  });
+});
+```
+
+#### 2. **Integration Testing Pattern** 
+```typescript
+// Example: post-publish-metadata.orchestration.test.ts
+
+// Hoisted state management for complex mocks
+const zipState = vi.hoisted(() => ({
+  metadata: null,
+  shouldThrowOnInit: false,
+  // ... complex state management
+}));
+
+// Module-level mocking with state
+vi.mock("adm-zip", () => {
+  class AdmZipMock {
+    constructor(filepath: string) {
+      if (zipState.shouldThrowOnInit) {
+        throw new Error("ADM-ZIP: Invalid filename");
+      }
+    }
+  }
+  return { default: AdmZipMock };
+});
+```
+
+#### 3. **Mock Strategy Architecture**
+
+**GitHub Actions Core Mocking:**
+- **Complete API Surface**: Mock all `@actions/core` methods (getInput, setOutput, setFailed)
+- **Behavior Verification**: Test both success and failure paths 
+- **Output Validation**: Verify correct GitHub Action outputs are set
+
+**File System Mocking:**
+- **ZIP Processing**: Mock `adm-zip` for bundle extraction testing
+- **File Existence**: Mock `fs.existsSync` for configuration validation
+- **State-Based Testing**: Use hoisted state to simulate different file conditions
+
+**External Service Mocking:**
+- **GitHub API**: Mock `@actions/github` for PR comment functionality
+- **Process Execution**: Mock child_process for CLI interactions
+
+#### 4. **Error Handling Test Patterns**
+
+**Validation Error Testing:**
+```typescript
+it("should fail for invalid environment value", () => {
+  // Setup invalid input
+  vi.mocked(core.getInput).mockReturnValue("invalid-env");
+  
+  validateEnv();
+  
+  // Verify proper error handling
+  expect(vi.mocked(core.setFailed)).toHaveBeenCalledWith(
+    "Input 'env' must be one of the following values: ci, tr, fprd, fqa, next."
+  );
+});
+```
+
+**Exception Handling Testing:**
+```typescript
+it("should handle zip extraction errors gracefully", async () => {
+  zipState.shouldThrowOnGetData = true;
+  
+  await expect(extractAppMetadata("/tmp/app.zip"))
+    .rejects.toThrow("Failed to read metadata.json");
+});
+```
+
+### Test Organization Structure
+
+```
+src/tests/
+├── setup.ts                           # Global test configuration
+├── validate-artifact.test.ts           # Unit tests for validation
+├── validate-env.test.ts               # Environment validation tests
+├── validate-is-token-or-azure.test.ts # Authentication tests
+├── post-publish-metadata.test.ts      # Metadata extraction tests
+├── post-publish-metadata.orchestration.test.ts # Integration tests
+├── check-meta-comment.test.ts         # PR comment tests
+└── infrastructure.test.ts             # Infrastructure/utility tests
+```
+
+### Coverage Strategy
+
+- **100% Line Coverage**: Every line of production code is tested
+- **Branch Coverage**: All conditional paths are verified
+- **Error Path Testing**: All error conditions have dedicated tests
+- **Integration Testing**: Cross-module interactions are validated
+- **Mock Isolation**: Each test runs in isolation with fresh mocks
+
+### CI/Local Testing Guard
+
+**Purpose**: Prevent accidental local test runs that might interact with real GitHub APIs
+```typescript
+// Requires explicit opt-in for local development
+if (!allowLocal && !process.env.GITHUB_ACTIONS) {
+  console.error("❌ Tests are guarded for CI. Set ALLOW_LOCAL_TESTS=true to run locally.");
+  process.exit(1);
+}
+```
+
+### Test Utilities & Setup
+
+**Global Console Mocking** (setup.ts):
+```typescript
+// Prevent console spam during tests while maintaining test tracking
+global.console = {
+  ...console,
+  log: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn()
+};
+```
+
+This testing architecture ensures:
+- **Reliability**: Tests accurately reflect production behavior
+- **Maintainability**: Clear patterns for adding new tests
+- **Performance**: Fast test execution with efficient mocking
+- **Confidence**: Comprehensive coverage of all code paths and error conditions
 
 ---
 

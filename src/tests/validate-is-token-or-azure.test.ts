@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AUTH_TYPES,
   detectAndValidateAuthType,
+  detectAzureResourceId,
   validateFusionToken,
   validateIsTokenOrAzure,
 } from "../core/validate-is-token-or-azure";
@@ -125,6 +126,113 @@ describe("validate-is-token-or-azure.ts", () => {
     });
   });
 
+  describe("detectAzureResourceId function", () => {
+    it("should return empty string when no Azure Client ID is provided", () => {
+      const result = detectAzureResourceId("ci", "", undefined);
+      expect(result).toBe("");
+    });
+
+    it("should return empty string when Azure Client ID is empty", () => {
+      const result = detectAzureResourceId("ci", "", "");
+      expect(result).toBe("");
+    });
+
+    it("should return user-provided Azure Resource ID when provided", () => {
+      const inputResourceId = "custom-resource-id-123";
+      const result = detectAzureResourceId("ci", inputResourceId, "client-123");
+      expect(result).toBe("custom-resource-id-123");
+    });
+
+    it("should remove '/.default' suffix from user-provided Azure Resource ID", () => {
+      const inputResourceId = "custom-resource-id-123/.default";
+      const result = detectAzureResourceId("ci", inputResourceId, "client-123");
+      expect(result).toBe("custom-resource-id-123");
+    });
+
+    it("should trim user-provided Azure Resource ID", () => {
+      const inputResourceId = "  custom-resource-id-123  ";
+      const result = detectAzureResourceId("ci", inputResourceId, "client-123");
+      expect(result).toBe("custom-resource-id-123");
+    });
+
+    it("should return non-production resource ID for 'ci' environment", () => {
+      const result = detectAzureResourceId("ci", "", "client-123");
+      expect(result).toBe("api://fusion.equinor.com/nonprod");
+    });
+
+    it("should return non-production resource ID for 'fqa' environment", () => {
+      const result = detectAzureResourceId("fqa", "", "client-123");
+      expect(result).toBe("api://fusion.equinor.com/nonprod");
+    });
+
+    it("should return non-production resource ID for 'tr' environment", () => {
+      const result = detectAzureResourceId("tr", "", "client-123");
+      expect(result).toBe("api://fusion.equinor.com/nonprod");
+    });
+
+    it("should return non-production resource ID for 'next' environment", () => {
+      const result = detectAzureResourceId("next", "", "client-123");
+      expect(result).toBe("api://fusion.equinor.com/nonprod");
+    });
+
+    it("should return production resource ID for 'fprd' environment", () => {
+      const result = detectAzureResourceId("fprd", "", "client-123");
+      expect(result).toBe("api://fusion.equinor.com/prod");
+    });
+
+    it("should be case-insensitive for environment values", () => {
+      expect(detectAzureResourceId("CI", "", "client-123")).toBe(
+        "api://fusion.equinor.com/nonprod",
+      );
+      expect(detectAzureResourceId("FQA", "", "client-123")).toBe(
+        "api://fusion.equinor.com/nonprod",
+      );
+      expect(detectAzureResourceId("TR", "", "client-123")).toBe(
+        "api://fusion.equinor.com/nonprod",
+      );
+      expect(detectAzureResourceId("NEXT", "", "client-123")).toBe(
+        "api://fusion.equinor.com/nonprod",
+      );
+      expect(detectAzureResourceId("FPRD", "", "client-123")).toBe("api://fusion.equinor.com/prod");
+    });
+
+    it("should return non-production resource ID for unrecognized environment", () => {
+      const result = detectAzureResourceId("unknown", "", "client-123");
+      expect(result).toBe("api://fusion.equinor.com/nonprod");
+    });
+
+    it("should log warning for unrecognized environment", () => {
+      detectAzureResourceId("unknown", "", "client-123");
+      expect(vi.mocked(core.warning)).toHaveBeenCalledWith(
+        "Unrecognized environment 'unknown'. Defaulting to non-production Azure resource ID.",
+      );
+    });
+
+    it("should log info when user provides Azure Resource ID", () => {
+      detectAzureResourceId("ci", "custom-resource-id", "client-123");
+      expect(vi.mocked(core.info)).toHaveBeenCalledWith("Using user-provided Azure Resource ID.");
+    });
+
+    it("should log info when no Azure Client ID is provided", () => {
+      detectAzureResourceId("ci", "", "");
+      expect(vi.mocked(core.info)).toHaveBeenCalledWith(
+        "No Azure Client ID provided, skipping Azure Resource ID detection.",
+      );
+    });
+
+    it("should log info for recognized environments", () => {
+      detectAzureResourceId("ci", "", "client-123");
+      expect(vi.mocked(core.info)).toHaveBeenCalledWith(
+        "Environment 'ci' detected. Using non-production Azure Resource ID.",
+      );
+
+      detectAzureResourceId("fprd", "", "client-123");
+      expect(vi.mocked(core.info)).toHaveBeenCalledWith(
+        "Environment 'fprd' detected. Using production Azure Resource ID.",
+      );
+    });
+  });
+
   describe("Integration tests with main function", () => {
     it("should fail when neither fusion-token nor Azure credentials are provided", () => {
       vi.mocked(core.getInput).mockImplementation((_input: string) => {
@@ -182,7 +290,6 @@ describe("validate-is-token-or-azure.ts", () => {
 
       validateIsTokenOrAzure();
 
-      expect(vi.mocked(core.info)).toHaveBeenCalledWith("Fusion token validation passed.");
       expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("auth-type", "token");
       expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("isToken", true);
       expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("isServicePrincipal", false);

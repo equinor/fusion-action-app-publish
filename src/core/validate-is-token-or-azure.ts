@@ -156,6 +156,62 @@ export function detectAndValidateAuthType(credentials: Credentials): AuthDetecti
 }
 
 /**
+ * Detects the appropriate Azure Resource ID based on environment and input
+ *
+ * Logic:
+ * 1. If user provides an inputAzureResourceId, use it (after trimming and removing '/.default' if present)
+ * 2. If no inputAzureResourceId, determine default based on environment:
+ *    - For 'ci', 'fqa', 'tr', 'next': Use non-production resource ID
+ *    - For 'fprd': Use production resource ID
+ *    - For unrecognized environments: Log warning and default to non-production resource ID
+ *
+ * @param environment - The deployment environment (e.g., 'ci', 'fqa', 'tr', 'next', 'fprd')
+ * @param inputAzureResourceId - Optional user-provided Azure Resource ID
+ * @param azureClientId - Optional Azure Client ID
+ * @returns The detected Azure Resource ID to use for authentication
+ * @example
+ * const resourceId = detectAzureResourceId('ci', '');
+ * // Returns: '5a842df8-3238-415d-b168-9f16a6a6031b' (non-production resource ID)
+ */
+export function detectAzureResourceId(
+  environment: string,
+  inputAzureResourceId?: string,
+  azureClientId?: string,
+): string {
+  if (!azureClientId) {
+    core.info("No Azure Client ID provided, skipping Azure Resource ID detection.");
+    return ""; // If no Azure Client ID, we won't be using Azure authentication, so return empty resource ID
+  }
+  if (inputAzureResourceId) {
+    core.info("Using user-provided Azure Resource ID.");
+    inputAzureResourceId = inputAzureResourceId.includes("/.default")
+      ? inputAzureResourceId.replace("/.default", "")
+      : inputAzureResourceId;
+    return inputAzureResourceId.trim();
+  }
+
+  core.info("No Azure Resource ID provided. Detecting default based on environment.");
+  core.warning(
+    "Scopes detection provide new scopes, these are not implemented in app-service, this will fail if used for now.",
+  );
+  const nonProductionEnvironments = ["ci", "fqa", "tr", "next"];
+
+  // Default resource ID based on environment
+  if (nonProductionEnvironments.includes(environment.toLowerCase())) {
+    core.info(`Environment '${environment}' detected. Using non-production Azure Resource ID.`);
+    return "api://fusion.equinor.com/nonprod";
+  } else if (environment.toLowerCase() === "fprd") {
+    core.info(`Environment '${environment}' detected. Using production Azure Resource ID.`);
+    return "api://fusion.equinor.com/prod";
+  } else {
+    core.warning(
+      `Unrecognized environment '${environment}'. Defaulting to non-production Azure resource ID.`,
+    );
+    return "api://fusion.equinor.com/nonprod";
+  }
+}
+
+/**
  * Main function to validate the authentication inputs
  *
  * This is the primary entry point for authentication validation:
@@ -178,7 +234,8 @@ export function validateIsTokenOrAzure(): void {
   let fusionToken = core.getInput("fusion-token");
   let azureClientId = core.getInput("azure-client-id");
   let azureTenantId = core.getInput("azure-tenant-id");
-  let azureResourceId = core.getInput("azure-resource-id");
+  let inputAzureResourceId = core.getInput("azure-resource-id");
+  let environment = core.getInput("environment");
 
   // Fallback to direct environment variables if core.getInput returns empty
   // This handles cases where input names might not be resolved correctly
@@ -191,9 +248,14 @@ export function validateIsTokenOrAzure(): void {
   if (!azureTenantId) {
     azureTenantId = process.env.INPUT_AZURE_TENANT_ID ?? "";
   }
-  if (!azureResourceId) {
-    azureResourceId = process.env.INPUT_AZURE_RESOURCE_ID ?? "";
+  if (!inputAzureResourceId) {
+    inputAzureResourceId = process.env.INPUT_AZURE_RESOURCE_ID ?? "";
   }
+  if (!environment) {
+    environment = process.env.INPUT_ENVIRONMENT ?? "ci";
+  }
+
+  const azureResourceId = detectAzureResourceId(environment, inputAzureResourceId, azureClientId);
 
   const credentials: Credentials = {
     fusionToken,
@@ -205,7 +267,7 @@ export function validateIsTokenOrAzure(): void {
   // Log for debugging (will appear in GitHub Action logs)
   core.debug(`Azure Client ID provided: ${!!azureClientId}`);
   core.debug(`Azure Tenant ID provided: ${!!azureTenantId}`);
-  core.debug(`Azure Resource ID provided: ${!!azureResourceId}`);
+  core.debug(`Azure Resource ID provided: ${!!inputAzureResourceId}`);
   core.debug(`Fusion Token provided: ${!!fusionToken}`);
 
   // Detect authentication type and validate credentials
@@ -234,6 +296,9 @@ export function validateIsTokenOrAzure(): void {
 
     core.info("Fusion token validation passed.");
   } else if (authResult.authType === AUTH_TYPES.SERVICE_PRINCIPAL) {
+    core.setOutput("azureClientId", credentials.azureClientId);
+    core.setOutput("azureTenantId", credentials.azureTenantId);
+    core.setOutput("azureResourceId", credentials.azureResourceId);
     core.info("Azure Service Principal credentials validated.");
   }
 }

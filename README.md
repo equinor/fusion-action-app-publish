@@ -1,6 +1,30 @@
 # Fusion App Publish Action
 
-A GitHub Action to authenticate and publish Fusion applications using the `@equinor/fusion-framework-cli`. This action supports both direct token authentication and Azure Service Principal authentication.
+[![SCM Compliance](https://scm-compliance-api.radix.equinor.com/repos/equinor/f16ab4de-c7a6-4487-8a9e-79ba443dd2f0/badge)](https://developer.equinor.com/governance/scm-policy/)
+
+**Automate the deployment of Fusion applications** to Equinor's Fusion platform using a standardized, secure workflow within GitHub Actions.
+
+## Why This Action Exists
+
+This action exists to **make it dead simple for Equinor developers to publish their Fusion applications** without wrestling with complex CLI commands, authentication setup, or deployment configurations. 
+
+**The Problem:** Publishing Fusion apps traditionally required developers to manually handle authentication tokens, remember CLI syntax, manage environment configurations, and track deployment status across multiple tools.
+
+**The Solution:** A single GitHub Action that handles all the orchestration behind the scenes while maintaining enterprise security standards.
+
+### What It Does For You
+
+🔐 **Handles Authentication Complexity** - Whether you have a pre-acquired token or need Azure Service Principal authentication, it just works
+
+🚀 **Eliminates Manual Steps** - No more remembering `@equinor/fusion-framework-cli` commands or debugging deployment issues
+
+🌍 **Manages Multi-Environment Deployments** - Automatically deploys to the right environment (`ci`, `tr`, `fprd`, `fqa`, `next`) with smart PR preview handling
+
+🔍 **Provides Rich Feedback** - Posts deployment details, app URLs, and metadata directly to your PRs
+
+🏢 **Meets Enterprise Standards** - Built for Equinor's Azure infrastructure with full security compliance
+
+*Think of it as your "deploy button" for Fusion apps - one action that handles everything from authentication to deployment feedback.*
 
 ## Features
 
@@ -13,6 +37,19 @@ A GitHub Action to authenticate and publish Fusion applications using the `@equi
 - 🧪 **Fully Tested**: 100% test coverage with comprehensive unit tests
 - 🔍 **Detailed Logging**: Clear output and error messages for debugging
 - 📝 **Rich Metadata**: Extracts app information from metadata.json (name -> appKey) and posts deployment details to PRs
+
+## 📖 Complete Use Cases Guide
+
+**👉 For comprehensive examples and deployment patterns, see our [Complete Use Cases Guide](docs/COMPLETE_USE_CASES.md)**
+
+This guide covers 9+ detailed scenarios including:
+- 🚀 **Basic to Enterprise deployment pipelines**
+- 🔐 **Azure Service Principal with GitHub Environments**  
+- 🔄 **Pull Request previews and multi-environment workflows**
+- 🏢 **Monorepo deployments and custom configurations**
+- 🐛 **Debugging and troubleshooting workflows**
+
+*Whether you're getting started or implementing enterprise-grade deployments, the complete guide has copy-paste ready examples for your use case.*
 
 ## Usage
 
@@ -112,6 +149,7 @@ jobs:
 | `env` | Target environment (ci/tr/fprd/fqa/next) | No | `ci` |
 | `prNR` | Pull Request number (used with env=ci) | No | - |
 | `artifact` | Path to built artifact file (.zip) | No | `./app-bundle.zip` |
+| `config` | Path to fusion app config file (optional) | No | - |
 | `tag` | Tag to apply to the deployment | No | `latest` |
 | `working-directory` | Working directory for commands | No | `.` |
 
@@ -245,30 +283,93 @@ The `name` field will be used as the app key for deployment.
 - Ensure the build step runs before publish
 - Check that `artifact` path is correct
 - Verify `working-directory` is set properly
+- Use absolute paths or verify relative paths from working directory
 
 **"Invalid environment"**
 - Use one of: ci, tr, fprd, fqa, next
 - Check spelling and case sensitivity
+- Environment names are case-sensitive
 
 **"Missing authentication credentials"**
 - Provide either `fusion-token` OR all SP credentials
 - Don't provide both authentication methods
+- Ensure all required Azure credentials are set (client-id, tenant-id, resource-id)
 
 **"Token seems unusually short"**
 - Verify your Fusion token is complete and valid
 - Check token hasn't expired
+- Ensure token includes "BEARER_" prefix
+
+**"Manifest file not found"**
+- Ensure `app-manifest.json` exists in your bundle
+- Check bundle structure matches requirements
+- Verify file names are correct (case-sensitive)
+
+**"Metadata file not found"**
+- Ensure `metadata.json` exists in your bundle
+- Check JSON syntax is valid
+- Verify required fields (name, version) are present
+
+**"Config file validation failed"**
+- Ensure config file exists at specified path
+- Verify config file contains valid JSON
+- Check file permissions
+
+**"Bundle extraction failed"**
+- Verify zip file is not corrupted
+- Check zip file contains required structure
+- Ensure bundle was created properly by your build process
 
 ### Debug Mode
 
 Add debug output to your workflow:
 
 ```yaml
-- name: Debug info
+- name: Debug Bundle Info
   run: |
     echo "Environment: ${{ inputs.env }}"
     echo "Artifact path: ${{ inputs.artifact }}"
+    echo "Working directory: $(pwd)"
     ls -la ${{ inputs.artifact }}
+    
+    # Check bundle contents
+    if [[ "${{ inputs.artifact }}" == *.zip ]]; then
+      echo "Bundle contents:"
+      unzip -l ${{ inputs.artifact }}
+      
+      # Check for required files
+      echo "Checking for required files:"
+      unzip -l ${{ inputs.artifact }} | grep -E "(metadata\.json|app-manifest\.json)" || echo "⚠️  Required files missing"
+    fi
+
+- name: Validate Bundle Structure
+  run: |
+    # Extract and validate metadata.json
+    unzip -p ${{ inputs.artifact }} metadata.json > /tmp/metadata.json 2>/dev/null || echo "❌ metadata.json missing"
+    if [[ -f /tmp/metadata.json ]]; then
+      echo "✅ metadata.json found:"
+      cat /tmp/metadata.json | jq .
+    fi
+    
+    # Extract and validate app-manifest.json
+    unzip -p ${{ inputs.artifact }} app-manifest.json > /tmp/manifest.json 2>/dev/null || echo "❌ app-manifest.json missing"
+    if [[ -f /tmp/manifest.json ]]; then
+      echo "✅ app-manifest.json found:"
+      cat /tmp/manifest.json | jq .
+    fi
 ```
+
+### Error Codes Reference
+
+| Error | Meaning | Solution |
+|-------|---------|----------|
+| `ENOENT` | File or directory not found | Check paths and ensure files exist |
+| `EACCES` | Permission denied | Check file permissions |
+| `Invalid JSON` | JSON parsing failed | Validate JSON syntax in metadata/config files |
+| `Missing appKey` | app-manifest.json missing required field | Add appKey to manifest |
+| `Missing name/version` | metadata.json missing required fields | Add name and version to metadata |
+| `Auth validation failed` | Authentication credentials invalid | Check token format or SP credentials |
+| `Unsupported environment` | Environment not in allowed list | Use: ci, tr, fprd, fqa, or next |
 
 ## Development
 
