@@ -1,5 +1,7 @@
 # Fusion App Publish Action
 
+[![SCM Compliance](https://scm-compliance-api.radix.equinor.com/repos/equinor/f16ab4de-c7a6-4487-8a9e-79ba443dd2f0/badge)](https://developer.equinor.com/governance/scm-policy/)
+
 **Automate the deployment of Fusion applications** to Equinor's Fusion platform using a standardized, secure workflow within GitHub Actions.
 
 ## Why This Action Exists
