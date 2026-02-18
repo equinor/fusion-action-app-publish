@@ -6,9 +6,12 @@
  * - Validating inputs (artifact, environment, authentication)
  * - Extracting and processing application metadata
  * - Posting deployment information to GitHub PRs
+ * - Bundle processing and configuration validation
  */
 
 export { checkMetaComment } from "./core/check-meta-comment";
+export { loadManifest } from "./core/extract-manifest";
+export { loadMetadata } from "./core/extract-metadata";
 export {
   extractAppMetadata,
   generateAppUrl,
@@ -16,6 +19,7 @@ export {
   postPublishMetadata,
 } from "./core/post-publish-metadata";
 export { validateArtifact } from "./core/validate-artifact";
+export { validateConfigAndManifest } from "./core/validate-config-and-manifest";
 export { validateEnv } from "./core/validate-env";
 export {
   AUTH_TYPES,

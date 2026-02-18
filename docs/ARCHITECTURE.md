@@ -18,26 +18,34 @@ graph TD
     C["Artifact Validation<br/>validateArtifact()"]
     D["Environment Validation<br/>validateEnv()"]
     E["Auth Validation<br/>validateIsTokenOrAzure()"]
-    F["Metadata & Publishing<br/>(src/core/post-publish-metadata.ts)"]
-    G["Extract Metadata<br/>extractAppMetadata()"]
-    H["Generate URLs<br/>generateAppUrl()"]
-    I["Post PR Comment<br/>postPrComment()"]
-    J["Check Meta Comment<br/>checkMetaComment()"]
-    K["fusion-framework-cli<br/>(External tool)<br/>Performs publishing"]
+    F["Configuration Validation<br/>validateConfigAndManifest()"]
+    G["Bundle Processing Layer<br/>(src/core/extract-*.ts)"]
+    H["Extract Manifest<br/>loadManifest()"]
+    I["Extract Metadata<br/>loadMetadata()"]
+    J["Metadata & Publishing<br/>(src/core/post-publish-metadata.ts)"]
+    K["Extract App Metadata<br/>extractAppMetadata()"]
+    L["Generate URLs<br/>generateAppUrl()"]
+    M["Post PR Comment<br/>postPrComment()"]
+    N["Check Meta Comment<br/>checkMetaComment()"]
+    O["fusion-framework-cli<br/>(External tool)<br/>Performs publishing"]
     
     A --> B
     B --> C
     B --> D
     B --> E
-    C --> F
-    D --> F
-    E --> F
+    B --> F
+    C --> G
     F --> G
     G --> H
-    H --> I
+    G --> I
     H --> J
-    I --> K
+    I --> J
     J --> K
+    K --> L
+    L --> M
+    L --> N
+    M --> O
+    N --> O
 ```
 
 ## Module Structure
@@ -48,10 +56,15 @@ graph TD
 Exports the public API of the library. All validation and publishing functions are re-exported here for clean module access.
 
 ```typescript
+export { checkMetaComment };
+export { loadManifest };
+export { loadMetadata };
+export { extractAppMetadata, generateAppUrl, postPrComment, postPublishMetadata };
 export { validateArtifact };
+export { validateConfigAndManifest };  
 export { validateEnv };
 export { validateIsTokenOrAzure };
-export { extractAppMetadata, generateAppUrl, postPrComment };
+export * from "./types";
 ```
 
 ### `/src/core/` - Core Business Logic
@@ -198,6 +211,129 @@ Prevents duplicate PR comments when action runs multiple times:
 - Reads environment: `GITHUB_TOKEN`, workflow context
 - Reads inputs: `tag` (for PR number fallback)
 - Sets output: `exists` ('true' or 'false')
+
+---
+
+#### `extract-manifest.ts`
+**Application Manifest Extraction**
+
+Extracts and loads the `app-manifest.json` file from Fusion application bundles. The manifest contains essential deployment configuration including the `appKey` used for identifying and configuring the application in the Fusion platform.
+
+**Key Functions:**
+- `loadManifest(bundle: AdmZip): Promise<Manifest>`
+  - Reads `app-manifest.json` from zip bundle using AdmZip
+  - Parses JSON and validates structure
+  - Returns manifest object with `appKey` and other configuration
+  - Throws error if manifest file is missing or malformed
+
+**Integration Notes:**
+- **Now Exported**: Available as public API from main index.ts
+- Used by publishing pipeline for deployment configuration  
+- Performant: Direct zip reading without temporary file extraction
+- Essential for proper Fusion app registration and routing
+- **Library Usage**: `import { loadManifest } from '@equinor/fusion-action-app-publish'`
+
+**Bundle Structure Requirements:**
+```
+app-bundle.zip
+├── app-manifest.json     # Required: App configuration
+├── metadata.json         # Required: App metadata  
+└── ...                  # Other app files
+```
+
+**Manifest Type Definition:**
+```typescript
+type Manifest = {
+  appKey: string;           // Required: Unique app identifier
+} & Record<string, unknown>; // Additional configuration properties
+```
+
+---
+
+#### `extract-metadata.ts`
+**Application Metadata Extraction**
+
+Extracts application metadata (name, version, appKey) from the `metadata.json` file within Fusion application bundles. This metadata is used for deployment tracking, URL generation, and PR comment information.
+
+**Key Functions:**
+- `loadMetadata(bundle: AdmZip): Promise<BundleMetadata>`
+  - Reads `metadata.json` from zip bundle using AdmZip
+  - Parses JSON and extracts name, version fields
+  - Maps name to appKey for URL generation
+  - Throws error if metadata file missing or lacks required fields
+
+**Integration Notes:**
+- **Now Exported**: Available as public API from main index.ts
+- Core dependency for `extractAppMetadata()` in post-publish-metadata.ts
+- Used for generating deployment URLs and tracking information
+- Direct zip access prevents temporary file creation
+- **Library Usage**: `import { loadMetadata } from '@equinor/fusion-action-app-publish'`
+
+**Metadata Type Definition:**
+```typescript
+type BundleMetadata = {
+  appKey: string;   // Mapped from name field
+  name: string;     // Required: Application name
+  version: string;  // Required: Semantic version
+};
+```
+
+**Expected metadata.json Structure:**
+```json
+{
+  "name": "my-fusion-app",     
+  "version": "1.2.3",          
+  "description": "App description (optional)"
+}
+```
+
+---
+
+#### `validate-config-and-manifest.ts`
+**Local Configuration File Validation**
+
+Validates the existence and structure of local configuration files, including both the application manifest and optional fusion app config files. This function ensures all required configuration files are present and contain valid JSON before deployment.
+
+**Key Functions:**
+- `validateConfigAndManifest(): Promise<void>`
+  - Validates `./app.manifest.json` exists and contains valid JSON
+  - Validates optional config file (from `INPUT_CONFIG` environment variable) if provided
+  - Logs validation success messages using `core.info()`
+  - Throws descriptive errors if files missing or JSON invalid
+
+**Validation Flow:**
+1. **Manifest Validation**
+   - Checks `./app.manifest.json` exists in current working directory
+   - Validates JSON parsing without syntax errors
+   - Logs success message for valid files
+
+2. **Config File Validation** (optional)
+   - Checks config file path from `config` input parameter
+   - Validates file exists and contains parseable JSON
+   - Skips validation if no config file specified
+
+**Integration Notes:**
+- **Now Exported**: Available as public API from main index.ts  
+- Runs early in deployment pipeline before bundle processing
+- Provides fast-fail validation for malformed configuration files
+- Uses GitHub Actions core logging for user feedback
+- **Library Usage**: `import { validateConfigAndManifest } from '@equinor/fusion-action-app-publish'`
+
+**Environment Dependencies:**
+- `INPUT_CONFIG`: Path to optional config file (from action inputs)
+- `process.cwd()`: Current working directory for manifest file lookup
+
+**Error Handling:**
+```typescript
+// Manifest file missing
+throw new Error(`Manifest file not found: ${path.join(cwd, manifestFile)}`);
+
+// Invalid JSON syntax  
+throw new Error(`Manifest file is not valid JSON: ${error.message}`);
+
+// Config file missing (when specified)
+throw new Error(`Config file not found: ${configPath}`);
+```
 
 ---
 
