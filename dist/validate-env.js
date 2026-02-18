@@ -6,6 +6,10 @@ function validateEnv() {
   const prNR = coreExports.getInput("prNR");
   const env = coreExports.getInput("env");
   const tag = coreExports.getInput("tag");
+  if (prNR && env) {
+    coreExports.setFailed("Inputs 'prNR' and 'env' cannot be used together.");
+    return;
+  }
   if (prNR) {
     coreExports.info(`prNR provided: ${prNR}`);
     coreExports.setOutput("tag", `${PR_TAG_PREFIX}${prNR}`);

@@ -41,4 +41,7 @@ async function validateConfigAndManifest() {
   }
 }
 validateConfigAndManifest();
+export {
+  validateConfigAndManifest
+};
 //# sourceMappingURL=validate-config-and-manifest.js.map
