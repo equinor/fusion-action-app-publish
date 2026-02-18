@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1
+
+### Patch Changes
+
+- 030891c: remove ci as default input for env
+
 ## 1.1.0
 
 ### Minor Changes
