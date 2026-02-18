@@ -229,19 +229,17 @@ describe("validate-env.ts", () => {
       expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("tag", "v1.2.3-beta");
     });
 
-    it("should prioritize prNR over env/tag validation", () => {
+    it("should fail when prNR and env/tag provided ", () => {
       vi.mocked(core.getInput).mockImplementation((input: string) => {
         if (input === "prNR") return "999";
-        if (input === "env") return "invalid-env"; // This should be ignored
+        if (input === "env") return "ci"; // This should be ignored
         if (input === "tag") return ""; // This should be ignored
         return "";
       });
 
       validateEnv();
 
-      expect(vi.mocked(core.setFailed)).not.toHaveBeenCalled();
-      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("tag", "pr-999");
-      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("env", "ci");
+      expect(vi.mocked(core.setFailed)).toHaveBeenCalled();
     });
   });
 });
