@@ -144,8 +144,8 @@ runs:
       if: steps.validate-auth.outputs.isToken == 'false'
       uses: azure/login@v2
       with:
-        client-id: ${{ steps.validate-auth.outputs.azure-client-id }}
-        tenant-id: ${{ steps.validate-auth.outputs.azure-tenant-id }}
+        client-id: ${{ inputs.azure-client-id }}
+        tenant-id: ${{ inputs.azure-tenant-id }}
         allow-no-subscriptions: true
 
     - name: Acquire token (if SP)
