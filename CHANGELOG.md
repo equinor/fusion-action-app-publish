@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1
+
+### Patch Changes
+
+- 11f7eb2: fix login
+
 ## 1.2.0
 
 ### Minor Changes
