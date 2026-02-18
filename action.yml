@@ -24,7 +24,6 @@ inputs:
 
   env:
     description: 'Target environment (ci/fqa/fprd/tr/next) or "ci" for PR-based selection'
-    default: 'ci'
     required: false
 
   prNR:
