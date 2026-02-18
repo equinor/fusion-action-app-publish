@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.2
+
+### Patch Changes
+
+- 33e3928: fix login again
+
 ## 1.2.1
 
 ### Patch Changes

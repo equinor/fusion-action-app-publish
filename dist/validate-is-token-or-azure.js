@@ -136,6 +136,9 @@ function validateIsTokenOrAzure() {
   coreExports.setOutput("auth-type", authResult.authType);
   coreExports.setOutput("isToken", authResult.authType === AUTH_TYPES.TOKEN);
   coreExports.setOutput("isServicePrincipal", authResult.authType === AUTH_TYPES.SERVICE_PRINCIPAL);
+  coreExports.setOutput("azureClientId", credentials.azureClientId);
+  coreExports.setOutput("azureTenantId", credentials.azureTenantId);
+  coreExports.setOutput("azureResourceId", credentials.azureResourceId);
   if (authResult.authType === AUTH_TYPES.TOKEN) {
     const tokenValidation = validateFusionToken(credentials.fusionToken.trim());
     if (!tokenValidation.isValid) {
