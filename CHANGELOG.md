@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.4
+
+### Patch Changes
+
+- 453dc54: fix working directory for Check Meta Comment step
+
 ## 1.3.3
 
 ### Patch Changes
