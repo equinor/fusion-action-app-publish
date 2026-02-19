@@ -216,12 +216,14 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
 
     - name: Workflow Summary
-      if: steps.check-meta.outputs.exists == 'false'
+      if: always()
       shell: bash
       run: |
-        echo "## 🚀 PR Deployment Published" >> $GITHUB_STEP_SUMMARY
-        echo "The application has been published to the CI environment. It will be tagged as pr-${{ github.event.number }} in Fusion." >> $GITHUB_STEP_SUMMARY
-        echo "View application [here](${{ steps.metadata.outputs.app-url }})" >> $GITHUB_STEP_SUMMARY
+        echo "## 🚀 Application Published" >> $GITHUB_STEP_SUMMARY
+        echo "The application has been published to the ${{ steps.validate-env.outputs.env }} environment." >> $GITHUB_STEP_SUMMARY
+        if [[ "${{ steps.metadata.outputs.app-url }}" != "" ]]; then
+          echo "View application [here](${{ steps.metadata.outputs.app-url }})" >> $GITHUB_STEP_SUMMARY
+        fi
 
 
     - name: Azure Logout (cleanup)
