@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.1
+
+### Patch Changes
+
+- 48a02af: update application URL in workflow summary to use dynamic output
+
 ## 1.3.0
 
 ### Minor Changes
