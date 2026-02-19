@@ -200,6 +200,8 @@ runs:
       run: node ${{ github.action_path }}/dist/check-meta-comment.js
       env:
         INPUT_TAG: ${{ steps.validate-env.outputs.tag }}
+        INPUT_ARTIFACT: ${{ inputs.artifact }}
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
         GITHUB_TOKEN: ${{ github.token }}
 
     - name: Post Publish Metadata

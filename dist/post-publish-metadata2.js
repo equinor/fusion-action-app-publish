@@ -1,8 +1,13 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
+import { r as requireTunnel, b as requireUndici, u as undiciExports, g as getInput, i as info, s as setOutput, a as setFailed, e as error, w as warning } from "./core.js";
 import { existsSync, readFileSync } from "fs";
 import { EOL } from "os";
 import http from "http";
 import https from "https";
-import { r as requireTunnel, b as requireUndici, u as undiciExports } from "./core.js";
+import { A as AdmZip } from "./adm-zip.js";
+import { loadMetadata } from "./extract-metadata.js";
 class Context {
   /**
    * Hydrate the context from the environment
@@ -14,8 +19,8 @@ class Context {
       if (existsSync(process.env.GITHUB_EVENT_PATH)) {
         this.payload = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, { encoding: "utf8" }));
       } else {
-        const path = process.env.GITHUB_EVENT_PATH;
-        process.stdout.write(`GITHUB_EVENT_PATH ${path} does not exist${EOL}`);
+        const path2 = process.env.GITHUB_EVENT_PATH;
+        process.stdout.write(`GITHUB_EVENT_PATH ${path2} does not exist${EOL}`);
       }
     }
     this.eventName = process.env.GITHUB_EVENT_NAME;
@@ -439,12 +444,12 @@ function requireLib() {
           throw new Error("Client has already been disposed.");
         }
         const parsedUrl = new URL(requestUrl);
-        let info = this._prepareRequest(verb, parsedUrl, headers);
+        let info2 = this._prepareRequest(verb, parsedUrl, headers);
         const maxTries = this._allowRetries && RetryableHttpVerbs.includes(verb) ? this._maxRetries + 1 : 1;
         let numTries = 0;
         let response;
         do {
-          response = yield this.requestRaw(info, data);
+          response = yield this.requestRaw(info2, data);
           if (response && response.message && response.message.statusCode === HttpCodes.Unauthorized) {
             let authenticationHandler;
             for (const handler2 of this.handlers) {
@@ -454,7 +459,7 @@ function requireLib() {
               }
             }
             if (authenticationHandler) {
-              return authenticationHandler.handleAuthentication(this, info, data);
+              return authenticationHandler.handleAuthentication(this, info2, data);
             } else {
               return response;
             }
@@ -477,8 +482,8 @@ function requireLib() {
                 }
               }
             }
-            info = this._prepareRequest(verb, parsedRedirectUrl, headers);
-            response = yield this.requestRaw(info, data);
+            info2 = this._prepareRequest(verb, parsedRedirectUrl, headers);
+            response = yield this.requestRaw(info2, data);
             redirectsRemaining--;
           }
           if (!response.message.statusCode || !HttpResponseRetryCodes.includes(response.message.statusCode)) {
@@ -507,7 +512,7 @@ function requireLib() {
      * @param info
      * @param data
      */
-    requestRaw(info, data) {
+    requestRaw(info2, data) {
       return __awaiter2(this, void 0, void 0, function* () {
         return new Promise((resolve, reject) => {
           function callbackForResult(err, res) {
@@ -519,7 +524,7 @@ function requireLib() {
               resolve(res);
             }
           }
-          this.requestRawWithCallback(info, data, callbackForResult);
+          this.requestRawWithCallback(info2, data, callbackForResult);
         });
       });
     }
@@ -529,12 +534,12 @@ function requireLib() {
      * @param data
      * @param onResult
      */
-    requestRawWithCallback(info, data, onResult) {
+    requestRawWithCallback(info2, data, onResult) {
       if (typeof data === "string") {
-        if (!info.options.headers) {
-          info.options.headers = {};
+        if (!info2.options.headers) {
+          info2.options.headers = {};
         }
-        info.options.headers["Content-Length"] = Buffer.byteLength(data, "utf8");
+        info2.options.headers["Content-Length"] = Buffer.byteLength(data, "utf8");
       }
       let callbackCalled = false;
       function handleResult(err, res) {
@@ -543,7 +548,7 @@ function requireLib() {
           onResult(err, res);
         }
       }
-      const req = info.httpModule.request(info.options, (msg) => {
+      const req = info2.httpModule.request(info2.options, (msg) => {
         const res = new HttpClientResponse(msg);
         handleResult(void 0, res);
       });
@@ -555,7 +560,7 @@ function requireLib() {
         if (socket) {
           socket.end();
         }
-        handleResult(new Error(`Request timeout: ${info.options.path}`));
+        handleResult(new Error(`Request timeout: ${info2.options.path}`));
       });
       req.on("error", function(err) {
         handleResult(err);
@@ -591,27 +596,27 @@ function requireLib() {
       return this._getProxyAgentDispatcher(parsedUrl, proxyUrl);
     }
     _prepareRequest(method, requestUrl, headers) {
-      const info = {};
-      info.parsedUrl = requestUrl;
-      const usingSsl = info.parsedUrl.protocol === "https:";
-      info.httpModule = usingSsl ? https$1 : http$1;
+      const info2 = {};
+      info2.parsedUrl = requestUrl;
+      const usingSsl = info2.parsedUrl.protocol === "https:";
+      info2.httpModule = usingSsl ? https$1 : http$1;
       const defaultPort = usingSsl ? 443 : 80;
-      info.options = {};
-      info.options.host = info.parsedUrl.hostname;
-      info.options.port = info.parsedUrl.port ? parseInt(info.parsedUrl.port) : defaultPort;
-      info.options.path = (info.parsedUrl.pathname || "") + (info.parsedUrl.search || "");
-      info.options.method = method;
-      info.options.headers = this._mergeHeaders(headers);
+      info2.options = {};
+      info2.options.host = info2.parsedUrl.hostname;
+      info2.options.port = info2.parsedUrl.port ? parseInt(info2.parsedUrl.port) : defaultPort;
+      info2.options.path = (info2.parsedUrl.pathname || "") + (info2.parsedUrl.search || "");
+      info2.options.method = method;
+      info2.options.headers = this._mergeHeaders(headers);
       if (this.userAgent != null) {
-        info.options.headers["user-agent"] = this.userAgent;
+        info2.options.headers["user-agent"] = this.userAgent;
       }
-      info.options.agent = this._getAgent(info.parsedUrl);
+      info2.options.agent = this._getAgent(info2.parsedUrl);
       if (this.handlers) {
         for (const handler2 of this.handlers) {
-          handler2.prepareRequest(info.options);
+          handler2.prepareRequest(info2.options);
         }
       }
-      return info;
+      return info2;
     }
     _mergeHeaders(headers) {
       if (this.requestOptions && this.requestOptions.headers) {
@@ -929,8 +934,8 @@ function addHook(state, kind, name, hook2) {
   }
   if (kind === "error") {
     hook2 = (method, options) => {
-      return Promise.resolve().then(method.bind(null, options)).catch((error) => {
-        return orig(error, options);
+      return Promise.resolve().then(method.bind(null, options)).catch((error2) => {
+        return orig(error2, options);
       });
     };
   }
@@ -1462,26 +1467,26 @@ async function fetchWrapper(requestOptions) {
       // See https://fetch.spec.whatwg.org/#dom-requestinit-duplex.
       ...requestOptions.body && { duplex: "half" }
     });
-  } catch (error) {
+  } catch (error2) {
     let message = "Unknown Error";
-    if (error instanceof Error) {
-      if (error.name === "AbortError") {
-        error.status = 500;
-        throw error;
+    if (error2 instanceof Error) {
+      if (error2.name === "AbortError") {
+        error2.status = 500;
+        throw error2;
       }
-      message = error.message;
-      if (error.name === "TypeError" && "cause" in error) {
-        if (error.cause instanceof Error) {
-          message = error.cause.message;
-        } else if (typeof error.cause === "string") {
-          message = error.cause;
+      message = error2.message;
+      if (error2.name === "TypeError" && "cause" in error2) {
+        if (error2.cause instanceof Error) {
+          message = error2.cause.message;
+        } else if (typeof error2.cause === "string") {
+          message = error2.cause;
         }
       }
     }
     const requestError = new RequestError(message, 500, {
       request: requestOptions
     });
-    requestError.cause = error;
+    requestError.cause = error2;
     throw requestError;
   }
   const status = fetchResponse.status;
@@ -4353,8 +4358,8 @@ function iterator(octokit, route, parameters) {
             }
           }
           return { value: normalizedResponse };
-        } catch (error) {
-          if (error.status !== 409) throw error;
+        } catch (error2) {
+          if (error2.status !== 409) throw error2;
           url = "";
           return {
             value: {
@@ -4432,8 +4437,123 @@ function getOctokit(token, options, ...additionalPlugins) {
   const GitHubWithPlugins = GitHub.plugin(...additionalPlugins);
   return new GitHubWithPlugins(getOctokitOptions(token));
 }
+async function extractAppMetadata(artifactPath) {
+  try {
+    const artifactExtension = path.extname(artifactPath).toLowerCase();
+    if (artifactExtension !== ".zip") {
+      throw new Error(
+        `Unsupported artifact format: ${artifactExtension}. Only .zip files are supported.`
+      );
+    }
+    const zip = new AdmZip(artifactPath);
+    const metadata = await loadMetadata(zip);
+    const appMetadata = {
+      name: metadata.name,
+      version: metadata.version,
+      key: metadata.appKey || metadata.name
+    };
+    return appMetadata;
+  } catch (error$1) {
+    const message = error$1 instanceof Error ? error$1.message : "Unknown error";
+    error(`Failed to extract app metadata: ${message}`);
+    throw error$1;
+  }
+}
+function generateAppUrl(meta, env, tag) {
+  const appKey = meta.key;
+  if (!appKey) {
+    throw new Error("App key not found in metadata");
+  }
+  const envUrls = {
+    ci: "https://fusion.ci.fusion-dev.net",
+    fqa: "https://fusion.fqa.fusion-dev.net",
+    fprd: "https://fusion.equinor.com",
+    tr: "https://fusion.tr.fusion-dev.net",
+    next: "https://next.fusion.ci.fusion-dev.net"
+  };
+  const baseUrl2 = envUrls[env] || envUrls.fprd;
+  if (!tag.startsWith("latest")) {
+    return `${baseUrl2}/apps/${appKey}?$tag=${tag}`;
+  }
+  return `${baseUrl2}/apps/${appKey}`;
+}
+async function postPrComment(meta, tag, appUrl) {
+  try {
+    const token = process.env.GITHUB_TOKEN;
+    if (!token) {
+      info("GITHUB_TOKEN not available, skipping PR comment");
+      return;
+    }
+    const octokit = getOctokit(token);
+    const context$1 = context;
+    const prNumber = context$1.payload.pull_request?.number || (tag?.startsWith("pr-") ? parseInt(tag.replace("pr-", ""), 10) : null);
+    if (!prNumber) {
+      info("Not a PR deployment, skipping PR comment");
+      return;
+    }
+    const appName = meta.name;
+    const commentBody = `
+### 🚀 ${tag.toLocaleUpperCase()} Deployed
+Preview [${appName}](${appUrl}) in Fusion PR Portal.
+    `;
+    await octokit.rest.issues.createComment({
+      owner: context$1.repo.owner,
+      repo: context$1.repo.repo,
+      issue_number: prNumber,
+      body: commentBody
+    });
+    info(`Posted deployment comment to PR #${prNumber}`);
+  } catch (error2) {
+    const message = error2 instanceof Error ? error2.message : "Unknown error";
+    warning(`Failed to post PR comment: ${message}`);
+  }
+}
+async function postPublishMetadata() {
+  try {
+    const artifact = getInput("artifact");
+    const env = getInput("env");
+    const tag = getInput("tag");
+    const workingDirectory = getInput("working-directory") || ".";
+    info(`Processing artifact: ${artifact}`);
+    info(`Environment: ${env}`);
+    info(`Tag: ${tag}`);
+    const artifactPath = path.resolve(workingDirectory, artifact);
+    if (!fs.existsSync(artifactPath)) {
+      throw new Error(`Artifact not found: ${artifactPath}`);
+    }
+    const meta = await extractAppMetadata(artifactPath);
+    const appName = meta.name;
+    const appVersion = meta.version || "unknown";
+    const appKey = meta.key;
+    info(`App Name: ${appName}`);
+    info(`App Version: ${appVersion}`);
+    info(`App Key: ${appKey}`);
+    const appUrl = generateAppUrl(meta, env, tag);
+    info(`App URL: ${appUrl}`);
+    setOutput("app-name", appName);
+    setOutput("app-version", appVersion);
+    setOutput("app-key", appKey);
+    setOutput("app-url", appUrl);
+    const publishInfo = `🚀 **${appName}** v${appVersion} deployed to **${env.toUpperCase()}**
+[Open Application](${appUrl})`;
+    setOutput("publish-info", publishInfo);
+    await postPrComment(meta, tag, appUrl);
+    info("Post-publish metadata processing completed successfully");
+  } catch (error2) {
+    const message = error2 instanceof Error ? error2.message : "Unknown error";
+    setFailed(`Post-publish metadata failed: ${message}`);
+  }
+}
+const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectExecution) {
+  postPublishMetadata();
+}
 export {
+  generateAppUrl as a,
+  postPublishMetadata as b,
   context as c,
-  getOctokit as g
+  extractAppMetadata as e,
+  getOctokit as g,
+  postPrComment as p
 };
-//# sourceMappingURL=github.js.map
+//# sourceMappingURL=post-publish-metadata2.js.map

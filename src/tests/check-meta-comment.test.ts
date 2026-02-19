@@ -20,8 +20,22 @@ vi.mock("@actions/github", () => ({
   },
 }));
 
+vi.mock("node:fs", () => ({
+  existsSync: vi.fn().mockReturnValue(true),
+}));
+
+vi.mock("../core/post-publish-metadata", () => ({
+  extractAppMetadata: vi.fn().mockResolvedValue({
+    name: "test-app",
+    version: "1.0.0",
+    key: "test-app",
+  }),
+}));
+
 import * as core from "@actions/core";
 import * as github from "@actions/github";
+import * as fs from "node:fs";
+import { extractAppMetadata } from "../core/post-publish-metadata";
 
 describe("check-meta-comment.ts", () => {
   beforeEach(() => {
@@ -117,7 +131,7 @@ describe("check-meta-comment.ts", () => {
         { id: 1, body: "Some comment" },
         {
           id: 2,
-          body: "### 🚀 LATEST Deployed\nPreview [application](https://example.com) in Fusion PR Portal.",
+          body: "### 🚀 LATEST Deployed\ntest-app preview [application](https://example.com) in Fusion PR Portal.",
         },
       ];
 

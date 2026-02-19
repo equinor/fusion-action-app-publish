@@ -15,11 +15,12 @@
  * - Skip posting if comment already exists
  * - Post fresh comment on first deployment
  */
-
+import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as core from "@actions/core";
 import * as github from "@actions/github";
+import { extractAppMetadata } from "./post-publish-metadata";
 
 /**
  * Checks if a meta comment already exists on the PR
@@ -47,15 +48,28 @@ import * as github from "@actions/github";
  * }
  */
 export async function checkMetaComment(): Promise<boolean> {
+  
   try {
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
       core.info("GITHUB_TOKEN not available");
       return false;
     }
-
+    
     const context = github.context;
     const tag = core.getInput("tag");
+     const artifact = core.getInput("artifact");
+     const workingDirectory = core.getInput("working-directory") || ".";
+   // Resolve artifact path
+    const artifactPath = path.resolve(workingDirectory, artifact);
+
+    if (!fs.existsSync(artifactPath)) {
+      throw new Error(`Artifact not found: ${artifactPath}`);
+    }
+
+    // Extract app metadata from artifact
+    const meta = await extractAppMetadata(artifactPath);
+      const appName = meta.name;
 
     // Extract PR number from context or tag
     const prNumber =
@@ -77,7 +91,7 @@ export async function checkMetaComment(): Promise<boolean> {
       });
 
       const exists = comments.data.some((comment) =>
-        comment.body?.includes(`### 🚀 ${tag.toLocaleUpperCase()} Deployed`),
+        comment.body?.includes(`### 🚀 ${tag.toLocaleUpperCase()} Deployed`) && comment.body?.includes(appName),
       );
 
       if (exists) {

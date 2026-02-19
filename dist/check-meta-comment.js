@@ -1,7 +1,8 @@
+import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { i as info, g as getInput, s as setOutput, w as warning, a as setFailed } from "./core.js";
-import { c as context, g as getOctokit } from "./github.js";
+import { c as context, e as extractAppMetadata, g as getOctokit } from "./post-publish-metadata2.js";
 async function checkMetaComment() {
   try {
     const token = process.env.GITHUB_TOKEN;
@@ -11,6 +12,14 @@ async function checkMetaComment() {
     }
     const context$1 = context;
     const tag = getInput("tag");
+    const artifact = getInput("artifact");
+    const workingDirectory = getInput("working-directory") || ".";
+    const artifactPath = path.resolve(workingDirectory, artifact);
+    if (!fs.existsSync(artifactPath)) {
+      throw new Error(`Artifact not found: ${artifactPath}`);
+    }
+    const meta = await extractAppMetadata(artifactPath);
+    const appName = meta.name;
     const prNumber = context$1.payload.pull_request?.number || (tag?.startsWith("pr-") ? parseInt(tag.replace("pr-", ""), 10) : null);
     if (!prNumber) {
       info("Not a PR deployment, no meta comment check needed");
@@ -24,7 +33,7 @@ async function checkMetaComment() {
         issue_number: prNumber
       });
       const exists = comments.data.some(
-        (comment) => comment.body?.includes(`### 🚀 ${tag.toLocaleUpperCase()} Deployed`)
+        (comment) => comment.body?.includes(`### 🚀 ${tag.toLocaleUpperCase()} Deployed`) && comment.body?.includes(appName)
       );
       if (exists) {
         info(`Meta comment already exists on PR #${prNumber}, will skip posting`);
