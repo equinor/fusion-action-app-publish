@@ -10,43 +10,8 @@ import { fileURLToPath } from "node:url";
 
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import AdmZip from "adm-zip";
 import type { AppMetadata } from "../types/metadata";
-import { loadMetadata } from "./extract-metadata";
-
-/**
- * Extracts app metadata from the artifact
- * Uses AdmZip library to read the metadata directly from the zip file
- * without extracting to temporary files for better performance and security
- * @param artifactPath - Path to the artifact
- * @returns Parsed app metadata with mapped fields
- */
-export async function extractAppMetadata(artifactPath: string): Promise<AppMetadata> {
-  try {
-    const artifactExtension = path.extname(artifactPath).toLowerCase();
-    if (artifactExtension !== ".zip") {
-      throw new Error(
-        `Unsupported artifact format: ${artifactExtension}. Only .zip files are supported.`,
-      );
-    }
-
-    const zip = new AdmZip(artifactPath);
-    const metadata = await loadMetadata(zip);
-
-    // Map the metadata to AppMetadata format
-    const appMetadata: AppMetadata = {
-      name: metadata.name,
-      version: metadata.version,
-      key: metadata.appKey || metadata.name,
-    };
-
-    return appMetadata;
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    core.error(`Failed to extract app metadata: ${message}`);
-    throw error;
-  }
-}
+import { extractAppMetadata } from "./extract-metadata";
 
 /**
  * Generates application URL based on environment and app info

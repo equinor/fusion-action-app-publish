@@ -7,6 +7,7 @@ vi.mock("@actions/core", () => ({
   info: vi.fn(),
   setOutput: vi.fn(),
   warning: vi.fn(),
+  error: vi.fn(),
 }));
 
 vi.mock("@actions/github", () => ({
@@ -24,7 +25,7 @@ vi.mock("node:fs", () => ({
   existsSync: vi.fn().mockReturnValue(true),
 }));
 
-vi.mock("../core/post-publish-metadata", () => ({
+vi.mock("../core/extract-metadata", () => ({
   extractAppMetadata: vi.fn().mockResolvedValue({
     name: "test-app",
     version: "1.0.0",
@@ -32,10 +33,8 @@ vi.mock("../core/post-publish-metadata", () => ({
   }),
 }));
 
-import * as fs from "node:fs";
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import { extractAppMetadata } from "../core/post-publish-metadata";
 
 describe("check-meta-comment.ts", () => {
   beforeEach(() => {
@@ -45,7 +44,18 @@ describe("check-meta-comment.ts", () => {
 
   describe("Token validation", () => {
     it("should return false when GITHUB_TOKEN is not available", async () => {
-      vi.mocked(core.getInput).mockReturnValue("latest");
+      vi.mocked(core.getInput).mockImplementation((name: string) => {
+        switch (name) {
+          case "tag":
+            return "latest";
+          case "artifact":
+            return "test-app.zip";
+          case "working-directory":
+            return ".";
+          default:
+            return "";
+        }
+      });
       delete process.env.GITHUB_TOKEN;
 
       const result = await checkMetaComment();
@@ -61,7 +71,18 @@ describe("check-meta-comment.ts", () => {
     });
 
     it("should return false when not a PR deployment (no PR number)", async () => {
-      vi.mocked(core.getInput).mockReturnValue("latest");
+      vi.mocked(core.getInput).mockImplementation((name: string) => {
+        switch (name) {
+          case "tag":
+            return "latest";
+          case "artifact":
+            return "test-app.zip";
+          case "working-directory":
+            return ".";
+          default:
+            return "";
+        }
+      });
       vi.mocked(github.context as any).payload = {};
 
       const result = await checkMetaComment();
@@ -71,7 +92,18 @@ describe("check-meta-comment.ts", () => {
     });
 
     it("should extract PR number from pull_request context", async () => {
-      vi.mocked(core.getInput).mockReturnValue("latest");
+      vi.mocked(core.getInput).mockImplementation((name: string) => {
+        switch (name) {
+          case "tag":
+            return "latest";
+          case "artifact":
+            return "test-app.zip";
+          case "working-directory":
+            return ".";
+          default:
+            return "";
+        }
+      });
       vi.mocked(github.context as any).payload = { pull_request: { number: 42 } };
 
       const mockOctokit = {
@@ -94,7 +126,18 @@ describe("check-meta-comment.ts", () => {
     });
 
     it("should extract PR number from tag when not in context", async () => {
-      vi.mocked(core.getInput).mockReturnValue("pr-123");
+      vi.mocked(core.getInput).mockImplementation((name: string) => {
+        switch (name) {
+          case "tag":
+            return "pr-123";
+          case "artifact":
+            return "test-app.zip";
+          case "working-directory":
+            return ".";
+          default:
+            return "";
+        }
+      });
       vi.mocked(github.context as any).payload = {};
 
       const mockOctokit = {
@@ -120,7 +163,18 @@ describe("check-meta-comment.ts", () => {
   describe("Meta comment detection", () => {
     beforeEach(() => {
       process.env.GITHUB_TOKEN = "fake-token";
-      vi.mocked(core.getInput).mockReturnValue("latest");
+      vi.mocked(core.getInput).mockImplementation((name: string) => {
+        switch (name) {
+          case "tag":
+            return "latest";
+          case "artifact":
+            return "test-app.zip";
+          case "working-directory":
+            return ".";
+          default:
+            return "";
+        }
+      });
       vi.mocked(github.context as any).payload = {
         pull_request: { number: 42 },
       };
@@ -195,7 +249,18 @@ describe("check-meta-comment.ts", () => {
   describe("Error handling", () => {
     beforeEach(() => {
       process.env.GITHUB_TOKEN = "fake-token";
-      vi.mocked(core.getInput).mockReturnValue("latest");
+      vi.mocked(core.getInput).mockImplementation((name: string) => {
+        switch (name) {
+          case "tag":
+            return "latest";
+          case "artifact":
+            return "test-app.zip";
+          case "working-directory":
+            return ".";
+          default:
+            return "";
+        }
+      });
       vi.mocked(github.context as any).payload = {
         pull_request: { number: 42 },
       };

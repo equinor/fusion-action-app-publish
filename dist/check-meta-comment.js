@@ -2,7 +2,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { i as info, g as getInput, s as setOutput, w as warning, a as setFailed } from "./core.js";
-import { c as context, e as extractAppMetadata, g as getOctokit } from "./post-publish-metadata2.js";
+import { c as context, g as getOctokit } from "./github.js";
+import { extractAppMetadata } from "./extract-metadata.js";
 async function checkMetaComment() {
   try {
     const token = process.env.GITHUB_TOKEN;

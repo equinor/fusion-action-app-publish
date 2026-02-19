@@ -8,7 +8,10 @@
  *
  * Throws an error if the metadata.json file is missing or cannot be parsed.
  */
-import type AdmZip from "adm-zip";
+import * as path from "node:path";
+import * as core from "@actions/core";
+import AdmZip from "adm-zip";
+import type { AppMetadata } from "../types";
 
 /**
  * The shape of the metadata loaded from the bundle zip file.
@@ -51,3 +54,37 @@ export const loadMetadata = (bundle: AdmZip): Promise<BundleMetadata> => {
     });
   });
 };
+
+/**
+ * Extracts app metadata from the artifact
+ * Uses AdmZip library to read the metadata directly from the zip file
+ * without extracting to temporary files for better performance and security
+ * @param artifactPath - Path to the artifact
+ * @returns Parsed app metadata with mapped fields
+ */
+export async function extractAppMetadata(artifactPath: string): Promise<AppMetadata> {
+  try {
+    const artifactExtension = path.extname(artifactPath).toLowerCase();
+    if (artifactExtension !== ".zip") {
+      throw new Error(
+        `Unsupported artifact format: ${artifactExtension}. Only .zip files are supported.`,
+      );
+    }
+
+    const zip = new AdmZip(artifactPath);
+    const metadata = await loadMetadata(zip);
+
+    // Map the metadata to AppMetadata format
+    const appMetadata: AppMetadata = {
+      name: metadata.name,
+      version: metadata.version,
+      key: metadata.appKey || metadata.name,
+    };
+
+    return appMetadata;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    core.error(`Failed to extract app metadata: ${message}`);
+    throw error;
+  }
+}

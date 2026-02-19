@@ -83,6 +83,7 @@ vi.mock("adm-zip", () => {
 
 import * as fs from "node:fs";
 import * as core from "@actions/core";
+import * as postMetaPublish from "../core/extract-metadata";
 import * as postPublish from "../core/post-publish-metadata";
 import type { AppMetadata } from "../types";
 
@@ -95,7 +96,7 @@ describe("post-publish-metadata orchestration", () => {
     it("extracts metadata from zip and maps key", async () => {
       setZipMetadata({ name: "my-app", version: "1.0.0", appKey: "my-app" });
 
-      const result = await postPublish.extractAppMetadata("/tmp/app.zip");
+      const result = await postMetaPublish.extractAppMetadata("/tmp/app.zip");
 
       expect(result.name).toBe("my-app");
       expect(result.version).toBe("1.0.0");
@@ -104,15 +105,14 @@ describe("post-publish-metadata orchestration", () => {
     });
 
     it("throws for non-zip artifacts", async () => {
-      await expect(postPublish.extractAppMetadata("/tmp/app.txt")).rejects.toThrow(
+      await expect(postMetaPublish.extractAppMetadata("/tmp/app.txt")).rejects.toThrow(
         "Unsupported artifact format: .txt. Only .zip files are supported.",
       );
     });
 
     it("throws when metadata.json is missing", async () => {
       setZipMetadata(null);
-
-      await expect(postPublish.extractAppMetadata("/tmp/app.zip")).rejects.toThrow(
+      await expect(postMetaPublish.extractAppMetadata("/tmp/app.zip")).rejects.toThrow(
         "Metadata file not found in bundle",
       );
     });
@@ -120,7 +120,7 @@ describe("post-publish-metadata orchestration", () => {
     it("throws when metadata.json is invalid", async () => {
       setZipRawData("not-json");
 
-      await expect(postPublish.extractAppMetadata("/tmp/app.zip")).rejects.toThrow(
+      await expect(postMetaPublish.extractAppMetadata("/tmp/app.zip")).rejects.toThrow(
         "Failed to parse metadata file",
       );
     });

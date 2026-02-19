@@ -20,7 +20,7 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import { extractAppMetadata } from "./post-publish-metadata";
+import { extractAppMetadata } from "./extract-metadata";
 
 /**
  * Checks if a meta comment already exists on the PR
