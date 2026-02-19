@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.3
+
+### Patch Changes
+
+- 385df8c: fix lint
+- 17f3427: Enhance meta comment functionality to extract and use app metadata from artifacts for improved PR comment generation
+
 ## 1.3.2
 
 ### Patch Changes
