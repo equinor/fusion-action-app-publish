@@ -48,19 +48,18 @@ import { extractAppMetadata } from "./post-publish-metadata";
  * }
  */
 export async function checkMetaComment(): Promise<boolean> {
-  
   try {
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
       core.info("GITHUB_TOKEN not available");
       return false;
     }
-    
+
     const context = github.context;
     const tag = core.getInput("tag");
-     const artifact = core.getInput("artifact");
-     const workingDirectory = core.getInput("working-directory") || ".";
-   // Resolve artifact path
+    const artifact = core.getInput("artifact");
+    const workingDirectory = core.getInput("working-directory") || ".";
+    // Resolve artifact path
     const artifactPath = path.resolve(workingDirectory, artifact);
 
     if (!fs.existsSync(artifactPath)) {
@@ -69,7 +68,7 @@ export async function checkMetaComment(): Promise<boolean> {
 
     // Extract app metadata from artifact
     const meta = await extractAppMetadata(artifactPath);
-      const appName = meta.name;
+    const appName = meta.name;
 
     // Extract PR number from context or tag
     const prNumber =
@@ -90,8 +89,10 @@ export async function checkMetaComment(): Promise<boolean> {
         issue_number: prNumber,
       });
 
-      const exists = comments.data.some((comment) =>
-        comment.body?.includes(`### 🚀 ${tag.toLocaleUpperCase()} Deployed`) && comment.body?.includes(appName),
+      const exists = comments.data.some(
+        (comment) =>
+          comment.body?.includes(`### 🚀 ${tag.toLocaleUpperCase()} Deployed`) &&
+          comment.body?.includes(appName),
       );
 
       if (exists) {

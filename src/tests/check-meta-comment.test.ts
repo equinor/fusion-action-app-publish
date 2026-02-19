@@ -32,9 +32,9 @@ vi.mock("../core/post-publish-metadata", () => ({
   }),
 }));
 
+import * as fs from "node:fs";
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import * as fs from "node:fs";
 import { extractAppMetadata } from "../core/post-publish-metadata";
 
 describe("check-meta-comment.ts", () => {
