@@ -136,9 +136,9 @@ function validateIsTokenOrAzure() {
   coreExports.setOutput("auth-type", authResult.authType);
   coreExports.setOutput("isToken", authResult.authType === AUTH_TYPES.TOKEN);
   coreExports.setOutput("isServicePrincipal", authResult.authType === AUTH_TYPES.SERVICE_PRINCIPAL);
-  coreExports.setOutput("azureClientId", credentials.azureClientId);
-  coreExports.setOutput("azureTenantId", credentials.azureTenantId);
-  coreExports.setOutput("azureResourceId", credentials.azureResourceId);
+  coreExports.setOutput("azure-client-id", credentials.azureClientId);
+  coreExports.setOutput("azure-tenant-id", credentials.azureTenantId);
+  coreExports.setOutput("azure-resource-id", credentials.azureResourceId);
   if (authResult.authType === AUTH_TYPES.TOKEN) {
     const tokenValidation = validateFusionToken(credentials.fusionToken.trim());
     if (!tokenValidation.isValid) {
@@ -148,9 +148,9 @@ function validateIsTokenOrAzure() {
     }
     coreExports.info("Fusion token validation passed.");
   } else if (authResult.authType === AUTH_TYPES.SERVICE_PRINCIPAL) {
-    coreExports.setOutput("azureClientId", credentials.azureClientId);
-    coreExports.setOutput("azureTenantId", credentials.azureTenantId);
-    coreExports.setOutput("azureResourceId", credentials.azureResourceId);
+    coreExports.setOutput("azure-client-id", credentials.azureClientId);
+    coreExports.setOutput("azure-tenant-id", credentials.azureTenantId);
+    coreExports.setOutput("azure-resource-id", credentials.azureResourceId);
     coreExports.info("Azure Service Principal credentials validated.");
   }
 }

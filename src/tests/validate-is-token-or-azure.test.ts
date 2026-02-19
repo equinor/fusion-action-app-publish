@@ -350,5 +350,25 @@ describe("validate-is-token-or-azure.ts", () => {
       delete process.env.INPUT_AZURE_TENANT_ID;
       delete process.env.INPUT_AZURE_RESOURCE_ID;
     });
+
+    it("should set Azure credential outputs with kebab-case names for Service Principal auth", () => {
+      vi.mocked(core.getInput).mockImplementation((input: string) => {
+        if (input === "azure-client-id") return "client-123";
+        if (input === "azure-tenant-id") return "tenant-456";
+        if (input === "azure-resource-id") return "resource-789";
+        if (input === "environment") return "ci";
+        return "";
+      });
+
+      validateIsTokenOrAzure();
+
+      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("auth-type", "service-principal");
+      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("isToken", false);
+      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("isServicePrincipal", true);
+      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("azure-client-id", "client-123");
+      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("azure-tenant-id", "tenant-456");
+      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("azure-resource-id", "resource-789");
+      expect(vi.mocked(core.setFailed)).not.toHaveBeenCalled();
+    });
   });
 });

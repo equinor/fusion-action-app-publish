@@ -145,7 +145,7 @@ jobs:
 | `fusion-token` | Pre-acquired Fusion bearer token | No | - |
 | `azure-client-id` | Azure Service Principal Client ID | No | - |
 | `azure-tenant-id` | Azure Tenant ID | No | - |
-| `azure-resource-id` | Fusion audience/resource ID for token acquisition | No | - |
+| `azure-resource-id` | Fusion audience/resource ID for token acquisition (auto-detected if not provided) | No | - |
 | `env` | Target environment (ci/tr/fprd/fqa/next) | No | `ci` |
 | `prNR` | Pull Request number (used with env=ci) | No | - |
 | `artifact` | Path to built artifact file (.zip) | No | `./app-bundle.zip` |
@@ -164,8 +164,8 @@ jobs:
 | `app-version` | Application version from metadata |
 | `publish-info` | Formatted publish information for PR comments |
 | `auth-type` | Authentication type used (`token` or `service-principal`) |
-| `is-token` | Whether fusion-token authentication was used |
-| `is-service-principal` | Whether Azure Service Principal authentication was used |
+| `is-token` | Whether fusion-token authentication was used (boolean) |
+| `is-service-principal` | Whether Azure Service Principal authentication was used (boolean) |
 
 ## Authentication Methods
 
@@ -217,6 +217,29 @@ permissions:
 
 **Authentication Priority**: When both authentication methods are provided, the action prioritizes Azure Service Principal authentication over tokens. This allows for future extensibility and consistent behavior.
 
+## Azure Resource ID Detection
+
+The action now **automatically detects the appropriate Azure Resource ID** based on the target environment when not explicitly provided:
+
+- **Non-production environments** (`ci`, `fqa`, `tr`, `next`): Uses `api://fusion.equinor.com/nonprod`
+- **Production environment** (`fprd`): Uses `api://fusion.equinor.com/prod`
+- **Unknown environments**: Defaults to non-production resource ID with a warning
+
+### Manual Override
+
+You can still explicitly specify the Azure Resource ID if needed:
+
+```yaml
+- uses: equinor/fusion-action-app-publish@v1
+  with:
+    azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+    azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+    azure-resource-id: "custom-resource-id"  # Override auto-detection
+    env: 'fprd'
+```
+
+**Note**: The auto-detection feature provides new scope patterns that are not yet implemented in the app-service backend. This functionality is prepared for future service updates.
+
 ## Environment Setup
 
 ### Required Secrets
@@ -246,6 +269,8 @@ The action validates against these environments:
 - `next` - Next/Beta environment
 
 When using `env: 'ci'` with a `prNR`, the action automatically creates preview deployments tagged as `pr-{number}`.
+
+
 
 ## Artifact Requirements
 

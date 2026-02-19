@@ -281,11 +281,11 @@ export function validateIsTokenOrAzure(): void {
 
   // Set outputs for authentication type information
   core.setOutput("auth-type", authResult.authType);
-  core.setOutput("isToken", authResult.authType === AUTH_TYPES.TOKEN);
-  core.setOutput("isServicePrincipal", authResult.authType === AUTH_TYPES.SERVICE_PRINCIPAL);
-  core.setOutput("azureClientId", credentials.azureClientId);
-  core.setOutput("azureTenantId", credentials.azureTenantId);
-  core.setOutput("azureResourceId", credentials.azureResourceId);
+  core.setOutput("is-token", authResult.authType === AUTH_TYPES.TOKEN);
+  core.setOutput("is-service-principal", authResult.authType === AUTH_TYPES.SERVICE_PRINCIPAL);
+  core.setOutput("azure-client-id", credentials.azureClientId);
+  core.setOutput("azure-tenant-id", credentials.azureTenantId);
+  core.setOutput("azure-resource-id", credentials.azureResourceId);
 
   // If using token authentication, validate the token format
   if (authResult.authType === AUTH_TYPES.TOKEN) {
@@ -299,9 +299,9 @@ export function validateIsTokenOrAzure(): void {
 
     core.info("Fusion token validation passed.");
   } else if (authResult.authType === AUTH_TYPES.SERVICE_PRINCIPAL) {
-    core.setOutput("azureClientId", credentials.azureClientId);
-    core.setOutput("azureTenantId", credentials.azureTenantId);
-    core.setOutput("azureResourceId", credentials.azureResourceId);
+    core.setOutput("azure-client-id", credentials.azureClientId);
+    core.setOutput("azure-tenant-id", credentials.azureTenantId);
+    core.setOutput("azure-resource-id", credentials.azureResourceId);
     core.info("Azure Service Principal credentials validated.");
   }
 }

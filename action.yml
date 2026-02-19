@@ -80,12 +80,12 @@ outputs:
     value: ${{ steps.validate-auth.outputs.auth-type }}
     
   is-token:
-    description: 'Whether fusion-token authentication was used (deprecated, use auth-type)'
-    value: ${{ steps.validate-auth.outputs.isToken }}
+    description: 'Whether fusion-token authentication was used'
+    value: ${{ steps.validate-auth.outputs.is-token }}
     
   is-service-principal:
     description: 'Whether Azure Service Principal authentication was used'
-    value: ${{ steps.validate-auth.outputs.isServicePrincipal }}
+    value: ${{ steps.validate-auth.outputs.is-service-principal }}
 
 runs:
   using: 'composite'
@@ -141,15 +141,15 @@ runs:
         INPUT_ENVIRONMENT: ${{ steps.validate-env.outputs.env }}
 
     - name: Azure Login (if SP)
-      if: steps.validate-auth.outputs.isToken == 'false'
+      if: steps.validate-auth.outputs.is-token == 'false'
       uses: azure/login@v2
       with:
-        client-id: ${{ inputs.azure-client-id }}
-        tenant-id: ${{ inputs.azure-tenant-id }}
+        client-id: ${{ steps.validate-auth.outputs.azure-client-id }}
+        tenant-id: ${{ steps.validate-auth.outputs.azure-tenant-id }}
         allow-no-subscriptions: true
 
     - name: Acquire token (if SP)
-      if: steps.validate-auth.outputs.isToken == 'false'
+      if: steps.validate-auth.outputs.is-token == 'false'
       id: token
       shell: bash
       run: |
@@ -158,7 +158,7 @@ runs:
         echo "::add-mask::$TOKEN"
 
     - name: Set token from input
-      if: steps.validate-auth.outputs.isToken == 'true'
+      if: steps.validate-auth.outputs.is-token == 'true'
       shell: bash
       run: |
         echo "FUSION_TOKEN=${{ inputs.fusion-token }}" >> $GITHUB_ENV
@@ -225,6 +225,6 @@ runs:
 
 
     - name: Azure Logout (cleanup)
-      if: ${{ always() && steps.validate-auth.outputs.isToken == 'false' }}
+      if: ${{ always() && steps.validate-auth.outputs.is-token == 'false' }}
       shell: bash
       run: az logout

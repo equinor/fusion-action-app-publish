@@ -143,7 +143,8 @@ Supports two authentication methods with automatic detection:
 
 **GitHub Action Integration:**
 - Reads inputs: `fusion-token`, `azure-client-id`, `azure-tenant-id`, `azure-resource-id`
-- Sets outputs: `auth-type`, `isToken`, `isServicePrincipal`
+- Sets outputs: `auth-type`, `is-token`, `is-service-principal`
+- **Auto-detects Azure Resource ID** when not provided based on environment (non-prod vs prod)
 
 ---
 
