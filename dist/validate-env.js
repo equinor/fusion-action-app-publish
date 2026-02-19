@@ -1,37 +1,37 @@
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { c as coreExports } from "./core.js";
+import { g as getInput, a as setFailed, i as info, s as setOutput } from "./core.js";
 const PR_TAG_PREFIX = "pr-";
 function validateEnv() {
-  const prNR = coreExports.getInput("prNR");
-  const env = coreExports.getInput("env");
-  const tag = coreExports.getInput("tag");
+  const prNR = getInput("prNR");
+  const env = getInput("env");
+  const tag = getInput("tag");
   if (prNR && env) {
-    coreExports.setFailed("Inputs 'prNR' and 'env' cannot be used together.");
+    setFailed("Inputs 'prNR' and 'env' cannot be used together.");
     return;
   }
   if (prNR) {
-    coreExports.info(`prNR provided: ${prNR}`);
-    coreExports.setOutput("tag", `${PR_TAG_PREFIX}${prNR}`);
-    coreExports.setOutput("env", "ci");
+    info(`prNR provided: ${prNR}`);
+    setOutput("tag", `${PR_TAG_PREFIX}${prNR}`);
+    setOutput("env", "ci");
     return;
   }
   if (!env) {
-    coreExports.setFailed("Input 'env' is required.");
+    setFailed("Input 'env' is required.");
     return;
   }
   const allowedEnvs = ["ci", "tr", "fprd", "fqa", "next"];
   if (!allowedEnvs.includes(env)) {
-    coreExports.setFailed(`Input 'env' must be one of the following values: ${allowedEnvs.join(", ")}.`);
+    setFailed(`Input 'env' must be one of the following values: ${allowedEnvs.join(", ")}.`);
     return;
   }
   if (!tag) {
-    coreExports.setFailed("Input 'tag' is required.");
+    setFailed("Input 'tag' is required.");
     return;
   }
-  coreExports.info("Environment validation passed.");
-  coreExports.setOutput("env", env);
-  coreExports.setOutput("tag", tag);
+  info("Environment validation passed.");
+  setOutput("env", env);
+  setOutput("tag", tag);
 }
 const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isDirectExecution) {

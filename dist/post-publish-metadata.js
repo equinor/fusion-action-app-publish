@@ -1,8 +1,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { c as coreExports } from "./core.js";
-import { g as githubExports } from "./github.js";
+import { g as getInput, i as info, s as setOutput, a as setFailed, e as error, w as warning } from "./core.js";
+import { g as getOctokit, c as context } from "./github.js";
 import { A as AdmZip } from "./adm-zip.js";
 import { loadMetadata } from "./extract-metadata.js";
 async function extractAppMetadata(artifactPath) {
@@ -21,10 +21,10 @@ async function extractAppMetadata(artifactPath) {
       key: metadata.appKey || metadata.name
     };
     return appMetadata;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    coreExports.error(`Failed to extract app metadata: ${message}`);
-    throw error;
+  } catch (error$1) {
+    const message = error$1 instanceof Error ? error$1.message : "Unknown error";
+    error(`Failed to extract app metadata: ${message}`);
+    throw error$1;
   }
 }
 function generateAppUrl(meta, env, tag) {
@@ -49,14 +49,14 @@ async function postPrComment(meta, tag, appUrl) {
   try {
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
-      coreExports.info("GITHUB_TOKEN not available, skipping PR comment");
+      info("GITHUB_TOKEN not available, skipping PR comment");
       return;
     }
-    const octokit = githubExports.getOctokit(token);
-    const context = githubExports.context;
-    const prNumber = context.payload.pull_request?.number || (tag?.startsWith("pr-") ? parseInt(tag.replace("pr-", ""), 10) : null);
+    const octokit = getOctokit(token);
+    const context$1 = context;
+    const prNumber = context$1.payload.pull_request?.number || (tag?.startsWith("pr-") ? parseInt(tag.replace("pr-", ""), 10) : null);
     if (!prNumber) {
-      coreExports.info("Not a PR deployment, skipping PR comment");
+      info("Not a PR deployment, skipping PR comment");
       return;
     }
     const appName = meta.name;
@@ -65,26 +65,26 @@ async function postPrComment(meta, tag, appUrl) {
 Preview [${appName}](${appUrl}) in Fusion PR Portal.
     `;
     await octokit.rest.issues.createComment({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
+      owner: context$1.repo.owner,
+      repo: context$1.repo.repo,
       issue_number: prNumber,
       body: commentBody
     });
-    coreExports.info(`Posted deployment comment to PR #${prNumber}`);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    coreExports.warning(`Failed to post PR comment: ${message}`);
+    info(`Posted deployment comment to PR #${prNumber}`);
+  } catch (error2) {
+    const message = error2 instanceof Error ? error2.message : "Unknown error";
+    warning(`Failed to post PR comment: ${message}`);
   }
 }
 async function postPublishMetadata() {
   try {
-    const artifact = coreExports.getInput("artifact");
-    const env = coreExports.getInput("env");
-    const tag = coreExports.getInput("tag");
-    const workingDirectory = coreExports.getInput("working-directory") || ".";
-    coreExports.info(`Processing artifact: ${artifact}`);
-    coreExports.info(`Environment: ${env}`);
-    coreExports.info(`Tag: ${tag}`);
+    const artifact = getInput("artifact");
+    const env = getInput("env");
+    const tag = getInput("tag");
+    const workingDirectory = getInput("working-directory") || ".";
+    info(`Processing artifact: ${artifact}`);
+    info(`Environment: ${env}`);
+    info(`Tag: ${tag}`);
     const artifactPath = path.resolve(workingDirectory, artifact);
     if (!fs.existsSync(artifactPath)) {
       throw new Error(`Artifact not found: ${artifactPath}`);
@@ -93,23 +93,23 @@ async function postPublishMetadata() {
     const appName = meta.name;
     const appVersion = meta.version || "unknown";
     const appKey = meta.key;
-    coreExports.info(`App Name: ${appName}`);
-    coreExports.info(`App Version: ${appVersion}`);
-    coreExports.info(`App Key: ${appKey}`);
+    info(`App Name: ${appName}`);
+    info(`App Version: ${appVersion}`);
+    info(`App Key: ${appKey}`);
     const appUrl = generateAppUrl(meta, env, tag);
-    coreExports.info(`App URL: ${appUrl}`);
-    coreExports.setOutput("app-name", appName);
-    coreExports.setOutput("app-version", appVersion);
-    coreExports.setOutput("app-key", appKey);
-    coreExports.setOutput("app-url", appUrl);
+    info(`App URL: ${appUrl}`);
+    setOutput("app-name", appName);
+    setOutput("app-version", appVersion);
+    setOutput("app-key", appKey);
+    setOutput("app-url", appUrl);
     const publishInfo = `🚀 **${appName}** v${appVersion} deployed to **${env.toUpperCase()}**
 [Open Application](${appUrl})`;
-    coreExports.setOutput("publish-info", publishInfo);
+    setOutput("publish-info", publishInfo);
     await postPrComment(meta, tag, appUrl);
-    coreExports.info("Post-publish metadata processing completed successfully");
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    coreExports.setFailed(`Post-publish metadata failed: ${message}`);
+    info("Post-publish metadata processing completed successfully");
+  } catch (error2) {
+    const message = error2 instanceof Error ? error2.message : "Unknown error";
+    setFailed(`Post-publish metadata failed: ${message}`);
   }
 }
 const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);

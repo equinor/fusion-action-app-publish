@@ -1,47 +1,47 @@
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { c as coreExports } from "./core.js";
-import { g as githubExports } from "./github.js";
+import { i as info, g as getInput, s as setOutput, w as warning, a as setFailed } from "./core.js";
+import { c as context, g as getOctokit } from "./github.js";
 async function checkMetaComment() {
   try {
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
-      coreExports.info("GITHUB_TOKEN not available");
+      info("GITHUB_TOKEN not available");
       return false;
     }
-    const context = githubExports.context;
-    const tag = coreExports.getInput("tag");
-    const prNumber = context.payload.pull_request?.number || (tag?.startsWith("pr-") ? parseInt(tag.replace("pr-", ""), 10) : null);
+    const context$1 = context;
+    const tag = getInput("tag");
+    const prNumber = context$1.payload.pull_request?.number || (tag?.startsWith("pr-") ? parseInt(tag.replace("pr-", ""), 10) : null);
     if (!prNumber) {
-      coreExports.info("Not a PR deployment, no meta comment check needed");
+      info("Not a PR deployment, no meta comment check needed");
       return false;
     }
-    const octokit = githubExports.getOctokit(token);
+    const octokit = getOctokit(token);
     try {
       const comments = await octokit.rest.issues.listComments({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
+        owner: context$1.repo.owner,
+        repo: context$1.repo.repo,
         issue_number: prNumber
       });
       const exists = comments.data.some(
         (comment) => comment.body?.includes(`### 🚀 ${tag.toLocaleUpperCase()} Deployed`)
       );
       if (exists) {
-        coreExports.info(`Meta comment already exists on PR #${prNumber}, will skip posting`);
-        coreExports.setOutput("exists", "true");
+        info(`Meta comment already exists on PR #${prNumber}, will skip posting`);
+        setOutput("exists", "true");
       } else {
-        coreExports.info(`No existing meta comment found on PR #${prNumber}`);
-        coreExports.setOutput("exists", "false");
+        info(`No existing meta comment found on PR #${prNumber}`);
+        setOutput("exists", "false");
       }
       return exists;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
-      coreExports.warning(`Failed to check for existing meta comment: ${message}`);
+      warning(`Failed to check for existing meta comment: ${message}`);
       return false;
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    coreExports.setFailed(`Check meta comment failed: ${message}`);
+    setFailed(`Check meta comment failed: ${message}`);
     throw error;
   }
 }

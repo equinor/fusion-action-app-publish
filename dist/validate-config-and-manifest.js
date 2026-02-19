@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { c as coreExports } from "./core.js";
+import { i as info, a as setFailed } from "./core.js";
 async function validateConfigAndManifest() {
   try {
     const config = process.env.INPUT_CONFIG;
@@ -12,7 +12,7 @@ async function validateConfigAndManifest() {
     try {
       const manifestContent = fs.readFileSync(manifestFile, "utf-8");
       JSON.parse(manifestContent);
-      coreExports.info(`✓ Manifest file is valid JSON: ${manifestFile}`);
+      info(`✓ Manifest file is valid JSON: ${manifestFile}`);
     } catch (error) {
       throw new Error(
         `Manifest file is not valid JSON: ${error instanceof Error ? error.message : String(error)}`
@@ -25,18 +25,18 @@ async function validateConfigAndManifest() {
       try {
         const configContent = fs.readFileSync(config, "utf-8");
         JSON.parse(configContent);
-        coreExports.info(`✓ Config file is valid JSON: ${config}`);
+        info(`✓ Config file is valid JSON: ${config}`);
       } catch (error) {
         throw new Error(
           `Config file is not valid JSON: ${error instanceof Error ? error.message : String(error)}`
         );
       }
     } else {
-      coreExports.info("No config file provided (optional)");
+      info("No config file provided (optional)");
     }
-    coreExports.info("✓ All file validations passed");
+    info("✓ All file validations passed");
   } catch (error) {
-    coreExports.setFailed(error instanceof Error ? error.message : String(error));
+    setFailed(error instanceof Error ? error.message : String(error));
     process.exit(1);
   }
 }

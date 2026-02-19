@@ -1,6 +1,6 @@
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { c as coreExports } from "./core.js";
+import { g as getInput, d as debug, a as setFailed, s as setOutput, i as info, w as warning } from "./core.js";
 const AUTH_TYPES = {
   TOKEN: "token",
   SERVICE_PRINCIPAL: "service-principal"
@@ -33,7 +33,7 @@ function detectAndValidateAuthType(credentials) {
   const hasAzureCredentials = trimmedAzureClientId && trimmedAzureTenantId && trimmedAzureResourceId;
   const hasPartialAzureCredentials = trimmedAzureClientId || trimmedAzureTenantId || trimmedAzureResourceId;
   if (trimmedFusionToken && hasAzureCredentials) {
-    coreExports.info("Both token and Azure credentials provided. Using Service Principal authentication.");
+    info("Both token and Azure credentials provided. Using Service Principal authentication.");
     return {
       authType: AUTH_TYPES.SERVICE_PRINCIPAL,
       isValid: true,
@@ -69,38 +69,38 @@ function detectAndValidateAuthType(credentials) {
 }
 function detectAzureResourceId(environment, inputAzureResourceId, azureClientId) {
   if (!azureClientId) {
-    coreExports.info("No Azure Client ID provided, skipping Azure Resource ID detection.");
+    info("No Azure Client ID provided, skipping Azure Resource ID detection.");
     return "";
   }
   if (inputAzureResourceId) {
-    coreExports.info("Using user-provided Azure Resource ID.");
+    info("Using user-provided Azure Resource ID.");
     inputAzureResourceId = inputAzureResourceId.includes("/.default") ? inputAzureResourceId.replace("/.default", "") : inputAzureResourceId;
     return inputAzureResourceId.trim();
   }
-  coreExports.info("No Azure Resource ID provided. Detecting default based on environment.");
-  coreExports.warning(
+  info("No Azure Resource ID provided. Detecting default based on environment.");
+  warning(
     "Scopes detection provide new scopes, these are not implemented in app-service, this will fail if used for now."
   );
   const nonProductionEnvironments = ["ci", "fqa", "tr", "next"];
   if (nonProductionEnvironments.includes(environment.toLowerCase())) {
-    coreExports.info(`Environment '${environment}' detected. Using non-production Azure Resource ID.`);
+    info(`Environment '${environment}' detected. Using non-production Azure Resource ID.`);
     return "api://fusion.equinor.com/nonprod";
   } else if (environment.toLowerCase() === "fprd") {
-    coreExports.info(`Environment '${environment}' detected. Using production Azure Resource ID.`);
+    info(`Environment '${environment}' detected. Using production Azure Resource ID.`);
     return "api://fusion.equinor.com/prod";
   } else {
-    coreExports.warning(
+    warning(
       `Unrecognized environment '${environment}'. Defaulting to non-production Azure resource ID.`
     );
     return "api://fusion.equinor.com/nonprod";
   }
 }
 function validateIsTokenOrAzure() {
-  let fusionToken = coreExports.getInput("fusion-token");
-  let azureClientId = coreExports.getInput("azure-client-id");
-  let azureTenantId = coreExports.getInput("azure-tenant-id");
-  let inputAzureResourceId = coreExports.getInput("azure-resource-id");
-  let environment = coreExports.getInput("environment");
+  let fusionToken = getInput("fusion-token");
+  let azureClientId = getInput("azure-client-id");
+  let azureTenantId = getInput("azure-tenant-id");
+  let inputAzureResourceId = getInput("azure-resource-id");
+  let environment = getInput("environment");
   if (!fusionToken) {
     fusionToken = process.env.INPUT_FUSION_TOKEN ?? "";
   }
@@ -123,35 +123,35 @@ function validateIsTokenOrAzure() {
     azureTenantId,
     azureResourceId
   };
-  coreExports.debug(`Azure Client ID provided: ${!!azureClientId}`);
-  coreExports.debug(`Azure Tenant ID provided: ${!!azureTenantId}`);
-  coreExports.debug(`Azure Resource ID provided: ${!!inputAzureResourceId}`);
-  coreExports.debug(`Fusion Token provided: ${!!fusionToken}`);
+  debug(`Azure Client ID provided: ${!!azureClientId}`);
+  debug(`Azure Tenant ID provided: ${!!azureTenantId}`);
+  debug(`Azure Resource ID provided: ${!!inputAzureResourceId}`);
+  debug(`Fusion Token provided: ${!!fusionToken}`);
   const authResult = detectAndValidateAuthType(credentials);
   if (!authResult.isValid) {
     const message = authResult.error ?? "Authentication validation failed.";
-    coreExports.setFailed(message);
+    setFailed(message);
     return;
   }
-  coreExports.setOutput("auth-type", authResult.authType);
-  coreExports.setOutput("isToken", authResult.authType === AUTH_TYPES.TOKEN);
-  coreExports.setOutput("isServicePrincipal", authResult.authType === AUTH_TYPES.SERVICE_PRINCIPAL);
-  coreExports.setOutput("azure-client-id", credentials.azureClientId);
-  coreExports.setOutput("azure-tenant-id", credentials.azureTenantId);
-  coreExports.setOutput("azure-resource-id", credentials.azureResourceId);
+  setOutput("auth-type", authResult.authType);
+  setOutput("is-token", authResult.authType === AUTH_TYPES.TOKEN);
+  setOutput("is-service-principal", authResult.authType === AUTH_TYPES.SERVICE_PRINCIPAL);
+  setOutput("azure-client-id", credentials.azureClientId);
+  setOutput("azure-tenant-id", credentials.azureTenantId);
+  setOutput("azure-resource-id", credentials.azureResourceId);
   if (authResult.authType === AUTH_TYPES.TOKEN) {
     const tokenValidation = validateFusionToken(credentials.fusionToken.trim());
     if (!tokenValidation.isValid) {
       const message = tokenValidation.error ?? "Invalid fusion token.";
-      coreExports.setFailed(message);
+      setFailed(message);
       return;
     }
-    coreExports.info("Fusion token validation passed.");
+    info("Fusion token validation passed.");
   } else if (authResult.authType === AUTH_TYPES.SERVICE_PRINCIPAL) {
-    coreExports.setOutput("azure-client-id", credentials.azureClientId);
-    coreExports.setOutput("azure-tenant-id", credentials.azureTenantId);
-    coreExports.setOutput("azure-resource-id", credentials.azureResourceId);
-    coreExports.info("Azure Service Principal credentials validated.");
+    setOutput("azure-client-id", credentials.azureClientId);
+    setOutput("azure-tenant-id", credentials.azureTenantId);
+    setOutput("azure-resource-id", credentials.azureResourceId);
+    info("Azure Service Principal credentials validated.");
   }
 }
 const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);

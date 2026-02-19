@@ -1,28 +1,28 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { c as coreExports } from "./core.js";
+import { g as getInput, a as setFailed, i as info, s as setOutput } from "./core.js";
 function validateArtifact() {
-  const artifact = coreExports.getInput("artifact");
+  const artifact = getInput("artifact");
   if (!artifact) {
-    coreExports.setFailed("Input 'artifact' is required. Please provide the path to the artifact file.");
+    setFailed("Input 'artifact' is required. Please provide the path to the artifact file.");
     return;
   }
   const artifactPath = path.resolve(artifact);
   if (!fs.existsSync(artifactPath)) {
-    coreExports.setFailed(`Artifact file does not exist at path: ${artifactPath}`);
+    setFailed(`Artifact file does not exist at path: ${artifactPath}`);
     return;
   }
   const validExtensions = [".zip"];
   const artifactExtension = path.extname(artifactPath).toLowerCase();
   if (!validExtensions.includes(artifactExtension)) {
-    coreExports.setFailed(
+    setFailed(
       `Artifact file must be one of the following types: ${validExtensions.join(", ")}`
     );
     return;
   }
-  coreExports.info("Artifact validation passed.");
-  coreExports.setOutput("artifact-path", artifactPath);
+  info("Artifact validation passed.");
+  setOutput("artifact-path", artifactPath);
 }
 const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isDirectExecution) {

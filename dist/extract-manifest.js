@@ -1,6 +1,6 @@
 import path__default from "node:path";
 import { fileURLToPath } from "node:url";
-import { c as coreExports } from "./core.js";
+import { g as getInput, e as error } from "./core.js";
 import { A as AdmZip } from "./adm-zip.js";
 const loadManifest = (bundle) => {
   const manifestEntry = bundle.getEntry("app-manifest.json") ?? bundle.getEntries().find((entry) => entry.entryName.endsWith("/app-manifest.json"));
@@ -14,8 +14,8 @@ const loadManifest = (bundle) => {
       }
       try {
         return resolve(JSON.parse(String(data)));
-      } catch (error) {
-        reject(new Error("Failed to parse manifest file", { cause: error }));
+      } catch (error2) {
+        reject(new Error("Failed to parse manifest file", { cause: error2 }));
       }
     });
   });
@@ -23,18 +23,18 @@ const loadManifest = (bundle) => {
 const isDirectExecution = process.argv[1] && path__default.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isDirectExecution) {
   try {
-    const zipPath = process.env.INPUT_ARTIFACT || coreExports.getInput("artifact");
+    const zipPath = process.env.INPUT_ARTIFACT || getInput("artifact");
     const bundle = new AdmZip(zipPath);
     loadManifest(bundle).then((manifest) => {
       console.log(JSON.stringify(manifest));
-    }).catch((error) => {
-      const message = error instanceof Error ? error.message : "Unknown error";
-      coreExports.error(`Failed to load manifest: ${message}`);
+    }).catch((error$1) => {
+      const message = error$1 instanceof Error ? error$1.message : "Unknown error";
+      error(`Failed to load manifest: ${message}`);
       process.exit(1);
     });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    coreExports.error(`Failed to load manifest: ${message}`);
+  } catch (error$1) {
+    const message = error$1 instanceof Error ? error$1.message : "Unknown error";
+    error(`Failed to load manifest: ${message}`);
     process.exit(1);
   }
 }

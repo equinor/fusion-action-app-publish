@@ -277,8 +277,8 @@ describe("validate-is-token-or-azure.ts", () => {
         "Azure Service Principal credentials validated.",
       );
       expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("auth-type", "service-principal");
-      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("isToken", false);
-      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("isServicePrincipal", true);
+      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("is-token", false);
+      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("is-service-principal", true);
       expect(vi.mocked(core.setFailed)).not.toHaveBeenCalled();
     });
 
@@ -291,8 +291,8 @@ describe("validate-is-token-or-azure.ts", () => {
       validateIsTokenOrAzure();
 
       expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("auth-type", "token");
-      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("isToken", true);
-      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("isServicePrincipal", false);
+      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("is-token", true);
+      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("is-service-principal", false);
       expect(vi.mocked(core.setFailed)).not.toHaveBeenCalled();
     });
 
@@ -327,7 +327,7 @@ describe("validate-is-token-or-azure.ts", () => {
         "Azure Service Principal credentials validated.",
       );
       expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("auth-type", "service-principal");
-      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("isServicePrincipal", true);
+      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("is-service-principal", true);
       expect(vi.mocked(core.setFailed)).not.toHaveBeenCalled();
     });
 
@@ -342,7 +342,7 @@ describe("validate-is-token-or-azure.ts", () => {
       validateIsTokenOrAzure();
 
       expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("auth-type", "service-principal");
-      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("isServicePrincipal", true);
+      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("is-service-principal", true);
       expect(vi.mocked(core.setFailed)).not.toHaveBeenCalled();
 
       // Cleanup
@@ -363,8 +363,8 @@ describe("validate-is-token-or-azure.ts", () => {
       validateIsTokenOrAzure();
 
       expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("auth-type", "service-principal");
-      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("isToken", false);
-      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("isServicePrincipal", true);
+      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("is-token", false);
+      expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("is-service-principal", true);
       expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("azure-client-id", "client-123");
       expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("azure-tenant-id", "tenant-456");
       expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("azure-resource-id", "resource-789");

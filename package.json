@@ -42,8 +42,8 @@
     "node": ">=24.0.0"
   },
   "dependencies": {
-    "@actions/core": "^2.0.2",
-    "@actions/github": "^7.0.0",
+    "@actions/core": "^3.0.0",
+    "@actions/github": "^9.0.0",
     "adm-zip": "^0.5.16"
   },
   "files": [
@@ -55,12 +55,12 @@
     "LICENSE"
   ],
   "devDependencies": {
-    "@biomejs/biome": "^2.3.11",
+    "@biomejs/biome": "^2.4.2",
     "@changesets/cli": "^2.29.8",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@testing-library/jest-dom": "^6.1.5",
     "@types/adm-zip": "^0.5.7",
-    "@types/node": "^25.0.9",
+    "@types/node": "^25.3.0",
     "@vitest/coverage-v8": "^4.0.0",
     "typescript": "^5.7.3",
     "vite": "^7.3.1",

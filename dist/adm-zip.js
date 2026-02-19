@@ -1,8 +1,8 @@
-import { g as getDefaultExportFromCjs } from "./core.js";
-import require$$0 from "fs";
-import require$$1 from "path";
-import require$$0$1 from "zlib";
-import require$$0$2 from "crypto";
+import { c as getDefaultExportFromCjs } from "./core.js";
+import fs__default from "fs";
+import path from "path";
+import require$$0 from "zlib";
+import crypto__default from "crypto";
 var util = { exports: {} };
 var constants;
 var hasRequiredConstants;
@@ -292,8 +292,8 @@ var hasRequiredUtils;
 function requireUtils() {
   if (hasRequiredUtils) return utils;
   hasRequiredUtils = 1;
-  const fsystem = require$$0;
-  const pth = require$$1;
+  const fsystem = fs__default;
+  const pth = path;
   const Constants = requireConstants();
   const Errors = requireErrors();
   const isWin = typeof process === "object" && "win32" === process.platform;
@@ -336,25 +336,25 @@ function requireUtils() {
     }
     mkdirSync(folder);
   };
-  Utils.prototype.writeFileTo = function(path, content, overwrite, attr) {
+  Utils.prototype.writeFileTo = function(path2, content, overwrite, attr) {
     const self = this;
-    if (self.fs.existsSync(path)) {
+    if (self.fs.existsSync(path2)) {
       if (!overwrite) return false;
-      var stat = self.fs.statSync(path);
+      var stat = self.fs.statSync(path2);
       if (stat.isDirectory()) {
         return false;
       }
     }
-    var folder = pth.dirname(path);
+    var folder = pth.dirname(path2);
     if (!self.fs.existsSync(folder)) {
       self.makeDir(folder);
     }
     var fd;
     try {
-      fd = self.fs.openSync(path, "w", 438);
+      fd = self.fs.openSync(path2, "w", 438);
     } catch (e) {
-      self.fs.chmodSync(path, 438);
-      fd = self.fs.openSync(path, "w", 438);
+      self.fs.chmodSync(path2, 438);
+      fd = self.fs.openSync(path2, "w", 438);
     }
     if (fd) {
       try {
@@ -363,31 +363,31 @@ function requireUtils() {
         self.fs.closeSync(fd);
       }
     }
-    self.fs.chmodSync(path, attr || 438);
+    self.fs.chmodSync(path2, attr || 438);
     return true;
   };
-  Utils.prototype.writeFileToAsync = function(path, content, overwrite, attr, callback) {
+  Utils.prototype.writeFileToAsync = function(path2, content, overwrite, attr, callback) {
     if (typeof attr === "function") {
       callback = attr;
       attr = void 0;
     }
     const self = this;
-    self.fs.exists(path, function(exist) {
+    self.fs.exists(path2, function(exist) {
       if (exist && !overwrite) return callback(false);
-      self.fs.stat(path, function(err, stat) {
+      self.fs.stat(path2, function(err, stat) {
         if (exist && stat.isDirectory()) {
           return callback(false);
         }
-        var folder = pth.dirname(path);
+        var folder = pth.dirname(path2);
         self.fs.exists(folder, function(exists) {
           if (!exists) self.makeDir(folder);
-          self.fs.open(path, "w", 438, function(err2, fd) {
+          self.fs.open(path2, "w", 438, function(err2, fd) {
             if (err2) {
-              self.fs.chmod(path, 438, function() {
-                self.fs.open(path, "w", 438, function(err3, fd2) {
+              self.fs.chmod(path2, 438, function() {
+                self.fs.open(path2, "w", 438, function(err3, fd2) {
                   self.fs.write(fd2, content, 0, content.length, 0, function() {
                     self.fs.close(fd2, function() {
-                      self.fs.chmod(path, attr || 438, function() {
+                      self.fs.chmod(path2, attr || 438, function() {
                         callback(true);
                       });
                     });
@@ -397,13 +397,13 @@ function requireUtils() {
             } else if (fd) {
               self.fs.write(fd, content, 0, content.length, 0, function() {
                 self.fs.close(fd, function() {
-                  self.fs.chmod(path, attr || 438, function() {
+                  self.fs.chmod(path2, attr || 438, function() {
                     callback(true);
                   });
                 });
               });
             } else {
-              self.fs.chmod(path, attr || 438, function() {
+              self.fs.chmod(path2, attr || 438, function() {
                 callback(true);
               });
             }
@@ -412,21 +412,21 @@ function requireUtils() {
       });
     });
   };
-  Utils.prototype.findFiles = function(path) {
+  Utils.prototype.findFiles = function(path2) {
     const self = this;
     function findSync(dir, pattern, recursive) {
       let files = [];
       self.fs.readdirSync(dir).forEach(function(file) {
-        const path2 = pth.join(dir, file);
-        const stat = self.fs.statSync(path2);
+        const path3 = pth.join(dir, file);
+        const stat = self.fs.statSync(path3);
         {
-          files.push(pth.normalize(path2) + (stat.isDirectory() ? self.sep : ""));
+          files.push(pth.normalize(path3) + (stat.isDirectory() ? self.sep : ""));
         }
-        if (stat.isDirectory() && recursive) files = files.concat(findSync(path2, pattern, recursive));
+        if (stat.isDirectory() && recursive) files = files.concat(findSync(path3, pattern, recursive));
       });
       return files;
     }
-    return findSync(path, void 0, true);
+    return findSync(path2, void 0, true);
   };
   Utils.prototype.findFilesAsync = function(dir, cb) {
     const self = this;
@@ -481,14 +481,14 @@ function requireUtils() {
         return "UNSUPPORTED (" + method + ")";
     }
   };
-  Utils.canonical = function(path) {
-    if (!path) return "";
-    const safeSuffix = pth.posix.normalize("/" + path.split("\\").join("/"));
+  Utils.canonical = function(path2) {
+    if (!path2) return "";
+    const safeSuffix = pth.posix.normalize("/" + path2.split("\\").join("/"));
     return pth.join(".", safeSuffix);
   };
-  Utils.zipnamefix = function(path) {
-    if (!path) return "";
-    const safeSuffix = pth.posix.normalize("/" + path.split("\\").join("/"));
+  Utils.zipnamefix = function(path2) {
+    if (!path2) return "";
+    const safeSuffix = pth.posix.normalize("/" + path2.split("\\").join("/"));
     return pth.posix.join(".", safeSuffix);
   };
   Utils.findLast = function(arr, callback) {
@@ -505,9 +505,9 @@ function requireUtils() {
     prefix = pth.resolve(pth.normalize(prefix));
     var parts = name.split("/");
     for (var i = 0, l = parts.length; i < l; i++) {
-      var path = pth.normalize(pth.join(prefix, parts.slice(i, l).join(pth.sep)));
-      if (path.indexOf(prefix) === 0) {
-        return path;
+      var path2 = pth.normalize(pth.join(prefix, parts.slice(i, l).join(pth.sep)));
+      if (path2.indexOf(prefix) === 0) {
+        return path2;
       }
     }
     return pth.normalize(pth.join(prefix, pth.basename(name)));
@@ -547,9 +547,9 @@ var hasRequiredFattr;
 function requireFattr() {
   if (hasRequiredFattr) return fattr;
   hasRequiredFattr = 1;
-  const pth = require$$1;
-  fattr = function(path, { fs }) {
-    var _path = path || "", _obj = newAttr(), _stat = null;
+  const pth = path;
+  fattr = function(path2, { fs }) {
+    var _path = path2 || "", _obj = newAttr(), _stat = null;
     function newAttr() {
       return {
         directory: false,
@@ -1011,7 +1011,7 @@ function requireDeflater() {
   if (hasRequiredDeflater) return deflater;
   hasRequiredDeflater = 1;
   deflater = function(inbuf) {
-    var zlib = require$$0$1;
+    var zlib = require$$0;
     var opts = { chunkSize: (parseInt(inbuf.length / 1024) + 1) * 1024 };
     return {
       deflate: function() {
@@ -1046,7 +1046,7 @@ function requireInflater() {
   hasRequiredInflater = 1;
   const version = +(process.versions ? process.versions.node : "").split(".")[0] || 0;
   inflater = function(inbuf, expectedLength) {
-    var zlib = require$$0$1;
+    var zlib = require$$0;
     const option = version >= 15 && expectedLength > 0 ? { maxOutputLength: expectedLength } : {};
     return {
       inflate: function() {
@@ -1079,7 +1079,7 @@ var hasRequiredZipcrypto;
 function requireZipcrypto() {
   if (hasRequiredZipcrypto) return zipcrypto;
   hasRequiredZipcrypto = 1;
-  const { randomFillSync } = require$$0$2;
+  const { randomFillSync } = crypto__default;
   const Errors = requireErrors();
   const crctable = new Uint32Array(256).map((t, crc) => {
     for (let j = 0; j < 8; j++) {
@@ -1880,7 +1880,7 @@ function requireAdmZip() {
   if (hasRequiredAdmZip) return admZip;
   hasRequiredAdmZip = 1;
   const Utils = requireUtil();
-  const pth = require$$1;
+  const pth = path;
   const ZipEntry = requireZipEntry();
   const ZipFile = requireZipFile();
   const get_Bool = (...val) => Utils.findLast(val, (c) => typeof c === "boolean");
