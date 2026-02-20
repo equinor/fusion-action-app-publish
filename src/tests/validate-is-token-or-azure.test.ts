@@ -124,6 +124,20 @@ describe("validate-is-token-or-azure.ts", () => {
       expect(result.isValid).toBe(false);
       expect(result.error).toContain("Either 'fusion-token' or all Azure credentials");
     });
+
+    it("should return valid when partial Azure credentials are provided", () => {
+      const credentials = {
+        fusionToken: "",
+        azureClientId: "client-123",
+        azureTenantId: "tenant-456",
+        azureResourceId: "",
+      };
+
+      const result = detectAndValidateAuthType(credentials);
+      expect(result.authType).toBe(AUTH_TYPES.SERVICE_PRINCIPAL);
+      expect(result.isValid).toBe(true);
+      expect(result.error).toBe(null);
+    });
   });
 
   describe("detectAzureResourceId function", () => {
