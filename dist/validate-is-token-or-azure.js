@@ -77,9 +77,6 @@ function detectAzureResourceId(environment, inputAzureResourceId, azureClientId)
     return inputAzureResourceId.trim();
   }
   info("No Azure Resource ID provided. Detecting default based on environment.");
-  warning(
-    "Scopes detection provide new scopes, these are not implemented in app-service, this will fail if used for now."
-  );
   const nonProductionEnvironments = ["ci", "fqa", "tr", "next"];
   if (nonProductionEnvironments.includes(environment.toLowerCase())) {
     info(`Environment '${environment}' detected. Using non-production Azure Resource ID.`);

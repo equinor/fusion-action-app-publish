@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.8
+
+### Patch Changes
+
+- 695fdbb: remove obsolete warning for scopes detection in Azure Resource ID detection
+
 ## 1.3.7
 
 ### Patch Changes
