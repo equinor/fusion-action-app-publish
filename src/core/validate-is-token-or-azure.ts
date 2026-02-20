@@ -102,8 +102,7 @@ export function detectAndValidateAuthType(credentials: Credentials): AuthDetecti
   const trimmedAzureResourceId = azureResourceId?.trim() ?? "";
 
   // Check if Azure Service Principal credentials are provided
-  const hasAzureCredentials =
-    trimmedAzureClientId && trimmedAzureTenantId;
+  const hasAzureCredentials = trimmedAzureClientId && trimmedAzureTenantId;
   const hasPartialAzureCredentials =
     trimmedAzureClientId || trimmedAzureTenantId || trimmedAzureResourceId;
 
