@@ -256,7 +256,7 @@ describe("validate-is-token-or-azure.ts", () => {
       validateIsTokenOrAzure();
 
       expect(vi.mocked(core.setFailed)).toHaveBeenCalledWith(
-        "Either 'fusion-token' or all Azure credentials ('azure-client-id', 'azure-tenant-id', 'azure-resource-id') must be provided.",
+        "Either 'fusion-token' or all Azure credentials ('azure-client-id', 'azure-tenant-id') must be provided.",
       );
     });
 
@@ -272,7 +272,7 @@ describe("validate-is-token-or-azure.ts", () => {
       validateIsTokenOrAzure();
 
       expect(vi.mocked(core.setFailed)).toHaveBeenCalledWith(
-        "All Azure credentials ('azure-client-id', 'azure-tenant-id', 'azure-resource-id') must be provided when using Service Principal authentication.",
+        "All Azure credentials ('azure-client-id', 'azure-tenant-id') must be provided when using Service Principal authentication.",
       );
     });
 

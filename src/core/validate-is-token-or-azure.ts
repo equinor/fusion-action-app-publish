@@ -78,7 +78,7 @@ export function validateFusionToken(token: string): ValidationResult {
  * 1. If both token and complete Azure credentials provided: Use Service Principal (prefers SP)
  * 2. If only token provided: Use token authentication
  * 3. If complete Azure credentials provided: Use Service Principal
- * 4. If partial Azure credentials: Error (all 3 required)
+ * 4. If partial Azure credentials: Error (all 2 required)
  * 5. No credentials: Error
  *
  * @param credentials - Object containing all potential credential inputs
@@ -87,24 +87,21 @@ export function validateFusionToken(token: string): ValidationResult {
  * const result = detectAndValidateAuthType({
  *   fusionToken: 'BEARER abc123',
  *   azureClientId: '',
- *   azureTenantId: '',
- *   azureResourceId: ''
+ *   azureTenantId: ''
  * });
  * // Returns: { authType: 'token', isValid: true, error: null }
  */
 export function detectAndValidateAuthType(credentials: Credentials): AuthDetectionResult {
-  const { fusionToken, azureClientId, azureTenantId, azureResourceId } = credentials;
+  const { fusionToken, azureClientId, azureTenantId } = credentials;
 
   // Trim and check for non-empty credentials
   const trimmedFusionToken = fusionToken?.trim() ?? "";
   const trimmedAzureClientId = azureClientId?.trim() ?? "";
   const trimmedAzureTenantId = azureTenantId?.trim() ?? "";
-  const trimmedAzureResourceId = azureResourceId?.trim() ?? "";
 
   // Check if Azure Service Principal credentials are provided
   const hasAzureCredentials = trimmedAzureClientId && trimmedAzureTenantId;
-  const hasPartialAzureCredentials =
-    trimmedAzureClientId || trimmedAzureTenantId || trimmedAzureResourceId;
+  const hasPartialAzureCredentials = trimmedAzureClientId || trimmedAzureTenantId;
 
   // If we have both token and Azure credentials
   if (trimmedFusionToken && hasAzureCredentials) {
@@ -141,7 +138,7 @@ export function detectAndValidateAuthType(credentials: Credentials): AuthDetecti
       authType: null,
       isValid: false,
       error:
-        "All Azure credentials ('azure-client-id', 'azure-tenant-id', 'azure-resource-id') must be provided when using Service Principal authentication.",
+        "All Azure credentials ('azure-client-id', 'azure-tenant-id') must be provided when using Service Principal authentication.",
     };
   }
 
@@ -150,7 +147,7 @@ export function detectAndValidateAuthType(credentials: Credentials): AuthDetecti
     authType: null,
     isValid: false,
     error:
-      "Either 'fusion-token' or all Azure credentials ('azure-client-id', 'azure-tenant-id', 'azure-resource-id') must be provided.",
+      "Either 'fusion-token' or all Azure credentials ('azure-client-id', 'azure-tenant-id') must be provided.",
   };
 }
 

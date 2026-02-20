@@ -102,7 +102,6 @@ jobs:
         with:
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
           azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          azure-resource-id: ${{ secrets.FUSION_RESOURCE_ID }}
           env: 'fprd'
           artifact: './app-bundle.zip'
 ```
@@ -145,7 +144,7 @@ jobs:
 | `fusion-token` | Pre-acquired Fusion bearer token | No | - |
 | `azure-client-id` | Azure Service Principal Client ID | No | - |
 | `azure-tenant-id` | Azure Tenant ID | No | - |
-| `azure-resource-id` | Fusion audience/resource ID for token acquisition (auto-detected if not provided) | No | - |
+| `azure-resource-id` | Fusion audience/resource ID for token acquisition (optional - auto-detected from environment) | No | - |
 | `env` | Target environment (ci/tr/fprd/fqa/next) | No | `ci` |
 | `prNR` | Pull Request number (used with env=ci) | No | - |
 | `artifact` | Path to built artifact file (.zip) | No | `./app-bundle.zip` |
@@ -180,7 +179,7 @@ Validates the format and structure of Fusion bearer tokens:
 ### `detectAndValidateAuthType(credentials)`
 Detects authentication type and validates Service Principal credentials:
 - Returns authentication type (`token` or `service-principal`)
-- Validates complete Azure Service Principal credential sets
+- Validates Azure Service Principal credentials (requires azure-client-id and azure-tenant-id)
 - Handles credential precedence when both types are provided
 
 ### Method 1: Pre-acquired Fusion Token
@@ -210,7 +209,6 @@ permissions:
   with:
     azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
     azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-    azure-resource-id: ${{ secrets.FUSION_RESOURCE_ID }}
     env: 'fprd'
     artifact: './app-bundle.zip'
 ```
