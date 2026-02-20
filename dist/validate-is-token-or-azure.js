@@ -30,7 +30,7 @@ function detectAndValidateAuthType(credentials) {
   const trimmedAzureClientId = azureClientId?.trim() ?? "";
   const trimmedAzureTenantId = azureTenantId?.trim() ?? "";
   const trimmedAzureResourceId = azureResourceId?.trim() ?? "";
-  const hasAzureCredentials = trimmedAzureClientId && trimmedAzureTenantId && trimmedAzureResourceId;
+  const hasAzureCredentials = trimmedAzureClientId && trimmedAzureTenantId;
   const hasPartialAzureCredentials = trimmedAzureClientId || trimmedAzureTenantId || trimmedAzureResourceId;
   if (trimmedFusionToken && hasAzureCredentials) {
     info("Both token and Azure credentials provided. Using Service Principal authentication.");

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.6
+
+### Patch Changes
+
+- 67d1540: Alow empty Azure Resource ID for authentication, as it is not required when using the client credentials flow with Azure AD. Update related outputs and tests accordingly.
+
 ## 1.3.5
 
 ### Patch Changes
