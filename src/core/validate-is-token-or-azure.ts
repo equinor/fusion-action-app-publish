@@ -187,9 +187,6 @@ export function detectAzureResourceId(
   }
 
   core.info("No Azure Resource ID provided. Detecting default based on environment.");
-  core.warning(
-    "Scopes detection provide new scopes, these are not implemented in app-service, this will fail if used for now.",
-  );
   const nonProductionEnvironments = ["ci", "fqa", "tr", "next"];
 
   // Default resource ID based on environment
