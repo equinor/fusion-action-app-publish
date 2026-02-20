@@ -25,13 +25,12 @@ function validateFusionToken(token) {
   };
 }
 function detectAndValidateAuthType(credentials) {
-  const { fusionToken, azureClientId, azureTenantId, azureResourceId } = credentials;
+  const { fusionToken, azureClientId, azureTenantId } = credentials;
   const trimmedFusionToken = fusionToken?.trim() ?? "";
   const trimmedAzureClientId = azureClientId?.trim() ?? "";
   const trimmedAzureTenantId = azureTenantId?.trim() ?? "";
-  const trimmedAzureResourceId = azureResourceId?.trim() ?? "";
   const hasAzureCredentials = trimmedAzureClientId && trimmedAzureTenantId;
-  const hasPartialAzureCredentials = trimmedAzureClientId || trimmedAzureTenantId || trimmedAzureResourceId;
+  const hasPartialAzureCredentials = trimmedAzureClientId || trimmedAzureTenantId;
   if (trimmedFusionToken && hasAzureCredentials) {
     info("Both token and Azure credentials provided. Using Service Principal authentication.");
     return {
@@ -58,13 +57,13 @@ function detectAndValidateAuthType(credentials) {
     return {
       authType: null,
       isValid: false,
-      error: "All Azure credentials ('azure-client-id', 'azure-tenant-id', 'azure-resource-id') must be provided when using Service Principal authentication."
+      error: "All Azure credentials ('azure-client-id', 'azure-tenant-id') must be provided when using Service Principal authentication."
     };
   }
   return {
     authType: null,
     isValid: false,
-    error: "Either 'fusion-token' or all Azure credentials ('azure-client-id', 'azure-tenant-id', 'azure-resource-id') must be provided."
+    error: "Either 'fusion-token' or all Azure credentials ('azure-client-id', 'azure-tenant-id') must be provided."
   };
 }
 function detectAzureResourceId(environment, inputAzureResourceId, azureClientId) {
