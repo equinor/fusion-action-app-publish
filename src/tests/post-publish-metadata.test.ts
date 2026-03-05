@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { generateAppUrl, postPrComment } from "../core/post-publish-metadata";
+import { generateAppUrl, generatePortalUrl, postPrComment } from "../core/post-publish-metadata";
 import type { AppMetadata } from "../types";
 
 vi.mock("@actions/core");
@@ -136,6 +136,36 @@ describe("post-publish-metadata.ts", () => {
       const tag = "latest";
 
       expect(() => generateAppUrl(meta, env, tag)).toThrow("App key not found in metadata");
+    });
+  });
+
+  describe("generatePortalUrl", () => {
+    it("should generate portal URL for fprd environment", () => {
+      const env = "fprd";
+
+      const result = generatePortalUrl(env);
+
+      expect(result).toBe("https://fusion.equinor.com");
+    });
+
+    it("should generate portal URL for all supported environments", () => {
+      expect(generatePortalUrl("ci")).toBe("https://fusion.ci.fusion-dev.net");
+
+      expect(generatePortalUrl("fqa")).toBe("https://fusion.fqa.fusion-dev.net");
+
+      expect(generatePortalUrl("fprd")).toBe("https://fusion.equinor.com");
+
+      expect(generatePortalUrl("tr")).toBe("https://fusion.tr.fusion-dev.net");
+
+      expect(generatePortalUrl("next")).toBe("https://next.fusion.ci.fusion-dev.net");
+    });
+
+    it("should default to fprd portal URL for unknown environments", () => {
+      const env = "unknown-env";
+
+      const result = generatePortalUrl(env);
+
+      expect(result).toBe("https://fusion.equinor.com");
     });
   });
 
