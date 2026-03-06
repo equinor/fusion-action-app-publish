@@ -34,7 +34,7 @@ async function checkMetaComment() {
         issue_number: prNumber
       });
       const exists = comments.data.some(
-        (comment) => comment.body?.includes(`### 🚀 ${tag.toLocaleUpperCase()} Deployed`) && comment.body?.includes(appName)
+        (comment) => comment.body?.includes(`### 🚀 ${tag?.toLocaleUpperCase() || "UNKNOWN"} Deployed`) && comment.body?.includes(appName)
       );
       if (exists) {
         info(`Meta comment already exists on PR #${prNumber}, will skip posting`);

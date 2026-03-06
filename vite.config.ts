@@ -18,6 +18,7 @@ export default defineConfig({
           "src/core/validate-config-and-manifest.ts",
         ),
         "post-publish-metadata": resolve(__dirname, "src/core/post-publish-metadata.ts"),
+        "generate-workflow-summary": resolve(__dirname, "src/core/generate-workflow-summary.ts"),
         "extract-manifest": resolve(__dirname, "src/core/extract-manifest.ts"),
         "extract-metadata": resolve(__dirname, "src/core/extract-metadata.ts"),
       },

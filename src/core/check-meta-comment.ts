@@ -90,8 +90,8 @@ export async function checkMetaComment(): Promise<boolean> {
       });
 
       const exists = comments.data.some(
-        (comment) =>
-          comment.body?.includes(`### 🚀 ${tag.toLocaleUpperCase()} Deployed`) &&
+        (comment: { body: string | string[] }) =>
+          comment.body?.includes(`### 🚀 ${tag?.toLocaleUpperCase() || "UNKNOWN"} Deployed`) &&
           comment.body?.includes(appName),
       );
 

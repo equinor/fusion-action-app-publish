@@ -179,6 +179,19 @@ describe("post-publish-metadata orchestration", () => {
       expect(zipState.zipPath).toBe(path.resolve("dist", "release.zip"));
     });
 
+    it("skips PR comment when skip-pr-comment input is true", async () => {
+      mockInputs({ "skip-pr-comment": "true" });
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+
+      setZipMetadata({ name: meta.name, version: meta.version, appKey: meta.key });
+
+      await postPublish.postPublishMetadata();
+
+      expect(core.info).toHaveBeenCalledWith(
+        "Skipping PR comment because an existing deployment comment was found",
+      );
+    });
+
     it("fails when artifact is missing", async () => {
       mockInputs({ "working-directory": "dist" });
       vi.mocked(fs.existsSync).mockReturnValue(false);

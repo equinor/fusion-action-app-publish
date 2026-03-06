@@ -11,9 +11,12 @@
 
 export { checkMetaComment } from "./core/check-meta-comment";
 export { loadManifest } from "./core/extract-manifest";
-export { loadMetadata } from "./core/extract-metadata";
+export { extractAppMetadata, loadMetadata } from "./core/extract-metadata";
 export {
-  extractAppMetadata,
+  generateWorkflowSummary,
+  main as generateWorkflowSummaryMain,
+} from "./core/generate-workflow-summary";
+export {
   generateAppUrl,
   postPrComment,
   postPublishMetadata,

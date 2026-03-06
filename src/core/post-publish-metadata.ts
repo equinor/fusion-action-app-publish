@@ -150,6 +150,7 @@ export async function postPublishMetadata(): Promise<void> {
     const artifact = core.getInput("artifact");
     const env = core.getInput("env");
     const tag = core.getInput("tag");
+    const skipPrComment = core.getInput("skip-pr-comment") === "true";
     const workingDirectory = core.getInput("working-directory") || ".";
 
     core.info(`Processing artifact: ${artifact}`);
@@ -188,8 +189,12 @@ export async function postPublishMetadata(): Promise<void> {
     const publishInfo = `🚀 **${appName}** v${appVersion} deployed to **${env.toUpperCase()}**\n[Open Application](${appUrl})`;
     core.setOutput("publish-info", publishInfo);
 
-    // Post comment to PR if applicable
-    await postPrComment(meta, tag, appUrl);
+    // Skip only comment posting when one already exists, but still publish metadata outputs.
+    if (skipPrComment) {
+      core.info("Skipping PR comment because an existing deployment comment was found");
+    } else {
+      await postPrComment(meta, tag, appUrl);
+    }
 
     core.info("Post-publish metadata processing completed successfully");
   } catch (error: unknown) {

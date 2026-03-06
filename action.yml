@@ -207,7 +207,6 @@ runs:
 
     - name: Post Publish Metadata
       id: metadata
-      if: steps.check-meta.outputs.exists == 'false'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: node ${{ github.action_path }}/dist/post-publish-metadata.js
@@ -215,18 +214,21 @@ runs:
         INPUT_ARTIFACT: ${{ inputs.artifact }}
         INPUT_ENV: ${{ steps.validate-env.outputs.env }}
         INPUT_TAG: ${{ steps.validate-env.outputs.tag }}
+        INPUT_SKIP_PR_COMMENT: ${{ steps.check-meta.outputs.exists }}
         INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
         GITHUB_TOKEN: ${{ github.token }}
 
-    - name: Workflow Summary
+    - name: Generate Workflow Summary
       if: always()
       shell: bash
-      run: |
-        echo "## 🚀 Application Published" >> $GITHUB_STEP_SUMMARY
-        echo "The application has been published to the ${{ steps.validate-env.outputs.env }} environment." >> $GITHUB_STEP_SUMMARY
-        if [[ "${{ steps.metadata.outputs.app-url }}" != "" ]]; then
-          echo "View application [here](${{ steps.metadata.outputs.app-url }})" >> $GITHUB_STEP_SUMMARY
-        fi
+      working-directory: ${{ inputs.working-directory }}
+      run: node ${{ github.action_path }}/dist/generate-workflow-summary.js
+      env:
+        INPUT_APP_NAME: ${{ steps.metadata.outputs.app-name }}
+        INPUT_APP_VERSION: ${{ steps.metadata.outputs.app-version }}
+        INPUT_ENVIRONMENT: ${{ steps.validate-env.outputs.env }}
+        INPUT_TAG: ${{ steps.validate-env.outputs.tag }}
+        INPUT_APP_URL: ${{ steps.metadata.outputs.app-url }}
 
 
     - name: Azure Logout (cleanup)
