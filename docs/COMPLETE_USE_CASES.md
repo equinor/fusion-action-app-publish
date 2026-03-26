@@ -9,11 +9,12 @@ This comprehensive guide covers all use cases for the **Fusion App Publish Actio
 | [Basic Production Deploy](#1-basic-production-deployment) | Azure SP | Repository Secrets | 🟢 Simple | 🔥 Essential |
 | [Multi-Environment with GitHub Environments](#2-multi-environment-with-github-environments) | Azure SP | Environment Variables | 🟡 Medium | 🔥 Essential |
 | [PR Previews](#3-pull-request-previews) | Azure SP | Repository Secrets | 🟢 Simple | 🔥 Essential |
-| [Manual Token Acquisition](#4-manual-token-acquisition) | Manual `az` | Environment Variables | 🟡 Medium | ⚠️ Advanced |
-| [Enterprise Multi-Pipeline](#5-enterprise-multi-environment-pipeline) | Azure SP | Environment Variables | 🔴 Complex | 🔥 Essential |
-| [Monorepo Deployments](#6-monorepo-applications) | Azure SP | Mixed | 🔴 Complex | ⚠️ Advanced |
-| [Custom Configuration](#7-custom-configuration-deployments) | Azure SP | Any | 🟡 Medium | ⚠️ Advanced |
-| [Complete PR Workflow with Build](#8-complete-pr-workflow-with-build-integration) | Azure SP | Repository Secrets | 🟡 Medium | 🔥 Essential |
+| [Snapshot Publishing](#4-snapshot-publishing) | Azure SP | Repository Secrets | 🟢 Simple | 🔥 Essential |
+| [Manual Token Acquisition](#5-manual-token-acquisition) | Manual `az` | Environment Variables | 🟡 Medium | ⚠️ Advanced |
+| [Enterprise Multi-Pipeline](#6-enterprise-multi-environment-pipeline) | Azure SP | Environment Variables | 🔴 Complex | 🔥 Essential |
+| [Monorepo Deployments](#7-monorepo-applications) | Azure SP | Mixed | 🔴 Complex | ⚠️ Advanced |
+| [Custom Configuration](#8-custom-configuration-deployments) | Azure SP | Any | 🟡 Medium | ⚠️ Advanced |
+| [Complete PR Workflow with Build](#9-complete-pr-workflow-with-build-integration) | Azure SP | Repository Secrets | 🟡 Medium | 🔥 Essential |
 
 ---
 
@@ -227,7 +228,117 @@ AZURE_TENANT_ID=your-azure-tenant-id
 
 ---
 
-## 4. Manual Token Acquisition
+## 4. Snapshot Publishing
+
+**Scenario:** Publish preview builds with unique snapshot versions without modifying package.json.
+
+**When to use:** PR previews, testing builds, isolated deployments where you need unique versions.
+
+**Setup:** Repository secrets with snapshot input.
+
+### Why Snapshot Publishing?
+
+Snapshot publishing creates a unique version for each build by appending a snapshot identifier to your existing version. For example, if your `package.json` has version `1.2.3`:
+
+- `snapshot: 'true'` → `1.2.3-snapshot.{timestamp}`
+- `snapshot: 'pr-42'` → `1.2.3-pr-42.{timestamp}`
+
+This is useful when:
+- You want unique versions for PR preview deployments
+- You need to test multiple builds without version conflicts
+- You want to avoid modifying `package.json` for preview builds
+
+### Basic Snapshot Deployment
+
+```yaml
+name: Snapshot Deployment
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  deploy-snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      
+      - name: Deploy Snapshot
+        id: deploy
+        uses: equinor/fusion-action-app-publish@v1
+        with:
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          env: 'ci'
+          artifact: './app-bundle.zip'
+          tag: 'pr-${{ github.event.number }}'
+          snapshot: 'true'  # Auto-generates snapshot identifier
+```
+
+### Snapshot with Custom Identifier
+
+Use a custom snapshot identifier for more descriptive versioning:
+
+```yaml
+name: PR Snapshot Deployment
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  deploy-pr-snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      
+      - name: Deploy PR Snapshot
+        id: deploy
+        uses: equinor/fusion-action-app-publish@v1
+        with:
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          env: 'ci'
+          artifact: './app-bundle.zip'
+          tag: 'pr-${{ github.event.number }}'
+          snapshot: 'pr-${{ github.event.number }}'  # Custom identifier → 1.2.3-pr-42.{timestamp}
+```
+
+### Combining Snapshot with prNR
+
+You can combine snapshot publishing with the `prNR` input for a complete PR preview setup:
+
+```yaml
+- name: Deploy Complete PR Preview
+  uses: equinor/fusion-action-app-publish@v1
+  with:
+    azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+    azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+    prNR: ${{ github.event.number }}  # Sets env=ci and tag=pr-{number}
+    artifact: './app-bundle.zip'
+    snapshot: 'pr-${{ github.event.number }}'  # Unique version per PR
+```
+
+### Benefits
+- ✅ Unique versions without modifying package.json
+- ✅ Perfect for PR preview deployments
+- ✅ Enables multiple concurrent preview builds
+- ✅ Easy to identify builds by snapshot identifier
+- ✅ Works with existing artifact-based publishing
+
+---
+
+## 5. Manual Token Acquisition
 
 **Scenario:** Manual control over token acquisition using `az` CLI.
 
@@ -315,7 +426,7 @@ Variables:
 
 ---
 
-## 5. Enterprise Multi-Environment Pipeline
+## 6. Enterprise Multi-Environment Pipeline
 
 **Scenario:** Complete enterprise deployment pipeline with staging gates and approvals.
 
@@ -462,7 +573,7 @@ Protection Rules:
 
 ---
 
-## 6. Monorepo Applications
+## 7. Monorepo Applications
 
 **Scenario:** Multiple Fusion applications in a single repository.
 
@@ -594,7 +705,7 @@ monorepo/
 
 ---
 
-## 7. Custom Configuration Deployments
+## 8. Custom Configuration Deployments
 
 **Scenario:** Applications requiring specific deployment configuration.
 
@@ -705,7 +816,7 @@ Variables:
 
 ---
 
-## 8. Complete PR Workflow with Build Integration
+## 9. Complete PR Workflow with Build Integration
 
 **Scenario:** Full PR workflow with build process, path filtering, and automatic deployment.
 
@@ -841,7 +952,7 @@ Ensures access to latest features like `--snapshot` flag.
 
 ---
 
-## 9. Debugging and Troubleshooting Workflows
+## 10. Debugging and Troubleshooting Workflows
 
 **Scenario:** Debugging deployment issues and understanding what's happening.
 

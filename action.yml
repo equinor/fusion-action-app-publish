@@ -49,6 +49,10 @@ inputs:
     required: false
     default: '.'
 
+  snapshot:
+    description: 'Enable snapshot versioning. Use "true" for auto-generated ID or provide custom identifier (e.g., "pr-123"). Creates unique version without modifying package.json.'
+    required: false
+
 
 outputs:
   app-url:
@@ -173,9 +177,18 @@ runs:
         FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
         INPUT_ARTIFACT: ${{ inputs.artifact }}
       run: |
+        SNAPSHOT_FLAG=""
+        if [[ -n "${{ inputs.snapshot }}" ]]; then
+          if [[ "${{ inputs.snapshot }}" == "true" ]]; then
+            SNAPSHOT_FLAG="--snapshot"
+          else
+            SNAPSHOT_FLAG="--snapshot ${{ inputs.snapshot }}"
+          fi
+        fi
         npx -y -p @equinor/fusion-framework-cli ffc app publish \
           --env "${{ steps.validate-env.outputs.env }}" \
           --tag "${{ steps.validate-env.outputs.tag }}" \
+          $SNAPSHOT_FLAG \
           "${{ inputs.artifact }}"
 
     - name: Publish with config (if provided)
@@ -188,9 +201,18 @@ runs:
         INPUT_CONFIG: ${{ inputs.config }}
         INPUT_ARTIFACT: ${{ inputs.artifact }}
       run: |
+        SNAPSHOT_FLAG=""
+        if [[ -n "${{ inputs.snapshot }}" ]]; then
+          if [[ "${{ inputs.snapshot }}" == "true" ]]; then
+            SNAPSHOT_FLAG="--snapshot"
+          else
+            SNAPSHOT_FLAG="--snapshot ${{ inputs.snapshot }}"
+          fi
+        fi
         npx -y -p @equinor/fusion-framework-cli ffc app publish \
           --env "${{ steps.validate-env.outputs.env }}" \
           --tag "${{ steps.validate-env.outputs.tag }}" \
+          $SNAPSHOT_FLAG \
           --config ${{ inputs.config }} \
           "${{ inputs.artifact }}"
 

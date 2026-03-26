@@ -151,6 +151,7 @@ jobs:
 | `config` | Path to fusion app config file (optional) | No | - |
 | `tag` | Tag to apply to the deployment | No | `latest` |
 | `working-directory` | Working directory for commands | No | `.` |
+| `snapshot` | Enable snapshot versioning. Use `true` for auto-generated ID or provide custom identifier (e.g., `pr-123`) | No | - |
 
 ## Outputs
 
