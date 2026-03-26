@@ -49,6 +49,10 @@ inputs:
     required: false
     default: '.'
 
+  snapshot:
+    description: 'Enable snapshot versioning. Use "true" for auto-generated ID or provide custom identifier (e.g., "pr-123"). Creates unique version without modifying package.json.'
+    required: false
+
 
 outputs:
   app-url:
@@ -164,6 +168,27 @@ runs:
         echo "FUSION_TOKEN=${{ inputs.fusion-token }}" >> $GITHUB_ENV
         echo "::add-mask::${{ inputs.fusion-token }}"
 
+    - name: Validate Snapshot Input
+      id: validate-snapshot
+      if: ${{ inputs.snapshot != '' }}
+      shell: bash
+      env:
+        INPUT_SNAPSHOT: ${{ inputs.snapshot }}
+      run: |
+        # Skip validation for boolean-like values
+        case "${INPUT_SNAPSHOT}" in
+          true|false|0|no) exit 0 ;;
+        esac
+        # Validate custom identifiers: alphanumeric, hyphens, dots only; no whitespace
+        if [[ "${INPUT_SNAPSHOT}" =~ [[:space:]] ]]; then
+          echo "::error::Snapshot identifier cannot contain whitespace: '${INPUT_SNAPSHOT}'"
+          exit 1
+        fi
+        if ! [[ "${INPUT_SNAPSHOT}" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+          echo "::error::Snapshot identifier contains invalid characters: '${INPUT_SNAPSHOT}'. Use only alphanumeric, dots, hyphens, and underscores."
+          exit 1
+        fi
+
     - name: Publish App Bundle
       id: publish
       if: ${{ inputs.config == '' }}
@@ -172,11 +197,27 @@ runs:
       env:
         FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
         INPUT_ARTIFACT: ${{ inputs.artifact }}
+        INPUT_SNAPSHOT: ${{ inputs.snapshot }}
       run: |
+        snapshot_args=()
+        if [[ -n "${INPUT_SNAPSHOT}" ]]; then
+          case "${INPUT_SNAPSHOT}" in
+            false|0|no)
+              # Explicitly disabled; do not add snapshot args
+              ;;
+            true)
+              snapshot_args+=(--snapshot)
+              ;;
+            *)
+              snapshot_args+=(--snapshot "${INPUT_SNAPSHOT}")
+              ;;
+          esac
+        fi
         npx -y -p @equinor/fusion-framework-cli ffc app publish \
           --env "${{ steps.validate-env.outputs.env }}" \
           --tag "${{ steps.validate-env.outputs.tag }}" \
-          "${{ inputs.artifact }}"
+          "${snapshot_args[@]}" \
+          "${INPUT_ARTIFACT}"
 
     - name: Publish with config (if provided)
       id: publish-config
@@ -187,12 +228,28 @@ runs:
         FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
         INPUT_CONFIG: ${{ inputs.config }}
         INPUT_ARTIFACT: ${{ inputs.artifact }}
+        INPUT_SNAPSHOT: ${{ inputs.snapshot }}
       run: |
+        snapshot_args=()
+        if [[ -n "${INPUT_SNAPSHOT}" ]]; then
+          case "${INPUT_SNAPSHOT}" in
+            false|0|no)
+              # Explicitly disabled; do not add snapshot args
+              ;;
+            true)
+              snapshot_args+=(--snapshot)
+              ;;
+            *)
+              snapshot_args+=(--snapshot "${INPUT_SNAPSHOT}")
+              ;;
+          esac
+        fi
         npx -y -p @equinor/fusion-framework-cli ffc app publish \
           --env "${{ steps.validate-env.outputs.env }}" \
           --tag "${{ steps.validate-env.outputs.tag }}" \
-          --config ${{ inputs.config }} \
-          "${{ inputs.artifact }}"
+          "${snapshot_args[@]}" \
+          --config "${INPUT_CONFIG}" \
+          "${INPUT_ARTIFACT}"
 
     - name: Check Meta Comment
       id: check-meta
