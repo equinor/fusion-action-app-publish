@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "skills": {
+    "fusion": {
+      "source": "equinor/fusion-skills",
+      "sourceType": "github",
+      "computedHash": "f81d3d244e622ee9388d7d8eefa33a78b740fd8a51023cfc417a4733a00105cd"
+    },
+    "fusion-github-review-resolution": {
+      "source": "equinor/fusion-skills",
+      "sourceType": "github",
+      "computedHash": "31ec168649090359fd7cccefd06871098ee973dfbf1f41ce6d29ef291de8c826"
+    },
+    "fusion-rules": {
+      "source": "equinor/fusion-skills",
+      "sourceType": "github",
+      "computedHash": "ed38f0981c45b3ab9ec79fa3b553c6b18a400cdd1037840b03b1c16c3810aaee"
+    },
+    "fusion-skill-authoring": {
+      "source": "equinor/fusion-skills",
+      "sourceType": "github",
+      "computedHash": "7fff89ef0babfe248ae95c5f183de104d07206c9fbcffb4a843cbe33cf9b42bc"
+    }
+  }
+}
