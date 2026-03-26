@@ -176,20 +176,21 @@ runs:
       env:
         FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
         INPUT_ARTIFACT: ${{ inputs.artifact }}
+        INPUT_SNAPSHOT: ${{ inputs.snapshot }}
       run: |
-        SNAPSHOT_FLAG=""
-        if [[ -n "${{ inputs.snapshot }}" ]]; then
-          if [[ "${{ inputs.snapshot }}" == "true" ]]; then
-            SNAPSHOT_FLAG="--snapshot"
+        snapshot_args=()
+        if [[ -n "${INPUT_SNAPSHOT}" ]]; then
+          if [[ "${INPUT_SNAPSHOT}" == "true" ]]; then
+            snapshot_args+=(--snapshot)
           else
-            SNAPSHOT_FLAG="--snapshot ${{ inputs.snapshot }}"
+            snapshot_args+=(--snapshot "${INPUT_SNAPSHOT}")
           fi
         fi
         npx -y -p @equinor/fusion-framework-cli ffc app publish \
           --env "${{ steps.validate-env.outputs.env }}" \
           --tag "${{ steps.validate-env.outputs.tag }}" \
-          $SNAPSHOT_FLAG \
-          "${{ inputs.artifact }}"
+          "${snapshot_args[@]}" \
+          "${INPUT_ARTIFACT}"
 
     - name: Publish with config (if provided)
       id: publish-config
@@ -200,21 +201,22 @@ runs:
         FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
         INPUT_CONFIG: ${{ inputs.config }}
         INPUT_ARTIFACT: ${{ inputs.artifact }}
+        INPUT_SNAPSHOT: ${{ inputs.snapshot }}
       run: |
-        SNAPSHOT_FLAG=""
-        if [[ -n "${{ inputs.snapshot }}" ]]; then
-          if [[ "${{ inputs.snapshot }}" == "true" ]]; then
-            SNAPSHOT_FLAG="--snapshot"
+        snapshot_args=()
+        if [[ -n "${INPUT_SNAPSHOT}" ]]; then
+          if [[ "${INPUT_SNAPSHOT}" == "true" ]]; then
+            snapshot_args+=(--snapshot)
           else
-            SNAPSHOT_FLAG="--snapshot ${{ inputs.snapshot }}"
+            snapshot_args+=(--snapshot "${INPUT_SNAPSHOT}")
           fi
         fi
         npx -y -p @equinor/fusion-framework-cli ffc app publish \
           --env "${{ steps.validate-env.outputs.env }}" \
           --tag "${{ steps.validate-env.outputs.tag }}" \
-          $SNAPSHOT_FLAG \
-          --config ${{ inputs.config }} \
-          "${{ inputs.artifact }}"
+          "${snapshot_args[@]}" \
+          --config "${INPUT_CONFIG}" \
+          "${INPUT_ARTIFACT}"
 
     - name: Check Meta Comment
       id: check-meta
