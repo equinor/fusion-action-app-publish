@@ -61,6 +61,43 @@ export function generateAppUrl(meta: AppMetadata, env: string, tag: string): str
 }
 
 /**
+ * Generates Fusion portal management URL based on environment and app info
+ *
+ * Portal URLs allow developers and admins to manage application settings,
+ * view deployment history, and configure the application within Fusion.
+ *
+ * URLs are constructed based on the environment:
+ * - ci: https://fusion.ci.fusion-dev.net
+ * - fqa: https://fusion.fqa.fusion-dev.net
+ * - fprd: https://fusion.equinor.com (production)
+ * - tr: https://fusion.tr.fusion-dev.net
+ * - next: https://next.fusion.ci.fusion-dev.net
+ *
+ * @param meta - App metadata containing application key
+ * @param env - Deployment environment (ci, fqa, fprd, tr, next)
+ * @returns Fusion portal URL for managing the application
+ * @throws Error if app key is not found in metadata
+ * @example
+ * const portalUrl = generatePortalUrl(meta, 'fprd');
+ * // Returns: https://fusion.equinor.com
+ */
+export function generatePortalUrl(env: string): string {
+  // Environment-specific Fusion portal base URLs
+  const envUrls: Record<string, string> = {
+    ci: "https://fusion.ci.fusion-dev.net",
+    fqa: "https://fusion.fqa.fusion-dev.net",
+    fprd: "https://fusion.equinor.com",
+    tr: "https://fusion.tr.fusion-dev.net",
+    next: "https://next.fusion.ci.fusion-dev.net",
+  };
+
+  const baseUrl = envUrls[env] || envUrls.fprd;
+
+  // Return portal base URL
+  return baseUrl;
+}
+
+/**
  * Posts a comment to the PR with the application URL and deployment info
  *
  * This function:
@@ -178,14 +215,19 @@ export async function postPublishMetadata(): Promise<void> {
     const appUrl = generateAppUrl(meta, env, tag);
     core.info(`App URL: ${appUrl}`);
 
+    // Generate portal management URL
+    const portalUrl = generatePortalUrl(env);
+    core.info(`Portal URL: ${portalUrl}`);
+
     // Set outputs for use in other steps
     core.setOutput("app-name", appName);
     core.setOutput("app-version", appVersion);
     core.setOutput("app-key", appKey);
     core.setOutput("app-url", appUrl);
+    core.setOutput("portal-url", portalUrl);
 
     // Create formatted publish info for PR comments
-    const publishInfo = `🚀 **${appName}** v${appVersion} deployed to **${env.toUpperCase()}**\n[Open Application](${appUrl})`;
+    const publishInfo = `🚀 **${appName}** v${appVersion} deployed to **${env.toUpperCase()}**\n[Open Application](${appUrl}) | [Manage in Portal](${portalUrl})`;
     core.setOutput("publish-info", publishInfo);
 
     // Post comment to PR if applicable
