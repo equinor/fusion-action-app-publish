@@ -146,7 +146,7 @@ runs:
 
     - name: Azure Login (if SP)
       if: steps.validate-auth.outputs.is-token == 'false'
-      uses: azure/login@v2
+      uses: azure/login@v3
       with:
         client-id: ${{ steps.validate-auth.outputs.azure-client-id }}
         tenant-id: ${{ steps.validate-auth.outputs.azure-tenant-id }}
