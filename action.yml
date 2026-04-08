@@ -57,11 +57,11 @@ inputs:
 outputs:
   app-url:
     description: 'Direct URL to the published application'
-    value: ${{ steps.publish.outputs.app-url }}
+    value: ${{ steps.metadata.outputs.app-url }}
   
   portal-url:
     description: 'Fusion portal URL for managing the application'
-    value: ${{ steps.publish.outputs.portal-url }}
+    value: ${{ steps.metadata.outputs.portal-url }}
   
   target-env:
     description: 'Resolved target environment (useful with auto mode)'
