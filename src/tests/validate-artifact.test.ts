@@ -24,35 +24,38 @@ describe("validate-artifact.ts", () => {
   });
 
   describe("Input validation", () => {
-    it("should fail when artifact input is not provided", () => {
+    it("should skip validation when artifact input is not provided", () => {
       vi.mocked(core.getInput).mockReturnValue("");
 
       validateArtifact();
 
       expect(core.getInput).toHaveBeenCalledWith("artifact");
-      expect(core.setFailed).toHaveBeenCalledWith(
-        "Input 'artifact' is required. Please provide the path to the artifact file.",
+      expect(core.setFailed).not.toHaveBeenCalled();
+      expect(core.info).toHaveBeenCalledWith(
+        "No artifact provided. The action will publish from the working directory.",
       );
+      expect(core.warning).toHaveBeenCalledWith(
+        "Source-based publish: metadata outputs (app-name, app-version, publish-info) and PR comments will not be available.",
+      );
+      expect(core.setOutput).toHaveBeenCalledWith("artifact-provided", "false");
     });
 
-    it("should fail when artifact input is undefined", () => {
+    it("should skip validation when artifact input is undefined", () => {
       vi.mocked(core.getInput).mockReturnValue(undefined as unknown as string);
 
       validateArtifact();
 
-      expect(core.setFailed).toHaveBeenCalledWith(
-        "Input 'artifact' is required. Please provide the path to the artifact file.",
-      );
+      expect(core.setFailed).not.toHaveBeenCalled();
+      expect(core.setOutput).toHaveBeenCalledWith("artifact-provided", "false");
     });
 
-    it("should fail when artifact input is null", () => {
+    it("should skip validation when artifact input is null", () => {
       vi.mocked(core.getInput).mockReturnValue(null as unknown as string);
 
       validateArtifact();
 
-      expect(core.setFailed).toHaveBeenCalledWith(
-        "Input 'artifact' is required. Please provide the path to the artifact file.",
-      );
+      expect(core.setFailed).not.toHaveBeenCalled();
+      expect(core.setOutput).toHaveBeenCalledWith("artifact-provided", "false");
     });
   });
 
@@ -172,6 +175,7 @@ describe("validate-artifact.ts", () => {
 
       const expectedPath = path.resolve(artifactFile);
       expect(core.setOutput).toHaveBeenCalledWith("artifact-path", expectedPath);
+      expect(core.setOutput).toHaveBeenCalledWith("artifact-provided", "true");
     });
 
     it("should set absolute path for relative input", () => {

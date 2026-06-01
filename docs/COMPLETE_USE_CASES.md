@@ -9,6 +9,7 @@ This comprehensive guide covers all use cases for the **Fusion App Publish Actio
 | [Basic Production Deploy](#1-basic-production-deployment) | Azure SP | Repository Secrets | 🟢 Simple | 🔥 Essential |
 | [Multi-Environment with GitHub Environments](#2-multi-environment-with-github-environments) | Azure SP | Environment Variables | 🟡 Medium | 🔥 Essential |
 | [PR Previews](#3-pull-request-previews) | Azure SP | Repository Secrets | 🟢 Simple | 🔥 Essential |
+| [PR Preview (Source-based)](#source-based-pr-preview-no-artifact) | Azure SP | Repository Secrets | 🟢 Simple | 🔥 Essential |
 | [Snapshot Publishing](#4-snapshot-publishing) | Azure SP | Repository Secrets | 🟢 Simple | 🔥 Essential |
 | [Manual Token Acquisition](#5-manual-token-acquisition) | Manual `az` | Environment Variables | 🟡 Medium | ⚠️ Advanced |
 | [Enterprise Multi-Pipeline](#6-enterprise-multi-environment-pipeline) | Azure SP | Environment Variables | 🔴 Complex | 🔥 Essential |
@@ -225,6 +226,41 @@ AZURE_TENANT_ID=your-azure-tenant-id
 - ✅ Easy testing of changes before merge
 - ✅ Uses `pr-{number}` tagging for easy identification
 - ✅ Deploys to CI environment automatically
+
+### Source-based PR Preview (No Artifact)
+
+When `artifact` is omitted, the action publishes directly from the working directory. The CLI handles the build/pack step internally, simplifying PR workflows.
+
+```yaml
+name: PR Preview (Source-based)
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy PR Preview from source
+        uses: equinor/fusion-action-app-publish@v1
+        with:
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          prNR: ${{ github.event.number }}
+```
+
+> **Note:** When publishing from source, metadata outputs (`app-name`, `app-version`, `publish-info`) and PR comments are not available since they require extracting information from the artifact zip.
 
 ---
 

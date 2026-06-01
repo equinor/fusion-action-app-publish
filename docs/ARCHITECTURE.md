@@ -73,17 +73,17 @@ export * from "./types";
 #### `validate-artifact.ts`
 **Artifact Validation**
 
-- Verifies artifact input is provided
-- Checks file exists on filesystem
+- If artifact is not provided, skips validation and sets `artifact-provided` to `false` (source-based publish)
+- If artifact is provided, checks file exists on filesystem
 - Ensures file is `.zip` format
-- Sets `artifact-path` output for downstream steps
+- Sets `artifact-path` and `artifact-provided` outputs for downstream steps
 
 **Key Functions:**
 - `validateArtifact()`: Main validation function
 
 **GitHub Action Integration:**
 - Reads input: `artifact`
-- Sets output: `artifact-path`
+- Sets outputs: `artifact-path`, `artifact-provided`
 
 ---
 
