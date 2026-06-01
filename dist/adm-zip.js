@@ -329,7 +329,11 @@ function requireUtils() {
         try {
           stat = self.fs.statSync(resolvedPath);
         } catch (e) {
-          self.fs.mkdirSync(resolvedPath);
+          if (e.message && e.message.startsWith("ENOENT")) {
+            self.fs.mkdirSync(resolvedPath);
+          } else {
+            throw e;
+          }
         }
         if (stat && stat.isFile()) throw Errors.FILE_IN_THE_WAY(`"${resolvedPath}"`);
       });
@@ -522,9 +526,9 @@ function requireUtils() {
     }
   };
   Utils.readBigUInt64LE = function(buffer, index) {
-    var slice = Buffer.from(buffer.slice(index, index + 8));
-    slice.swap64();
-    return parseInt(`0x${slice.toString("hex")}`);
+    const lo = buffer.readUInt32LE(index);
+    const hi = buffer.readUInt32LE(index + 4);
+    return hi * 4294967296 + lo;
   };
   Utils.fromDOS2Date = function(val) {
     return new Date((val >> 25 & 127) + 1980, Math.max((val >> 21 & 15) - 1, 0), Math.max(val >> 16 & 31, 1), val >> 11 & 31, val >> 5 & 63, (val & 31) << 1);
@@ -708,6 +712,7 @@ function requireEntryHeader() {
         return Utils.fromDOS2Date(this.timeval);
       },
       set time(val) {
+        val = new Date(val);
         this.timeval = Utils.fromDate2DOS(val);
       },
       get timeval() {
@@ -808,6 +813,7 @@ function requireEntryHeader() {
         }
         _localHeader.version = data.readUInt16LE(Constants.LOCVER);
         _localHeader.flags = data.readUInt16LE(Constants.LOCFLG);
+        _localHeader.flags_desc = (_localHeader.flags & Constants.FLG_DESC) > 0;
         _localHeader.method = data.readUInt16LE(Constants.LOCHOW);
         _localHeader.time = data.readUInt32LE(Constants.LOCTIM);
         _localHeader.crc = data.readUInt32LE(Constants.LOCCRC);
@@ -1218,7 +1224,7 @@ function requireZipEntry() {
       return input.slice(_centralHeader.realDataOffset, _centralHeader.realDataOffset + _centralHeader.compressedSize);
     }
     function crc32OK(data) {
-      if (!_centralHeader.flags_desc) {
+      if (!_centralHeader.flags_desc && !_centralHeader.localHeader.flags_desc) {
         if (Utils.crc32(data) !== _centralHeader.localHeader.crc) {
           return false;
         }
@@ -1347,7 +1353,7 @@ function requireZipEntry() {
       }
     }
     function readUInt64LE(buffer, offset) {
-      return (buffer.readUInt32LE(offset + 4) << 4) + buffer.readUInt32LE(offset);
+      return Utils.readBigUInt64LE(buffer, offset);
     }
     function parseExtra(data) {
       try {
@@ -1940,7 +1946,7 @@ function requireAdmZip() {
     }
     function fixPath(zipPath) {
       const { join, normalize, sep } = pth.posix;
-      return join(".", normalize(sep + zipPath.split("\\").join(sep) + sep));
+      return join(pth.isAbsolute(zipPath) ? "/" : ".", normalize(sep + zipPath.split("\\").join(sep) + sep));
     }
     function filenameFilter(filterfn) {
       if (filterfn instanceof RegExp) {

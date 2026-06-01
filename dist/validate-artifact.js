@@ -1,11 +1,15 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { g as getInput, a as setFailed, i as info, s as setOutput } from "./core.js";
+import { g as getInput, i as info, w as warning, s as setOutput, a as setFailed } from "./core.js";
 function validateArtifact() {
   const artifact = getInput("artifact");
   if (!artifact) {
-    setFailed("Input 'artifact' is required. Please provide the path to the artifact file.");
+    info("No artifact provided. The action will publish from the working directory.");
+    warning(
+      "Source-based publish: metadata outputs (app-name, app-version, publish-info) and PR comments will not be available."
+    );
+    setOutput("artifact-provided", "false");
     return;
   }
   const artifactPath = path.resolve(artifact);
@@ -23,6 +27,7 @@ function validateArtifact() {
   }
   info("Artifact validation passed.");
   setOutput("artifact-path", artifactPath);
+  setOutput("artifact-provided", "true");
 }
 const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isDirectExecution) {
