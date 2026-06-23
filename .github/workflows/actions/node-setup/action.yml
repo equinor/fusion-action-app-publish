@@ -31,4 +31,5 @@ runs:
       shell: bash
       run: |
         # Install dependencies for the workflow and action
-        pnpm install --frozen-lockfile
+        # Use --allow-scripts to permit build scripts for packages like esbuild in CI
+        pnpm install --frozen-lockfile --allow-scripts
