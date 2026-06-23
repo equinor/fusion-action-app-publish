@@ -14,6 +14,18 @@ import type { AppMetadata } from "../types/metadata";
 import { extractAppMetadata } from "./extract-metadata";
 
 /**
+ * Environment-specific Fusion portal base URLs
+ * Used by both generateAppUrl and generatePortalUrl functions
+ */
+const ENV_URLS: Record<string, string> = {
+  ci: "https://fusion.ci.fusion-dev.net",
+  fqa: "https://fusion.fqa.fusion-dev.net",
+  fprd: "https://fusion.equinor.com",
+  tr: "https://fusion.tr.fusion-dev.net",
+  next: "https://next.fusion.ci.fusion-dev.net",
+};
+
+/**
  * Generates application URL based on environment and app info
  *
  * URLs are constructed based on the environment:
@@ -41,16 +53,7 @@ export function generateAppUrl(meta: AppMetadata, env: string, tag: string): str
     throw new Error("App key not found in metadata");
   }
 
-  // Environment-specific Fusion portal base URLs
-  const envUrls: Record<string, string> = {
-    ci: "https://fusion.ci.fusion-dev.net",
-    fqa: "https://fusion.fqa.fusion-dev.net",
-    fprd: "https://fusion.equinor.com",
-    tr: "https://fusion.tr.fusion-dev.net",
-    next: "https://next.fusion.ci.fusion-dev.net",
-  };
-
-  const baseUrl = envUrls[env] || envUrls.fprd;
+  const baseUrl = ENV_URLS[env] || ENV_URLS.fprd;
 
   // Construct application URL
   if (!tag.startsWith("latest")) {
@@ -61,12 +64,14 @@ export function generateAppUrl(meta: AppMetadata, env: string, tag: string): str
 }
 
 /**
- * Generates Fusion portal management URL based on environment and app info
+ * Generates Fusion portal management URL for an application
  *
- * Portal URLs allow developers and admins to manage application settings,
- * view deployment history, and configure the application within Fusion.
+ * Portal management URLs allow developers and admins to manage application settings,
+ * view deployment history, and configure the application within Fusion's app-admin interface.
  *
- * URLs are constructed based on the environment:
+ * URLs are constructed as: {baseUrl}/apps/app-admin/app/{appKey}
+ *
+ * Base URLs by environment:
  * - ci: https://fusion.ci.fusion-dev.net
  * - fqa: https://fusion.fqa.fusion-dev.net
  * - fprd: https://fusion.equinor.com (production)
@@ -75,26 +80,23 @@ export function generateAppUrl(meta: AppMetadata, env: string, tag: string): str
  *
  * @param meta - App metadata containing application key
  * @param env - Deployment environment (ci, fqa, fprd, tr, next)
- * @returns Fusion portal URL for managing the application
+ * @returns Full URL to the app's management page in the Fusion portal
  * @throws Error if app key is not found in metadata
  * @example
  * const portalUrl = generatePortalUrl(meta, 'fprd');
- * // Returns: https://fusion.equinor.com
+ * // Returns: https://fusion.equinor.com/apps/app-admin/app/my-app
  */
-export function generatePortalUrl(env: string): string {
-  // Environment-specific Fusion portal base URLs
-  const envUrls: Record<string, string> = {
-    ci: "https://fusion.ci.fusion-dev.net",
-    fqa: "https://fusion.fqa.fusion-dev.net",
-    fprd: "https://fusion.equinor.com",
-    tr: "https://fusion.tr.fusion-dev.net",
-    next: "https://next.fusion.ci.fusion-dev.net",
-  };
+export function generatePortalUrl(meta: AppMetadata, env: string): string {
+  const appKey = meta.key;
 
-  const baseUrl = envUrls[env] || envUrls.fprd;
+  if (!appKey) {
+    throw new Error("App key not found in metadata");
+  }
 
-  // Return portal base URL
-  return baseUrl;
+  const baseUrl = ENV_URLS[env] || ENV_URLS.fprd;
+
+  // Return app-specific management page URL
+  return `${baseUrl}/apps/app-admin/app/${appKey}`;
 }
 
 /**
@@ -216,7 +218,7 @@ export async function postPublishMetadata(): Promise<void> {
     core.info(`App URL: ${appUrl}`);
 
     // Generate portal management URL
-    const portalUrl = generatePortalUrl(env);
+    const portalUrl = generatePortalUrl(meta, env);
     core.info(`Portal URL: ${portalUrl}`);
 
     // Set outputs for use in other steps

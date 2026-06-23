@@ -141,31 +141,45 @@ describe("post-publish-metadata.ts", () => {
 
   describe("generatePortalUrl", () => {
     it("should generate portal URL for fprd environment", () => {
+      const meta = { key: "demo-app", name: "demo-app" };
       const env = "fprd";
 
-      const result = generatePortalUrl(env);
+      const result = generatePortalUrl(meta, env);
 
-      expect(result).toBe("https://fusion.equinor.com");
+      expect(result).toBe("https://fusion.equinor.com/apps/app-admin/app/demo-app");
     });
 
     it("should generate portal URL for all supported environments", () => {
-      expect(generatePortalUrl("ci")).toBe("https://fusion.ci.fusion-dev.net");
+      const meta = { key: "demo-app", name: "demo-app" };
 
-      expect(generatePortalUrl("fqa")).toBe("https://fusion.fqa.fusion-dev.net");
+      expect(generatePortalUrl(meta, "ci")).toBe(
+        "https://fusion.ci.fusion-dev.net/apps/app-admin/app/demo-app",
+      );
 
-      expect(generatePortalUrl("fprd")).toBe("https://fusion.equinor.com");
+      expect(generatePortalUrl(meta, "fqa")).toBe(
+        "https://fusion.fqa.fusion-dev.net/apps/app-admin/app/demo-app",
+      );
 
-      expect(generatePortalUrl("tr")).toBe("https://fusion.tr.fusion-dev.net");
+      expect(generatePortalUrl(meta, "fprd")).toBe(
+        "https://fusion.equinor.com/apps/app-admin/app/demo-app",
+      );
 
-      expect(generatePortalUrl("next")).toBe("https://next.fusion.ci.fusion-dev.net");
+      expect(generatePortalUrl(meta, "tr")).toBe(
+        "https://fusion.tr.fusion-dev.net/apps/app-admin/app/demo-app",
+      );
+
+      expect(generatePortalUrl(meta, "next")).toBe(
+        "https://next.fusion.ci.fusion-dev.net/apps/app-admin/app/demo-app",
+      );
     });
 
     it("should default to fprd portal URL for unknown environments", () => {
+      const meta = { key: "demo-app", name: "demo-app" };
       const env = "unknown-env";
 
-      const result = generatePortalUrl(env);
+      const result = generatePortalUrl(meta, env);
 
-      expect(result).toBe("https://fusion.equinor.com");
+      expect(result).toBe("https://fusion.equinor.com/apps/app-admin/app/demo-app");
     });
   });
 

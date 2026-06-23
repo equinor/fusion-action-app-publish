@@ -163,8 +163,12 @@ describe("post-publish-metadata orchestration", () => {
       expect(core.setOutput).toHaveBeenCalledWith("app-key", "demo-app");
       expect(core.setOutput).toHaveBeenCalledWith("app-url", expectedAppUrl);
       expect(core.setOutput).toHaveBeenCalledWith(
+        "portal-url",
+        "https://fusion.equinor.com/apps/app-admin/app/demo-app",
+      );
+      expect(core.setOutput).toHaveBeenCalledWith(
         "publish-info",
-        "🚀 **demo-app** v2.0.0 deployed to **FPRD**\n[Open Application](https://fusion.equinor.com/apps/demo-app) | [Manage in Portal](https://fusion.equinor.com)",
+        "🚀 **demo-app** v2.0.0 deployed to **FPRD**\n[Open Application](https://fusion.equinor.com/apps/demo-app) | [Manage in Portal](https://fusion.equinor.com/apps/app-admin/app/demo-app)",
       );
     });
 
