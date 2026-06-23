@@ -2699,9 +2699,9 @@ var hasRequiredConstants$3;
 function requireConstants$3() {
   if (hasRequiredConstants$3) return constants$3;
   hasRequiredConstants$3 = 1;
-  (function(exports$1) {
-    Object.defineProperty(exports$1, "__esModule", { value: true });
-    exports$1.SPECIAL_HEADERS = exports$1.HEADER_STATE = exports$1.MINOR = exports$1.MAJOR = exports$1.CONNECTION_TOKEN_CHARS = exports$1.HEADER_CHARS = exports$1.TOKEN = exports$1.STRICT_TOKEN = exports$1.HEX = exports$1.URL_CHAR = exports$1.STRICT_URL_CHAR = exports$1.USERINFO_CHARS = exports$1.MARK = exports$1.ALPHANUM = exports$1.NUM = exports$1.HEX_MAP = exports$1.NUM_MAP = exports$1.ALPHA = exports$1.FINISH = exports$1.H_METHOD_MAP = exports$1.METHOD_MAP = exports$1.METHODS_RTSP = exports$1.METHODS_ICE = exports$1.METHODS_HTTP = exports$1.METHODS = exports$1.LENIENT_FLAGS = exports$1.FLAGS = exports$1.TYPE = exports$1.ERROR = void 0;
+  (function(exports) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.SPECIAL_HEADERS = exports.HEADER_STATE = exports.MINOR = exports.MAJOR = exports.CONNECTION_TOKEN_CHARS = exports.HEADER_CHARS = exports.TOKEN = exports.STRICT_TOKEN = exports.HEX = exports.URL_CHAR = exports.STRICT_URL_CHAR = exports.USERINFO_CHARS = exports.MARK = exports.ALPHANUM = exports.NUM = exports.HEX_MAP = exports.NUM_MAP = exports.ALPHA = exports.FINISH = exports.H_METHOD_MAP = exports.METHOD_MAP = exports.METHODS_RTSP = exports.METHODS_ICE = exports.METHODS_HTTP = exports.METHODS = exports.LENIENT_FLAGS = exports.FLAGS = exports.TYPE = exports.ERROR = void 0;
     const utils_1 = requireUtils();
     (function(ERROR) {
       ERROR[ERROR["OK"] = 0] = "OK";
@@ -2729,12 +2729,12 @@ function requireConstants$3() {
       ERROR[ERROR["PAUSED_UPGRADE"] = 22] = "PAUSED_UPGRADE";
       ERROR[ERROR["PAUSED_H2_UPGRADE"] = 23] = "PAUSED_H2_UPGRADE";
       ERROR[ERROR["USER"] = 24] = "USER";
-    })(exports$1.ERROR || (exports$1.ERROR = {}));
+    })(exports.ERROR || (exports.ERROR = {}));
     (function(TYPE) {
       TYPE[TYPE["BOTH"] = 0] = "BOTH";
       TYPE[TYPE["REQUEST"] = 1] = "REQUEST";
       TYPE[TYPE["RESPONSE"] = 2] = "RESPONSE";
-    })(exports$1.TYPE || (exports$1.TYPE = {}));
+    })(exports.TYPE || (exports.TYPE = {}));
     (function(FLAGS) {
       FLAGS[FLAGS["CONNECTION_KEEP_ALIVE"] = 1] = "CONNECTION_KEEP_ALIVE";
       FLAGS[FLAGS["CONNECTION_CLOSE"] = 2] = "CONNECTION_CLOSE";
@@ -2745,12 +2745,12 @@ function requireConstants$3() {
       FLAGS[FLAGS["SKIPBODY"] = 64] = "SKIPBODY";
       FLAGS[FLAGS["TRAILING"] = 128] = "TRAILING";
       FLAGS[FLAGS["TRANSFER_ENCODING"] = 512] = "TRANSFER_ENCODING";
-    })(exports$1.FLAGS || (exports$1.FLAGS = {}));
+    })(exports.FLAGS || (exports.FLAGS = {}));
     (function(LENIENT_FLAGS) {
       LENIENT_FLAGS[LENIENT_FLAGS["HEADERS"] = 1] = "HEADERS";
       LENIENT_FLAGS[LENIENT_FLAGS["CHUNKED_LENGTH"] = 2] = "CHUNKED_LENGTH";
       LENIENT_FLAGS[LENIENT_FLAGS["KEEP_ALIVE"] = 4] = "KEEP_ALIVE";
-    })(exports$1.LENIENT_FLAGS || (exports$1.LENIENT_FLAGS = {}));
+    })(exports.LENIENT_FLAGS || (exports.LENIENT_FLAGS = {}));
     var METHODS;
     (function(METHODS2) {
       METHODS2[METHODS2["DELETE"] = 0] = "DELETE";
@@ -2799,8 +2799,8 @@ function requireConstants$3() {
       METHODS2[METHODS2["REDIRECT"] = 43] = "REDIRECT";
       METHODS2[METHODS2["RECORD"] = 44] = "RECORD";
       METHODS2[METHODS2["FLUSH"] = 45] = "FLUSH";
-    })(METHODS = exports$1.METHODS || (exports$1.METHODS = {}));
-    exports$1.METHODS_HTTP = [
+    })(METHODS = exports.METHODS || (exports.METHODS = {}));
+    exports.METHODS_HTTP = [
       METHODS.DELETE,
       METHODS.GET,
       METHODS.HEAD,
@@ -2838,10 +2838,10 @@ function requireConstants$3() {
       // TODO(indutny): should we allow it with HTTP?
       METHODS.SOURCE
     ];
-    exports$1.METHODS_ICE = [
+    exports.METHODS_ICE = [
       METHODS.SOURCE
     ];
-    exports$1.METHODS_RTSP = [
+    exports.METHODS_RTSP = [
       METHODS.OPTIONS,
       METHODS.DESCRIBE,
       METHODS.ANNOUNCE,
@@ -2858,24 +2858,24 @@ function requireConstants$3() {
       METHODS.GET,
       METHODS.POST
     ];
-    exports$1.METHOD_MAP = utils_1.enumToMap(METHODS);
-    exports$1.H_METHOD_MAP = {};
-    Object.keys(exports$1.METHOD_MAP).forEach((key) => {
+    exports.METHOD_MAP = utils_1.enumToMap(METHODS);
+    exports.H_METHOD_MAP = {};
+    Object.keys(exports.METHOD_MAP).forEach((key) => {
       if (/^H/.test(key)) {
-        exports$1.H_METHOD_MAP[key] = exports$1.METHOD_MAP[key];
+        exports.H_METHOD_MAP[key] = exports.METHOD_MAP[key];
       }
     });
     (function(FINISH) {
       FINISH[FINISH["SAFE"] = 0] = "SAFE";
       FINISH[FINISH["SAFE_WITH_CB"] = 1] = "SAFE_WITH_CB";
       FINISH[FINISH["UNSAFE"] = 2] = "UNSAFE";
-    })(exports$1.FINISH || (exports$1.FINISH = {}));
-    exports$1.ALPHA = [];
+    })(exports.FINISH || (exports.FINISH = {}));
+    exports.ALPHA = [];
     for (let i = "A".charCodeAt(0); i <= "Z".charCodeAt(0); i++) {
-      exports$1.ALPHA.push(String.fromCharCode(i));
-      exports$1.ALPHA.push(String.fromCharCode(i + 32));
+      exports.ALPHA.push(String.fromCharCode(i));
+      exports.ALPHA.push(String.fromCharCode(i + 32));
     }
-    exports$1.NUM_MAP = {
+    exports.NUM_MAP = {
       0: 0,
       1: 1,
       2: 2,
@@ -2887,7 +2887,7 @@ function requireConstants$3() {
       8: 8,
       9: 9
     };
-    exports$1.HEX_MAP = {
+    exports.HEX_MAP = {
       0: 0,
       1: 1,
       2: 2,
@@ -2911,7 +2911,7 @@ function requireConstants$3() {
       e: 14,
       f: 15
     };
-    exports$1.NUM = [
+    exports.NUM = [
       "0",
       "1",
       "2",
@@ -2923,10 +2923,10 @@ function requireConstants$3() {
       "8",
       "9"
     ];
-    exports$1.ALPHANUM = exports$1.ALPHA.concat(exports$1.NUM);
-    exports$1.MARK = ["-", "_", ".", "!", "~", "*", "'", "(", ")"];
-    exports$1.USERINFO_CHARS = exports$1.ALPHANUM.concat(exports$1.MARK).concat(["%", ";", ":", "&", "=", "+", "$", ","]);
-    exports$1.STRICT_URL_CHAR = [
+    exports.ALPHANUM = exports.ALPHA.concat(exports.NUM);
+    exports.MARK = ["-", "_", ".", "!", "~", "*", "'", "(", ")"];
+    exports.USERINFO_CHARS = exports.ALPHANUM.concat(exports.MARK).concat(["%", ";", ":", "&", "=", "+", "$", ","]);
+    exports.STRICT_URL_CHAR = [
       "!",
       '"',
       "$",
@@ -2957,13 +2957,13 @@ function requireConstants$3() {
       "|",
       "}",
       "~"
-    ].concat(exports$1.ALPHANUM);
-    exports$1.URL_CHAR = exports$1.STRICT_URL_CHAR.concat(["	", "\f"]);
+    ].concat(exports.ALPHANUM);
+    exports.URL_CHAR = exports.STRICT_URL_CHAR.concat(["	", "\f"]);
     for (let i = 128; i <= 255; i++) {
-      exports$1.URL_CHAR.push(i);
+      exports.URL_CHAR.push(i);
     }
-    exports$1.HEX = exports$1.NUM.concat(["a", "b", "c", "d", "e", "f", "A", "B", "C", "D", "E", "F"]);
-    exports$1.STRICT_TOKEN = [
+    exports.HEX = exports.NUM.concat(["a", "b", "c", "d", "e", "f", "A", "B", "C", "D", "E", "F"]);
+    exports.STRICT_TOKEN = [
       "!",
       "#",
       "$",
@@ -2979,17 +2979,17 @@ function requireConstants$3() {
       "`",
       "|",
       "~"
-    ].concat(exports$1.ALPHANUM);
-    exports$1.TOKEN = exports$1.STRICT_TOKEN.concat([" "]);
-    exports$1.HEADER_CHARS = ["	"];
+    ].concat(exports.ALPHANUM);
+    exports.TOKEN = exports.STRICT_TOKEN.concat([" "]);
+    exports.HEADER_CHARS = ["	"];
     for (let i = 32; i <= 255; i++) {
       if (i !== 127) {
-        exports$1.HEADER_CHARS.push(i);
+        exports.HEADER_CHARS.push(i);
       }
     }
-    exports$1.CONNECTION_TOKEN_CHARS = exports$1.HEADER_CHARS.filter((c) => c !== 44);
-    exports$1.MAJOR = exports$1.NUM_MAP;
-    exports$1.MINOR = exports$1.MAJOR;
+    exports.CONNECTION_TOKEN_CHARS = exports.HEADER_CHARS.filter((c) => c !== 44);
+    exports.MAJOR = exports.NUM_MAP;
+    exports.MINOR = exports.MAJOR;
     var HEADER_STATE;
     (function(HEADER_STATE2) {
       HEADER_STATE2[HEADER_STATE2["GENERAL"] = 0] = "GENERAL";
@@ -3001,8 +3001,8 @@ function requireConstants$3() {
       HEADER_STATE2[HEADER_STATE2["CONNECTION_CLOSE"] = 6] = "CONNECTION_CLOSE";
       HEADER_STATE2[HEADER_STATE2["CONNECTION_UPGRADE"] = 7] = "CONNECTION_UPGRADE";
       HEADER_STATE2[HEADER_STATE2["TRANSFER_ENCODING_CHUNKED"] = 8] = "TRANSFER_ENCODING_CHUNKED";
-    })(HEADER_STATE = exports$1.HEADER_STATE || (exports$1.HEADER_STATE = {}));
-    exports$1.SPECIAL_HEADERS = {
+    })(HEADER_STATE = exports.HEADER_STATE || (exports.HEADER_STATE = {}));
+    exports.SPECIAL_HEADERS = {
       "connection": HEADER_STATE.CONNECTION,
       "content-length": HEADER_STATE.CONTENT_LENGTH,
       "proxy-connection": HEADER_STATE.CONNECTION,
@@ -5836,9 +5836,9 @@ function requireClientH1() {
   const TIMEOUT_BODY = 4 | USE_FAST_TIMER;
   const TIMEOUT_KEEP_ALIVE = 8 | USE_NATIVE_TIMER;
   class Parser {
-    constructor(client2, socket, { exports: exports$1 }) {
+    constructor(client2, socket, { exports }) {
       assert(Number.isFinite(client2[kMaxHeadersSize]) && client2[kMaxHeadersSize] > 0);
-      this.llhttp = exports$1;
+      this.llhttp = exports;
       this.ptr = this.llhttp.llhttp_alloc(constants2.TYPE.RESPONSE);
       this.client = client2;
       this.socket = socket;
