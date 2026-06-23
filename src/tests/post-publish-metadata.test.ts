@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { generateAppUrl, postPrComment } from "../core/post-publish-metadata";
+import { generateAppUrl, generatePortalUrl, postPrComment } from "../core/post-publish-metadata";
 import type { AppMetadata } from "../types";
 
 vi.mock("@actions/core");
@@ -136,6 +136,50 @@ describe("post-publish-metadata.ts", () => {
       const tag = "latest";
 
       expect(() => generateAppUrl(meta, env, tag)).toThrow("App key not found in metadata");
+    });
+  });
+
+  describe("generatePortalUrl", () => {
+    it("should generate portal URL for fprd environment", () => {
+      const meta = { key: "demo-app", name: "demo-app" };
+      const env = "fprd";
+
+      const result = generatePortalUrl(meta, env);
+
+      expect(result).toBe("https://fusion.equinor.com/apps/app-admin/app/demo-app");
+    });
+
+    it("should generate portal URL for all supported environments", () => {
+      const meta = { key: "demo-app", name: "demo-app" };
+
+      expect(generatePortalUrl(meta, "ci")).toBe(
+        "https://fusion.ci.fusion-dev.net/apps/app-admin/app/demo-app",
+      );
+
+      expect(generatePortalUrl(meta, "fqa")).toBe(
+        "https://fusion.fqa.fusion-dev.net/apps/app-admin/app/demo-app",
+      );
+
+      expect(generatePortalUrl(meta, "fprd")).toBe(
+        "https://fusion.equinor.com/apps/app-admin/app/demo-app",
+      );
+
+      expect(generatePortalUrl(meta, "tr")).toBe(
+        "https://fusion.tr.fusion-dev.net/apps/app-admin/app/demo-app",
+      );
+
+      expect(generatePortalUrl(meta, "next")).toBe(
+        "https://next.fusion.ci.fusion-dev.net/apps/app-admin/app/demo-app",
+      );
+    });
+
+    it("should default to fprd portal URL for unknown environments", () => {
+      const meta = { key: "demo-app", name: "demo-app" };
+      const env = "unknown-env";
+
+      const result = generatePortalUrl(meta, env);
+
+      expect(result).toBe("https://fusion.equinor.com/apps/app-admin/app/demo-app");
     });
   });
 
