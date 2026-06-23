@@ -189,8 +189,7 @@ jobs:
         with:
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
           azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          env: 'ci'
-          prNR: ${{ github.event.number }}
+          prNR: ${{ github.event.number }}  # Automatically deploys to ci environment
           artifact: './app-bundle.zip'
 
       - name: Comment PR with Deployment Info

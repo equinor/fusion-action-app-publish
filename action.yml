@@ -23,11 +23,11 @@ inputs:
     required: false
 
   env:
-    description: 'Target environment (ci/fqa/fprd/tr/next) or "ci" for PR-based selection'
+    description: 'Target environment (ci/fqa/fprd/tr/next). Required unless prNR is set (mutually exclusive with prNR)'
     required: false
 
   prNR:
-    description: 'Pull Request number (When used, env will be set to "ci")'
+    description: 'Pull Request number for preview deployments (mutually exclusive with env). When used, automatically sets env to "ci" and tag to "pr-{number}", overriding any provided tag value'
     required: false
 
   artifact:
@@ -40,7 +40,7 @@ inputs:
     required: false
 
   tag:
-    description: 'Tag to apply to the deployment'
+    description: 'Tag to apply to the deployment. Required when using env, ignored when using prNR (which automatically uses "pr-{number}")'
     required: false
     default: 'latest'
 

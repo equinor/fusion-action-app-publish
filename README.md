@@ -132,8 +132,7 @@ jobs:
         with:
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
           azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          env: 'ci'  # Will create pr-{number} deployment
-          prNR: ${{ github.event.number }}
+          prNR: ${{ github.event.number }}  # Automatically deploys to ci environment
           artifact: './app-bundle.zip'
 ```
 
@@ -145,11 +144,11 @@ jobs:
 | `azure-client-id` | Azure Service Principal Client ID | No | - |
 | `azure-tenant-id` | Azure Tenant ID | No | - |
 | `azure-resource-id` | Fusion audience/resource ID for token acquisition (optional - auto-detected from environment) | No | - |
-| `env` | Target environment (ci/tr/fprd/fqa/next) | No | `ci` |
-| `prNR` | Pull Request number (used with env=ci) | No | - |
+| `env` | Target environment (ci/tr/fprd/fqa/next). Required unless `prNR` is set (mutually exclusive with `prNR`) | Conditional | - |
+| `prNR` | Pull Request number for preview deployments (mutually exclusive with `env`). When used, automatically sets env to 'ci' and tag to 'pr-{number}' | No | - |
 | `artifact` | Path to built artifact file (.zip) | No | `./app-bundle.zip` |
 | `config` | Path to fusion app config file (optional) | No | - |
-| `tag` | Tag to apply to the deployment | No | `latest` |
+| `tag` | Tag to apply to the deployment. Required when using `env`, ignored when using `prNR` (which uses 'pr-{number}') | Conditional | - |
 | `working-directory` | Working directory for commands | No | `.` |
 | `snapshot` | Enable snapshot versioning. Use `true` for auto-generated ID or provide custom identifier (e.g., `pr-123`) | No | - |
 
