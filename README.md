@@ -6,7 +6,7 @@
 
 ## Why This Action Exists
 
-This action exists to **make it dead simple for Equinor developers to publish their Fusion applications** without wrestling with complex CLI commands, authentication setup, or deployment configurations. 
+This action exists to **make it dead simple for Equinor developers to publish their Fusion applications** without wrestling with complex CLI commands, authentication setup, or deployment configurations.
 
 **The Problem:** Publishing Fusion apps traditionally required developers to manually handle authentication tokens, remember CLI syntax, manage environment configurations, and track deployment status across multiple tools.
 
@@ -24,7 +24,7 @@ This action exists to **make it dead simple for Equinor developers to publish th
 
 🏢 **Meets Enterprise Standards** - Built for Equinor's Azure infrastructure with full security compliance
 
-*Think of it as your "deploy button" for Fusion apps - one action that handles everything from authentication to deployment feedback.*
+_Think of it as your "deploy button" for Fusion apps - one action that handles everything from authentication to deployment feedback._
 
 ## Features
 
@@ -43,13 +43,14 @@ This action exists to **make it dead simple for Equinor developers to publish th
 **👉 For comprehensive examples and deployment patterns, see our [Complete Use Cases Guide](docs/COMPLETE_USE_CASES.md)**
 
 This guide covers 9+ detailed scenarios including:
+
 - 🚀 **Basic to Enterprise deployment pipelines**
-- 🔐 **Azure Service Principal with GitHub Environments**  
+- 🔐 **Azure Service Principal with GitHub Environments**
 - 🔄 **Pull Request previews and multi-environment workflows**
 - 🏢 **Monorepo deployments and custom configurations**
 - 🐛 **Debugging and troubleshooting workflows**
 
-*Whether you're getting started or implementing enterprise-grade deployments, the complete guide has copy-paste ready examples for your use case.*
+_Whether you're getting started or implementing enterprise-grade deployments, the complete guide has copy-paste ready examples for your use case._
 
 ## Usage
 
@@ -67,14 +68,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Publish to Fusion
         uses: equinor/fusion-action-app-publish@v1
         with:
           fusion-token: ${{ secrets.FUSION_TOKEN }}
-          env: 'fprd'
-          artifact: './app-bundle.zip'
-          tag: 'v1.0.0'
+          env: "fprd"
+          artifact: "./app-bundle.zip"
+          tag: "v1.0.0"
 ```
 
 ### Using Azure Service Principal (OIDC)
@@ -96,14 +97,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Publish to Fusion
         uses: equinor/fusion-action-app-publish@v1
         with:
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          env: 'fprd'
-          artifact: './app-bundle.zip'
+          azure-client-id: 00000000-0000-0000-0000-000000000000
+          env: "fprd"
+          artifact: "./app-bundle.zip"
 ```
 
 ### PR Preview Deployments
@@ -118,53 +118,52 @@ on:
 permissions:
   id-token: write
   contents: read
-  pull-requests: write  # For posting deployment comments
+  pull-requests: write # For posting deployment comments
 
 jobs:
   deploy-preview:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Deploy PR Preview
         id: deploy
         uses: equinor/fusion-action-app-publish@v1
         with:
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          env: 'ci'  # Will create pr-{number} deployment
+          azure-client-id: 00000000-0000-0000-0000-000000000000
+          env: "ci" # Will create pr-{number} deployment
           prNR: ${{ github.event.number }}
-          artifact: './app-bundle.zip'
+          artifact: "./app-bundle.zip"
 ```
 
 ## Inputs
 
-| Input | Description | Required | Default |
-|-------|-------------|----------|---------|
-| `fusion-token` | Pre-acquired Fusion bearer token | No | - |
-| `azure-client-id` | Azure Service Principal Client ID | No | - |
-| `azure-tenant-id` | Azure Tenant ID | No | - |
-| `azure-resource-id` | Fusion audience/resource ID for token acquisition (optional - auto-detected from environment) | No | - |
-| `env` | Target environment (ci/tr/fprd/fqa/next) | No | `ci` |
-| `prNR` | Pull Request number (used with env=ci) | No | - |
-| `artifact` | Path to built artifact file (.zip) | No | `./app-bundle.zip` |
-| `config` | Path to fusion app config file (optional) | No | - |
-| `tag` | Tag to apply to the deployment | No | `latest` |
-| `working-directory` | Working directory for commands | No | `.` |
-| `snapshot` | Enable snapshot versioning. Use `true` for auto-generated ID or provide custom identifier (e.g., `pr-123`) | No | - |
+| Input               | Description                                                                                                | Required | Default                                |
+| ------------------- | ---------------------------------------------------------------------------------------------------------- | -------- | -------------------------------------- |
+| `fusion-token`      | Pre-acquired Fusion bearer token                                                                           | No       | -                                      |
+| `azure-client-id`   | Azure Service Principal Client ID                                                                          | No       | -                                      |
+| `azure-tenant-id`   | Azure Tenant ID                                                                                            | No       | `3aa4a235-b6e2-48d5-9195-7fcf05b459b0` |
+| `azure-resource-id` | Fusion audience/resource ID for token acquisition (optional - auto-detected from environment)              | No       | -                                      |
+| `env`               | Target environment (ci/tr/fprd/fqa/next)                                                                   | No       | `ci`                                   |
+| `prNR`              | Pull Request number (used with env=ci)                                                                     | No       | -                                      |
+| `artifact`          | Path to built artifact file (.zip)                                                                         | No       | `./app-bundle.zip`                     |
+| `config`            | Path to fusion app config file (optional)                                                                  | No       | -                                      |
+| `tag`               | Tag to apply to the deployment                                                                             | No       | `latest`                               |
+| `working-directory` | Working directory for commands                                                                             | No       | `.`                                    |
+| `snapshot`          | Enable snapshot versioning. Use `true` for auto-generated ID or provide custom identifier (e.g., `pr-123`) | No       | -                                      |
 
 ## Outputs
 
-| Output | Description |
-|--------|-------------|
-| `app-url` | Direct URL to the published application |
-| `portal-url` | Fusion portal URL for managing the application |
-| `target-env` | Resolved target environment |
-| `app-name` | Application name from metadata |
-| `app-version` | Application version from metadata |
-| `publish-info` | Formatted publish information for PR comments |
-| `auth-type` | Authentication type used (`token` or `service-principal`) |
-| `is-token` | Whether fusion-token authentication was used (boolean) |
+| Output                 | Description                                                       |
+| ---------------------- | ----------------------------------------------------------------- |
+| `app-url`              | Direct URL to the published application                           |
+| `portal-url`           | Fusion portal URL for managing the application                    |
+| `target-env`           | Resolved target environment                                       |
+| `app-name`             | Application name from metadata                                    |
+| `app-version`          | Application version from metadata                                 |
+| `publish-info`         | Formatted publish information for PR comments                     |
+| `auth-type`            | Authentication type used (`token` or `service-principal`)         |
+| `is-token`             | Whether fusion-token authentication was used (boolean)            |
 | `is-service-principal` | Whether Azure Service Principal authentication was used (boolean) |
 
 ## Authentication Methods
@@ -172,13 +171,17 @@ jobs:
 The action provides two distinct functions for authentication validation:
 
 ### `validateFusionToken(token)`
+
 Validates the format and structure of Fusion bearer tokens:
+
 - Ensures token is a non-empty string
 - Validates BEARER prefix format
 - Supports alphanumeric characters, dots, dashes, and underscores
 
 ### `detectAndValidateAuthType(credentials)`
+
 Detects authentication type and validates Service Principal credentials:
+
 - Returns authentication type (`token` or `service-principal`)
 - Validates Azure Service Principal credentials (requires azure-client-id and azure-tenant-id)
 - Handles credential precedence when both types are provided
@@ -191,8 +194,8 @@ Use this method if you already have a Fusion bearer token:
 - uses: equinor/fusion-action-app-publish@v1
   with:
     fusion-token: ${{ secrets.FUSION_TOKEN }}
-    env: 'fprd'
-    artifact: './app-bundle.zip'
+    env: "fprd"
+    artifact: "./app-bundle.zip"
 ```
 
 ### Method 2: Azure Service Principal
@@ -208,8 +211,7 @@ permissions:
 # In job steps:
 - uses: equinor/fusion-action-app-publish@v1
   with:
-    azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-    azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+    azure-client-id: 00000000-0000-0000-0000-000000000000
     env: 'fprd'
     artifact: './app-bundle.zip'
 ```
@@ -231,10 +233,9 @@ You can still explicitly specify the Azure Resource ID if needed:
 ```yaml
 - uses: equinor/fusion-action-app-publish@v1
   with:
-    azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-    azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-    azure-resource-id: "custom-resource-id"  # Override auto-detection
-    env: 'fprd'
+    azure-client-id: 00000000-0000-0000-0000-000000000000
+    azure-resource-id: "custom-resource-id" # Override auto-detection
+    env: "fprd"
 ```
 
 **Note**: The auto-detection feature provides new scope patterns that are not yet implemented in the app-service backend. This functionality is prepared for future service updates.
@@ -244,11 +245,13 @@ You can still explicitly specify the Azure Resource ID if needed:
 ### Required Secrets
 
 For **Fusion Token** method:
+
 - `FUSION_TOKEN`: Your pre-acquired Fusion bearer token
 
 For **Service Principal** method:
+
 - `AZURE_CLIENT_ID`: Azure Application (client) ID
-- `AZURE_TENANT_ID`: Azure Directory (tenant) ID  
+- `AZURE_TENANT_ID`: Azure Directory (tenant) ID
 - `FUSION_RESOURCE_ID`: Fusion API resource/audience ID
 
 ### Setting up Azure Service Principal
@@ -261,6 +264,7 @@ For **Service Principal** method:
 ## Supported Environments
 
 The action validates against these environments:
+
 - `ci` - Continuous Integration / Pull Request previews
 - `tr` - Test/Trial environment
 - `fprd` - Full Production
@@ -269,16 +273,16 @@ The action validates against these environments:
 
 When using `env: 'ci'` with a `prNR`, the action automatically creates preview deployments tagged as `pr-{number}`.
 
-
-
 ## Artifact Requirements
 
 The action supports various artifact types:
 
 ### Archive Files (Recommended)
+
 - `.zip` files - Standard ZIP archives (only format supported currently)
 
 ### Directory
+
 ```
 app-bundle/
 ├── index.html
@@ -290,6 +294,7 @@ app-bundle/
 The action will automatically extract metadata from `metadata.json` when present. The extraction process uses `unzip -p` to read the metadata directly from the zip archive without creating temporary files, making it more efficient and faster.
 
 #### Expected metadata.json format:
+
 ```json
 {
   "name": "fusion-framework-cookbook-app-react",
@@ -304,42 +309,50 @@ The `name` field will be used as the app key for deployment.
 ### Common Issues
 
 **"Artifact not found"**
+
 - Ensure the build step runs before publish
 - Check that `artifact` path is correct
 - Verify `working-directory` is set properly
 - Use absolute paths or verify relative paths from working directory
 
 **"Invalid environment"**
+
 - Use one of: ci, tr, fprd, fqa, next
 - Check spelling and case sensitivity
 - Environment names are case-sensitive
 
 **"Missing authentication credentials"**
+
 - Provide either `fusion-token` OR all SP credentials
 - Don't provide both authentication methods
 - Ensure all required Azure credentials are set (client-id, tenant-id, resource-id)
 
 **"Token seems unusually short"**
+
 - Verify your Fusion token is complete and valid
 - Check token hasn't expired
-- Ensure token includes "BEARER_" prefix
+- Ensure token includes "BEARER\_" prefix
 
 **"Manifest file not found"**
+
 - Ensure `app-manifest.json` exists in your bundle
 - Check bundle structure matches requirements
 - Verify file names are correct (case-sensitive)
 
 **"Metadata file not found"**
+
 - Ensure `metadata.json` exists in your bundle
 - Check JSON syntax is valid
 - Verify required fields (name, version) are present
 
 **"Config file validation failed"**
+
 - Ensure config file exists at specified path
 - Verify config file contains valid JSON
 - Check file permissions
 
 **"Bundle extraction failed"**
+
 - Verify zip file is not corrupted
 - Check zip file contains required structure
 - Ensure bundle was created properly by your build process
@@ -355,7 +368,7 @@ Add debug output to your workflow:
     echo "Artifact path: ${{ inputs.artifact }}"
     echo "Working directory: $(pwd)"
     ls -la ${{ inputs.artifact }}
-    
+
     # Check bundle contents
     if [[ "${{ inputs.artifact }}" == *.zip ]]; then
       echo "Bundle contents:"
@@ -374,7 +387,7 @@ Add debug output to your workflow:
       echo "✅ metadata.json found:"
       cat /tmp/metadata.json | jq .
     fi
-    
+
     # Extract and validate app-manifest.json
     unzip -p ${{ inputs.artifact }} app-manifest.json > /tmp/manifest.json 2>/dev/null || echo "❌ app-manifest.json missing"
     if [[ -f /tmp/manifest.json ]]; then
@@ -385,15 +398,15 @@ Add debug output to your workflow:
 
 ### Error Codes Reference
 
-| Error | Meaning | Solution |
-|-------|---------|----------|
-| `ENOENT` | File or directory not found | Check paths and ensure files exist |
-| `EACCES` | Permission denied | Check file permissions |
-| `Invalid JSON` | JSON parsing failed | Validate JSON syntax in metadata/config files |
-| `Missing appKey` | app-manifest.json missing required field | Add appKey to manifest |
-| `Missing name/version` | metadata.json missing required fields | Add name and version to metadata |
-| `Auth validation failed` | Authentication credentials invalid | Check token format or SP credentials |
-| `Unsupported environment` | Environment not in allowed list | Use: ci, tr, fprd, fqa, or next |
+| Error                     | Meaning                                  | Solution                                      |
+| ------------------------- | ---------------------------------------- | --------------------------------------------- |
+| `ENOENT`                  | File or directory not found              | Check paths and ensure files exist            |
+| `EACCES`                  | Permission denied                        | Check file permissions                        |
+| `Invalid JSON`            | JSON parsing failed                      | Validate JSON syntax in metadata/config files |
+| `Missing appKey`          | app-manifest.json missing required field | Add appKey to manifest                        |
+| `Missing name/version`    | metadata.json missing required fields    | Add name and version to metadata              |
+| `Auth validation failed`  | Authentication credentials invalid       | Check token format or SP credentials          |
+| `Unsupported environment` | Environment not in allowed list          | Use: ci, tr, fprd, fqa, or next               |
 
 ## Development
 
@@ -433,7 +446,8 @@ MIT - see [LICENSE](LICENSE) file for details.
 ## Support
 
 For issues related to:
+
 - **GitHub Action**: Open an issue in this repository
-- **Fusion Framework CLI**: Check [@equinor/fusion-framework-cli](https://github.com/equinor/fusion-framework-cli) 
+- **Fusion Framework CLI**: Check [@equinor/fusion-framework-cli](https://github.com/equinor/fusion-framework-cli)
 - **Fusion Platform**: Contact the Fusion Core team
-Github Action for publishing Fusion applications
+  Github Action for publishing Fusion applications
