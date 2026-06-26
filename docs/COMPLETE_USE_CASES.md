@@ -4,17 +4,17 @@ This comprehensive guide covers all use cases for the **Fusion App Publish Actio
 
 ## 📋 Quick Reference
 
-| Scenario | Authentication | Environment Setup | Complexity | Priority |
-|----------|---------------|------------------|------------|----------|
-| [Basic Production Deploy](#1-basic-production-deployment) | Azure SP | Repository Secrets | 🟢 Simple | 🔥 Essential |
-| [Multi-Environment with GitHub Environments](#2-multi-environment-with-github-environments) | Azure SP | Environment Variables | 🟡 Medium | 🔥 Essential |
-| [PR Previews](#3-pull-request-previews) | Azure SP | Repository Secrets | 🟢 Simple | 🔥 Essential |
-| [Snapshot Publishing](#4-snapshot-publishing) | Azure SP | Repository Secrets | 🟢 Simple | 🔥 Essential |
-| [Manual Token Acquisition](#5-manual-token-acquisition) | Manual `az` | Environment Variables | 🟡 Medium | ⚠️ Advanced |
-| [Enterprise Multi-Pipeline](#6-enterprise-multi-environment-pipeline) | Azure SP | Environment Variables | 🔴 Complex | 🔥 Essential |
-| [Monorepo Deployments](#7-monorepo-applications) | Azure SP | Mixed | 🔴 Complex | ⚠️ Advanced |
-| [Custom Configuration](#8-custom-configuration-deployments) | Azure SP | Any | 🟡 Medium | ⚠️ Advanced |
-| [Complete PR Workflow with Build](#9-complete-pr-workflow-with-build-integration) | Azure SP | Repository Secrets | 🟡 Medium | 🔥 Essential |
+| Scenario                                                                                    | Authentication | Environment Setup     | Complexity | Priority     |
+| ------------------------------------------------------------------------------------------- | -------------- | --------------------- | ---------- | ------------ |
+| [Basic Production Deploy](#1-basic-production-deployment)                                   | Azure SP       | None required         | 🟢 Simple  | 🔥 Essential |
+| [Multi-Environment with GitHub Environments](#2-multi-environment-with-github-environments) | Azure SP       | Environment Variables | 🟡 Medium  | 🔥 Essential |
+| [PR Previews](#3-pull-request-previews)                                                     | Azure SP       | None required         | 🟢 Simple  | 🔥 Essential |
+| [Snapshot Publishing](#4-snapshot-publishing)                                               | Azure SP       | None required         | 🟢 Simple  | 🔥 Essential |
+| [Manual Token Acquisition](#5-manual-token-acquisition)                                     | Manual `az`    | Environment Variables | 🟡 Medium  | ⚠️ Advanced  |
+| [Enterprise Multi-Pipeline](#6-enterprise-multi-environment-pipeline)                       | Azure SP       | Environment Variables | 🔴 Complex | 🔥 Essential |
+| [Monorepo Deployments](#7-monorepo-applications)                                            | Azure SP       | Mixed                 | 🔴 Complex | ⚠️ Advanced  |
+| [Custom Configuration](#8-custom-configuration-deployments)                                 | Azure SP       | Any                   | 🟡 Medium  | ⚠️ Advanced  |
+| [Complete PR Workflow with Build](#9-complete-pr-workflow-with-build-integration)           | Azure SP       | None required         | 🟡 Medium  | 🔥 Essential |
 
 ---
 
@@ -24,7 +24,7 @@ This comprehensive guide covers all use cases for the **Fusion App Publish Actio
 
 **When to use:** Single-environment deployment, getting started, simple projects.
 
-**Setup:** Repository secrets only.
+**Setup:** No secrets required.
 
 ### Workflow Configuration
 
@@ -44,25 +44,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Deploy to Fusion Production
         uses: equinor/fusion-action-app-publish@v1
         with:
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          env: 'fprd'
-          artifact: './app-bundle.zip'
+          azure-client-id: 00000000-0000-0000-0000-000000000000
+          env: "fprd"
+          artifact: "./app-bundle.zip"
           tag: ${{ github.event.release.tag_name }}
 ```
 
-### Required Repository Secrets
-
-```
-AZURE_CLIENT_ID=your-azure-client-id
-AZURE_TENANT_ID=your-azure-tenant-id
-```
-
 ### Benefits
+
 - ✅ Simple setup
 - ✅ No environment configuration needed
 - ✅ Uses default production resource ID automatically
@@ -100,15 +93,14 @@ jobs:
     environment: staging
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Deploy to Staging
         uses: equinor/fusion-action-app-publish@v1
         with:
-          azure-client-id: ${{ vars.AZURE_CLIENT_ID }}
-          azure-tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          azure-client-id: 00000000-0000-0000-0000-000000000000
           env: ${{ vars.FUSION_ENVIRONMENT }}
-          artifact: './app-bundle.zip'
-          tag: 'staging-${{ github.sha }}'
+          artifact: "./app-bundle.zip"
+          tag: "staging-${{ github.sha }}"
 
   deploy-production:
     if: github.event_name == 'push'
@@ -116,36 +108,36 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Deploy to Production
         uses: equinor/fusion-action-app-publish@v1
         with:
-          azure-client-id: ${{ vars.AZURE_CLIENT_ID }}
-          azure-tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          azure-client-id: 00000000-0000-0000-0000-000000000000
           env: ${{ vars.FUSION_ENVIRONMENT }}
-          artifact: './app-bundle.zip'
-          tag: 'prod-${{ github.sha }}'
+          artifact: "./app-bundle.zip"
+          tag: "prod-${{ github.sha }}"
 ```
 
 ### GitHub Environment Setup
 
 **Environment: `staging`**
+
 ```
 Variables:
   AZURE_CLIENT_ID=staging-client-id
-  AZURE_TENANT_ID=your-tenant-id
   FUSION_ENVIRONMENT=fqa
 ```
 
 **Environment: `production`**
+
 ```
 Variables:
   AZURE_CLIENT_ID=production-client-id
-  AZURE_TENANT_ID=your-tenant-id
   FUSION_ENVIRONMENT=fprd
 ```
 
 ### Benefits
+
 - ✅ Environment-specific configuration
 - ✅ Clear separation between staging and production
 - ✅ Environment protection rules apply
@@ -160,7 +152,7 @@ Variables:
 
 **When to use:** Code review process, testing changes before merge.
 
-**Setup:** Repository secrets with PR permissions.
+**Setup:** No secrets required (only PR write permission).
 
 ### Workflow Configuration
 
@@ -175,23 +167,22 @@ on:
 permissions:
   id-token: write
   contents: read
-  pull-requests: write  # For posting deployment comments
+  pull-requests: write # For posting deployment comments
 
 jobs:
   deploy-preview:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Deploy PR Preview
         id: deploy
         uses: equinor/fusion-action-app-publish@v1
         with:
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          env: 'ci'
+          azure-client-id: 00000000-0000-0000-0000-000000000000
+          env: "ci"
           prNR: ${{ github.event.number }}
-          artifact: './app-bundle.zip'
+          artifact: "./app-bundle.zip"
 
       - name: Comment PR with Deployment Info
         uses: actions/github-script@v7
@@ -213,14 +204,8 @@ jobs:
             })
 ```
 
-### Required Repository Secrets
-
-```
-AZURE_CLIENT_ID=your-azure-client-id
-AZURE_TENANT_ID=your-azure-tenant-id
-```
-
 ### Benefits
+
 - ✅ Automatic deployment URL in PR comments
 - ✅ Easy testing of changes before merge
 - ✅ Uses `pr-{number}` tagging for easy identification
@@ -234,7 +219,7 @@ AZURE_TENANT_ID=your-azure-tenant-id
 
 **When to use:** PR previews, testing builds, isolated deployments where you need unique versions.
 
-**Setup:** Repository secrets with snapshot input.
+**Setup:** No secrets required.
 
 ### Why Snapshot Publishing?
 
@@ -244,6 +229,7 @@ Snapshot publishing creates a unique version for each build by appending a snaps
 - `snapshot: 'pr-42'` → `1.2.3-pr-42.{timestamp}`
 
 This is useful when:
+
 - You want unique versions for PR preview deployments
 - You need to test multiple builds without version conflicts
 - You want to avoid modifying `package.json` for preview builds
@@ -267,17 +253,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Deploy Snapshot
         id: deploy
         uses: equinor/fusion-action-app-publish@v1
         with:
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          env: 'ci'
-          artifact: './app-bundle.zip'
-          tag: 'pr-${{ github.event.number }}'
-          snapshot: 'true'  # Auto-generates snapshot identifier
+          azure-client-id: 00000000-0000-0000-0000-000000000000
+          env: "ci"
+          artifact: "./app-bundle.zip"
+          tag: "pr-${{ github.event.number }}"
+          snapshot: "true" # Auto-generates snapshot identifier
 ```
 
 ### Snapshot with Custom Identifier
@@ -301,17 +286,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Deploy PR Snapshot
         id: deploy
         uses: equinor/fusion-action-app-publish@v1
         with:
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          env: 'ci'
-          artifact: './app-bundle.zip'
-          tag: 'pr-${{ github.event.number }}'
-          snapshot: 'pr-${{ github.event.number }}'  # Custom identifier → 1.2.3-pr-42.{timestamp}
+          azure-client-id: 00000000-0000-0000-0000-000000000000
+          env: "ci"
+          artifact: "./app-bundle.zip"
+          tag: "pr-${{ github.event.number }}"
+          snapshot: "pr-${{ github.event.number }}" # Custom identifier → 1.2.3-pr-42.{timestamp}
 ```
 
 ### Combining Snapshot with prNR
@@ -322,14 +306,14 @@ You can combine snapshot publishing with the `prNR` input for a complete PR prev
 - name: Deploy Complete PR Preview
   uses: equinor/fusion-action-app-publish@v1
   with:
-    azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-    azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-    prNR: ${{ github.event.number }}  # Sets env=ci and tag=pr-{number}
-    artifact: './app-bundle.zip'
-    snapshot: 'pr-${{ github.event.number }}'  # Unique version per PR
+    azure-client-id: 00000000-0000-0000-0000-000000000000
+    prNR: ${{ github.event.number }} # Sets env=ci and tag=pr-{number}
+    artifact: "./app-bundle.zip"
+    snapshot: "pr-${{ github.event.number }}" # Unique version per PR
 ```
 
 ### Benefits
+
 - ✅ Unique versions without modifying package.json
 - ✅ Perfect for PR preview deployments
 - ✅ Enables multiple concurrent preview builds
@@ -355,10 +339,10 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Target environment'
+        description: "Target environment"
         required: true
         type: choice
-        options: ['staging', 'production']
+        options: ["staging", "production"]
 
 jobs:
   deploy:
@@ -369,12 +353,12 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Azure Login
         uses: azure/login@v2
         with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          client-id: 00000000-0000-0000-0000-000000000000
+          tenant-id: 3aa4a235-b6e2-48d5-9195-7fcf05b459b0
           allow-no-subscriptions: true
 
       - name: Acquire Fusion Token
@@ -390,8 +374,8 @@ jobs:
         with:
           fusion-token: ${{ env.FUSION_TOKEN }}
           env: ${{ vars.FUSION_ENVIRONMENT }}
-          artifact: './app-bundle.zip'
-          tag: 'manual-${{ github.run_number }}'
+          artifact: "./app-bundle.zip"
+          tag: "manual-${{ github.run_number }}"
 
       - name: Azure Logout
         if: always()
@@ -401,24 +385,25 @@ jobs:
 ### Environment Variables Setup
 
 **Environment: `staging`**
+
 ```
 Variables:
   AZURE_CLIENT_ID=staging-client-id
-  AZURE_TENANT_ID=your-tenant-id
   FUSION_RESOURCE_ID=api://fusion.equinor.com/nonprod
   FUSION_ENVIRONMENT=fqa
 ```
 
 **Environment: `production`**
+
 ```
 Variables:
   AZURE_CLIENT_ID=production-client-id
-  AZURE_TENANT_ID=your-tenant-id
   FUSION_RESOURCE_ID=api://fusion.equinor.com/prod
   FUSION_ENVIRONMENT=fprd
 ```
 
 ### Benefits
+
 - ✅ Full control over token acquisition
 - ✅ Manual deployment approval
 - ✅ Environment-specific resource IDs
@@ -455,15 +440,14 @@ jobs:
     environment: development
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Deploy to Development
         uses: equinor/fusion-action-app-publish@v1
         with:
-          azure-client-id: ${{ vars.AZURE_CLIENT_ID }}
-          azure-tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          azure-client-id: 00000000-0000-0000-0000-000000000000
           env: ${{ vars.FUSION_ENVIRONMENT }}
-          artifact: './app-bundle.zip'
-          tag: 'dev-${{ github.sha }}'
+          artifact: "./app-bundle.zip"
+          tag: "dev-${{ github.sha }}"
 
   deploy-test:
     needs: deploy-dev
@@ -471,15 +455,14 @@ jobs:
     environment: test
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Deploy to Test
         uses: equinor/fusion-action-app-publish@v1
         with:
-          azure-client-id: ${{ vars.AZURE_CLIENT_ID }}
-          azure-tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          azure-client-id: 00000000-0000-0000-0000-000000000000
           env: ${{ vars.FUSION_ENVIRONMENT }}
-          artifact: './app-bundle.zip'
-          tag: 'test-${{ github.sha }}'
+          artifact: "./app-bundle.zip"
+          tag: "test-${{ github.sha }}"
 
   deploy-qa:
     needs: deploy-test
@@ -487,15 +470,14 @@ jobs:
     environment: qa
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Deploy to QA
         uses: equinor/fusion-action-app-publish@v1
         with:
-          azure-client-id: ${{ vars.AZURE_CLIENT_ID }}
-          azure-tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          azure-client-id: 00000000-0000-0000-0000-000000000000
           env: ${{ vars.FUSION_ENVIRONMENT }}
-          artifact: './app-bundle.zip'
-          tag: 'qa-${{ github.sha }}'
+          artifact: "./app-bundle.zip"
+          tag: "qa-${{ github.sha }}"
 
   deploy-production:
     needs: deploy-qa
@@ -504,15 +486,14 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Deploy to Production
         id: deploy
         uses: equinor/fusion-action-app-publish@v1
         with:
-          azure-client-id: ${{ vars.AZURE_CLIENT_ID }}
-          azure-tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          azure-client-id: 00000000-0000-0000-0000-000000000000
           env: ${{ vars.FUSION_ENVIRONMENT }}
-          artifact: './app-bundle.zip'
+          artifact: "./app-bundle.zip"
           tag: ${{ github.event.release.tag_name }}
 
       - name: Notify Teams on Success
@@ -526,37 +507,37 @@ jobs:
 ### GitHub Environment Configuration
 
 **Environment: `development`**
+
 ```
 Variables:
   AZURE_CLIENT_ID=dev-client-id
-  AZURE_TENANT_ID=your-tenant-id
   FUSION_ENVIRONMENT=ci
 Protection Rules: None
 ```
 
 **Environment: `test`**
+
 ```
 Variables:
   AZURE_CLIENT_ID=test-client-id
-  AZURE_TENANT_ID=your-tenant-id
   FUSION_ENVIRONMENT=tr
 Protection Rules: None
 ```
 
 **Environment: `qa`**
+
 ```
 Variables:
   AZURE_CLIENT_ID=qa-client-id
-  AZURE_TENANT_ID=your-tenant-id
   FUSION_ENVIRONMENT=fqa
 Protection Rules: Wait timer: 5 minutes
 ```
 
 **Environment: `production`**
+
 ```
 Variables:
   AZURE_CLIENT_ID=prod-client-id
-  AZURE_TENANT_ID=your-tenant-id
   FUSION_ENVIRONMENT=fprd
 Protection Rules:
   - Required reviewers: [team-leads, security-team]
@@ -565,6 +546,7 @@ Protection Rules:
 ```
 
 ### Benefits
+
 - ✅ Controlled deployment progression
 - ✅ Environment-specific protection rules
 - ✅ Automatic dev/test, manual QA/production
@@ -592,10 +574,10 @@ on:
   workflow_dispatch:
     inputs:
       app:
-        description: 'Application to deploy'
+        description: "Application to deploy"
         required: true
         type: choice
-        options: ['frontend', 'admin', 'mobile', 'all']
+        options: ["frontend", "admin", "mobile", "all"]
 
 jobs:
   determine-changes:
@@ -626,16 +608,15 @@ jobs:
     environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Deploy Frontend App
         uses: equinor/fusion-action-app-publish@v1
         with:
-          azure-client-id: ${{ vars.AZURE_CLIENT_ID }}
-          azure-tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          azure-client-id: 00000000-0000-0000-0000-000000000000
           env: ${{ vars.FUSION_ENVIRONMENT }}
-          artifact: './apps/frontend/dist/app-bundle.zip'
-          working-directory: './apps/frontend'
-          tag: 'frontend-${{ github.sha }}'
+          artifact: "./apps/frontend/dist/app-bundle.zip"
+          working-directory: "./apps/frontend"
+          tag: "frontend-${{ github.sha }}"
 
   deploy-admin:
     needs: determine-changes
@@ -646,17 +627,16 @@ jobs:
     environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Deploy Admin App
         uses: equinor/fusion-action-app-publish@v1
         with:
-          azure-client-id: ${{ vars.AZURE_CLIENT_ID }}
-          azure-tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          azure-client-id: 00000000-0000-0000-0000-000000000000
           env: ${{ vars.FUSION_ENVIRONMENT }}
-          artifact: './apps/admin/dist/admin-bundle.zip'
-          working-directory: './apps/admin'
-          config: './apps/admin/fusion.config.json'
-          tag: 'admin-${{ github.sha }}'
+          artifact: "./apps/admin/dist/admin-bundle.zip"
+          working-directory: "./apps/admin"
+          config: "./apps/admin/fusion.config.json"
+          tag: "admin-${{ github.sha }}"
 
   deploy-mobile:
     needs: determine-changes
@@ -667,16 +647,15 @@ jobs:
     environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Deploy Mobile App
         uses: equinor/fusion-action-app-publish@v1
         with:
-          azure-client-id: ${{ vars.AZURE_CLIENT_ID }}
-          azure-tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          azure-client-id: 00000000-0000-0000-0000-000000000000
           env: ${{ vars.FUSION_ENVIRONMENT }}
-          artifact: './apps/mobile/build/mobile-app.zip'
-          working-directory: './apps/mobile'
-          tag: 'mobile-${{ github.sha }}'
+          artifact: "./apps/mobile/build/mobile-app.zip"
+          working-directory: "./apps/mobile"
+          tag: "mobile-${{ github.sha }}"
 ```
 
 ### Repository Structure
@@ -697,6 +676,7 @@ monorepo/
 ```
 
 ### Benefits
+
 - ✅ Selective deployment based on file changes
 - ✅ Manual deployment of specific apps
 - ✅ App-specific configuration and artifacts
@@ -732,7 +712,7 @@ jobs:
     environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Generate Dynamic Config
         run: |
           # Create environment-specific configuration
@@ -758,19 +738,18 @@ jobs:
         id: deploy
         uses: equinor/fusion-action-app-publish@v1
         with:
-          azure-client-id: ${{ vars.AZURE_CLIENT_ID }}
-          azure-tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          azure-client-id: 00000000-0000-0000-0000-000000000000
           env: ${{ vars.FUSION_ENVIRONMENT }}
-          artifact: './app-bundle.zip'
-          config: './fusion.config.json'
-          tag: '${{ vars.TAG_PREFIX }}-${{ github.sha }}'
+          artifact: "./app-bundle.zip"
+          config: "./fusion.config.json"
+          tag: "${{ vars.TAG_PREFIX }}-${{ github.sha }}"
 
       - name: Validate Deployment
         run: |
           echo "Deployment successful!"
           echo "App URL: ${{ steps.deploy.outputs.app-url }}"
           echo "Environment: ${{ steps.deploy.outputs.target-env }}"
-          
+
           # Custom validation logic
           curl -f "${{ steps.deploy.outputs.app-url }}/health" || exit 1
 ```
@@ -780,7 +759,6 @@ jobs:
 ```
 Variables:
   AZURE_CLIENT_ID=prod-client-id
-  AZURE_TENANT_ID=your-tenant-id
   FUSION_ENVIRONMENT=fprd
   ENABLE_BETA_FEATURES=false
   ENABLE_ANALYTICS=true
@@ -795,8 +773,7 @@ Variables:
 
 ```
 Variables:
-  AZURE_CLIENT_ID=staging-client-id  
-  AZURE_TENANT_ID=your-tenant-id
+  AZURE_CLIENT_ID=staging-client-id
   FUSION_ENVIRONMENT=fqa
   ENABLE_BETA_FEATURES=true
   ENABLE_ANALYTICS=false
@@ -808,6 +785,7 @@ Variables:
 ```
 
 ### Benefits
+
 - ✅ Environment-specific feature flags
 - ✅ Dynamic configuration generation
 - ✅ Custom validation logic
@@ -822,7 +800,7 @@ Variables:
 
 **When to use:** Production applications with build steps, monorepo with multiple apps, when you want efficient CI that only runs when relevant files change.
 
-**Setup:** Repository secrets with complete build integration.
+**Setup:** No secrets required.
 
 ### Workflow Configuration
 
@@ -861,8 +839,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: "20"
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install
@@ -872,7 +850,7 @@ jobs:
         run: |
           # Build the application
           pnpm run build
-          
+
           # Pack for PR deployment with snapshot version
           npx -y -p @equinor/fusion-framework-cli@latest ffc app pack --snapshot pr
 
@@ -883,17 +861,7 @@ jobs:
           artifact: ./app-bundle.zip
           prNR: ${{ github.event.number }}
           working-directory: ${{ env.work-dir }}
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-
-
-```
-
-### Required Repository Secrets
-
-```
-AZURE_CLIENT_ID=your-azure-client-id
-AZURE_TENANT_ID=your-azure-tenant-id
+          azure-client-id: 00000000-0000-0000-0000-000000000000
 ```
 
 ### Directory Structure Expected
@@ -910,6 +878,7 @@ your-repo/
 ```
 
 ### Benefits
+
 - ✅ **Efficient CI**: Only runs when app-specific files change
 - ✅ **Concurrency Control**: Prevents multiple deployments for same PR
 - ✅ **Complete Build Integration**: Handles dependencies, build, and pack
@@ -921,33 +890,41 @@ your-repo/
 ### Key Features
 
 **Path Filtering:**
+
 ```yaml
 paths:
   - apps/my-fusion-app/src/**
   - apps/my-fusion-app/package*
 ```
+
 Only triggers when source code or dependencies change.
 
 **Concurrency Control:**
+
 ```yaml
 concurrency:
   group: pr-my-fusion-app-${{ github.event.pull_request.id }}
   cancel-in-progress: true
 ```
+
 Cancels previous runs when new commits are pushed.
 
 **Environment Variables:**
+
 ```yaml
 env:
   app-name: my-fusion-app
   work-dir: ./apps/my-fusion-app
 ```
+
 Makes the workflow easy to adapt for different apps.
 
 **Latest CLI Usage:**
+
 ```bash
 npx -y -p @equinor/fusion-framework-cli@latest ffc app pack --snapshot pr
 ```
+
 Ensures access to latest features like `--snapshot` flag.
 
 ---
@@ -967,11 +944,11 @@ on:
   workflow_dispatch:
     inputs:
       debug_level:
-        description: 'Debug level'
+        description: "Debug level"
         type: choice
-        options: ['basic', 'verbose', 'full']
+        options: ["basic", "verbose", "full"]
       dry_run:
-        description: 'Dry run (validation only)'
+        description: "Dry run (validation only)"
         type: boolean
         default: false
 
@@ -981,7 +958,7 @@ jobs:
     environment: staging
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Debug Information
         run: |
           echo "🔍 Debug Information"
@@ -996,7 +973,6 @@ jobs:
         run: |
           echo "🔧 Environment Variables"
           echo "AZURE_CLIENT_ID exists: ${{ vars.AZURE_CLIENT_ID != '' }}"
-          echo "AZURE_TENANT_ID exists: ${{ vars.AZURE_TENANT_ID != '' }}"
           echo "FUSION_ENVIRONMENT: ${{ vars.FUSION_ENVIRONMENT }}"
 
       - name: Check Artifact
@@ -1023,8 +999,8 @@ jobs:
         if: github.event.inputs.dry_run != 'true'
         uses: azure/login@v2
         with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          client-id: 00000000-0000-0000-0000-000000000000
+          tenant-id: 3aa4a235-b6e2-48d5-9195-7fcf05b459b0
           allow-no-subscriptions: true
 
       - name: Test Token Acquisition
@@ -1032,7 +1008,7 @@ jobs:
         run: |
           echo "🔑 Testing Token Acquisition"
           RESOURCE_ID="api://fusion.equinor.com/nonprod"
-          
+
           TOKEN=$(az account get-access-token --resource "$RESOURCE_ID" --query accessToken -o tsv)
           if [[ -n "$TOKEN" ]]; then
             echo "✅ Token acquired successfully"
@@ -1047,11 +1023,10 @@ jobs:
         if: github.event.inputs.dry_run != 'true'
         uses: equinor/fusion-action-app-publish@v1
         with:
-          azure-client-id: ${{ vars.AZURE_CLIENT_ID }}
-          azure-tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          azure-client-id: 00000000-0000-0000-0000-000000000000
           env: ${{ vars.FUSION_ENVIRONMENT }}
-          artifact: './app-bundle.zip'
-          tag: 'debug-${{ github.run_number }}'
+          artifact: "./app-bundle.zip"
+          tag: "debug-${{ github.run_number }}"
 
       - name: Dry Run Summary
         if: github.event.inputs.dry_run == 'true'
@@ -1064,6 +1039,7 @@ jobs:
 ```
 
 ### Benefits
+
 - ✅ Comprehensive validation before deployment
 - ✅ Artifact structure verification
 - ✅ Authentication testing
@@ -1077,16 +1053,19 @@ jobs:
 ### 1. Azure Service Principal Setup
 
 1. **Create Azure App Registration:**
+
    ```bash
    az ad app create --display-name "fusion-app-deploy-prod"
    ```
 
 2. **Create Service Principal:**
+
    ```bash
    az ad sp create --id <app-id>
    ```
 
 3. **Configure OIDC:**
+
    ```bash
    az ad app federated-credential create \
      --id <app-id> \
@@ -1094,6 +1073,7 @@ jobs:
    ```
 
    `credential.json`:
+
    ```json
    {
      "name": "github-actions",
@@ -1113,10 +1093,11 @@ jobs:
 ### 3. Required Permissions
 
 **Repository Settings → Actions → General:**
+
 ```yaml
 permissions:
-  id-token: write      # For OIDC authentication
-  contents: read       # For code checkout
+  id-token: write # For OIDC authentication
+  contents: read # For code checkout
   pull-requests: write # For PR comments (optional)
 ```
 
@@ -1124,24 +1105,24 @@ permissions:
 
 ## 📊 Decision Matrix
 
-| Need | Use Case | Authentication | Environment Setup | Complexity |
-|------|----------|---------------|------------------|------------|
-| **Quick Start** | [Basic Production](#1-basic-production-deployment) | Repository Secrets | Simple | 🟢 |
-| **Professional Workflow** | [Multi-Environment](#2-multi-environment-with-github-environments) | Environment Variables | Medium | 🟡 |
-| **Code Review Process** | [PR Previews](#3-pull-request-previews) | Repository Secrets | Simple | 🟢 |
-| **Full Control** | [Manual Token](#4-manual-token-acquisition) | Manual `az` | Advanced | 🔴 |
-| **Enterprise Grade** | [Multi-Pipeline](#5-enterprise-multi-environment-pipeline) | Environment Variables | Complex | 🔴 |
-| **Multiple Apps** | [Monorepo](#6-monorepo-applications) | Mixed | Complex | 🔴 |
-| **Custom Requirements** | [Custom Config](#7-custom-configuration-deployments) | Environment Variables | Medium | 🟡 |
-| **Production PR Workflow** | [Complete PR Build](#8-complete-pr-workflow-with-build-integration) | Repository Secrets | Medium | 🟡 |
-| **Debugging Issues** | [Debug Workflow](#9-debugging-and-troubleshooting-workflows) | Any | Any | 🟡 |
+| Need                       | Use Case                                                            | Authentication        | Environment Setup | Complexity |
+| -------------------------- | ------------------------------------------------------------------- | --------------------- | ----------------- | ---------- |
+| **Quick Start**            | [Basic Production](#1-basic-production-deployment)                  | None required         | Simple            | 🟢         |
+| **Professional Workflow**  | [Multi-Environment](#2-multi-environment-with-github-environments)  | Environment Variables | Medium            | 🟡         |
+| **Code Review Process**    | [PR Previews](#3-pull-request-previews)                             | None required         | Simple            | 🟢         |
+| **Full Control**           | [Manual Token](#4-manual-token-acquisition)                         | Manual `az`           | Advanced          | 🔴         |
+| **Enterprise Grade**       | [Multi-Pipeline](#5-enterprise-multi-environment-pipeline)          | Environment Variables | Complex           | 🔴         |
+| **Multiple Apps**          | [Monorepo](#6-monorepo-applications)                                | Mixed                 | Complex           | 🔴         |
+| **Custom Requirements**    | [Custom Config](#7-custom-configuration-deployments)                | Environment Variables | Medium            | 🟡         |
+| **Production PR Workflow** | [Complete PR Build](#8-complete-pr-workflow-with-build-integration) | None required         | Medium            | 🟡         |
+| **Debugging Issues**       | [Debug Workflow](#9-debugging-and-troubleshooting-workflows)        | Any                   | Any               | 🟡         |
 
 ---
 
 ## 🚀 Quick Start Recommendations
 
 1. **New Project:** Start with [Basic Production Deployment](#1-basic-production-deployment)
-2. **Growing Team:** Upgrade to [Multi-Environment](#2-multi-environment-with-github-environments)  
+2. **Growing Team:** Upgrade to [Multi-Environment](#2-multi-environment-with-github-environments)
 3. **Professional Workflow:** Add [PR Previews](#3-pull-request-previews) or [Complete PR Workflow](#8-complete-pr-workflow-with-build-integration)
 4. **Enterprise Scale:** Implement [Multi-Pipeline](#5-enterprise-multi-environment-pipeline)
 

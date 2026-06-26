@@ -17,6 +17,7 @@ inputs:
   azure-tenant-id:
     description: 'Azure Tenant ID'
     required: false
+    default: '3aa4a235-b6e2-48d5-9195-7fcf05b459b0'
 
   azure-resource-id:
     description: 'Fusion audience/resource ID (for token acquisition)'
