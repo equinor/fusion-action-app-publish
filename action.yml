@@ -206,6 +206,7 @@ runs:
         FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
         INPUT_ARTIFACT: ${{ inputs.artifact }}
         INPUT_SNAPSHOT: ${{ inputs.snapshot }}
+        NPM_CONFIG_REGISTRY: https://registry.npmjs.org
       run: |
         snapshot_args=()
         if [[ -n "${INPUT_SNAPSHOT}" ]]; then
@@ -241,6 +242,7 @@ runs:
         INPUT_CONFIG: ${{ inputs.config }}
         INPUT_ARTIFACT: ${{ inputs.artifact }}
         INPUT_SNAPSHOT: ${{ inputs.snapshot }}
+        NPM_CONFIG_REGISTRY: https://registry.npmjs.org
       run: |
         snapshot_args=()
         if [[ -n "${INPUT_SNAPSHOT}" ]]; then
