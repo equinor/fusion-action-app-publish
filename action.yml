@@ -226,7 +226,7 @@ runs:
         if [[ -n "${INPUT_ARTIFACT}" ]]; then
           artifact_args+=("${INPUT_ARTIFACT}")
         fi
-        npx -y -p @equinor/fusion-framework-cli ffc app publish \
+        npx -y -p @equinor/fusion-framework-cli@latest ffc app publish \
           --env "${{ steps.validate-env.outputs.env }}" \
           --tag "${{ steps.validate-env.outputs.tag }}" \
           "${snapshot_args[@]}" \
@@ -262,7 +262,7 @@ runs:
         if [[ -n "${INPUT_ARTIFACT}" ]]; then
           artifact_args+=("${INPUT_ARTIFACT}")
         fi
-        npx -y -p @equinor/fusion-framework-cli ffc app publish \
+        npx -y -p @equinor/fusion-framework-cli@latest ffc app publish \
           --env "${{ steps.validate-env.outputs.env }}" \
           --tag "${{ steps.validate-env.outputs.tag }}" \
           "${snapshot_args[@]}" \
