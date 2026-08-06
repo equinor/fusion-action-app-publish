@@ -229,7 +229,7 @@ var hasRequiredErrors;
 function requireErrors() {
   if (hasRequiredErrors) return errors;
   hasRequiredErrors = 1;
-  (function(exports$1) {
+  (function(exports) {
     const errors2 = {
       /* Header error messages */
       INVALID_LOC: "Invalid LOC header (bad signature)",
@@ -282,7 +282,7 @@ function requireErrors() {
       };
     }
     for (const msg of Object.keys(errors2)) {
-      exports$1[msg] = E(errors2[msg]);
+      exports[msg] = E(errors2[msg]);
     }
   })(errors);
   return errors;
