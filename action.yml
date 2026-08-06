@@ -31,9 +31,8 @@ inputs:
     required: false
 
   artifact:
-    description: 'Path to built artifact (default: ./app-bundle.zip)'
+    description: 'Path to built artifact (.zip). If omitted, the action publishes from the working directory using the CLI.'
     required: false
-    default: './app-bundle.zip'
 
   config:
     description: 'Path to fusion app config file (optional)'
@@ -101,11 +100,18 @@ runs:
         package-manager-cache: false
 
     - name: Validate Artifact
+      id: validate-artifact
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: node ${{ github.action_path }}/dist/validate-artifact.js
       env:
         INPUT_ARTIFACT: ${{ inputs.artifact }}
+
+    - name: Warn on source-based publish without prNR
+      if: steps.validate-artifact.outputs.artifact-provided == 'false' && inputs.prNR == ''
+      shell: bash
+      run: |
+        echo "::warning::Publishing from source without prNR set. Ensure this is intentional — metadata outputs and PR comments will be unavailable."
 
     - name: Validate Environment
       id: validate-env
@@ -119,6 +125,7 @@ runs:
 
     - name: Extract App Manifest
       id: manifest
+      if: steps.validate-artifact.outputs.artifact-provided == 'true'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: node ${{ github.action_path }}/dist/extract-manifest.js > ./app.manifest.json
@@ -127,6 +134,7 @@ runs:
 
     - name: Validate Config and Manifest
       id: validate-config-manifest
+      if: steps.validate-artifact.outputs.artifact-provided == 'true'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: node ${{ github.action_path }}/dist/validate-config-and-manifest.js
@@ -213,11 +221,15 @@ runs:
               ;;
           esac
         fi
+        artifact_args=()
+        if [[ -n "${INPUT_ARTIFACT}" ]]; then
+          artifact_args+=("${INPUT_ARTIFACT}")
+        fi
         npx -y -p @equinor/fusion-framework-cli ffc app publish \
           --env "${{ steps.validate-env.outputs.env }}" \
           --tag "${{ steps.validate-env.outputs.tag }}" \
           "${snapshot_args[@]}" \
-          "${INPUT_ARTIFACT}"
+          "${artifact_args[@]}"
 
     - name: Publish with config (if provided)
       id: publish-config
@@ -244,15 +256,20 @@ runs:
               ;;
           esac
         fi
+        artifact_args=()
+        if [[ -n "${INPUT_ARTIFACT}" ]]; then
+          artifact_args+=("${INPUT_ARTIFACT}")
+        fi
         npx -y -p @equinor/fusion-framework-cli ffc app publish \
           --env "${{ steps.validate-env.outputs.env }}" \
           --tag "${{ steps.validate-env.outputs.tag }}" \
           "${snapshot_args[@]}" \
           --config "${INPUT_CONFIG}" \
-          "${INPUT_ARTIFACT}"
+          "${artifact_args[@]}"
 
     - name: Check Meta Comment
       id: check-meta
+      if: steps.validate-artifact.outputs.artifact-provided == 'true'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: node ${{ github.action_path }}/dist/check-meta-comment.js
@@ -264,7 +281,7 @@ runs:
 
     - name: Post Publish Metadata
       id: metadata
-      if: steps.check-meta.outputs.exists == 'false'
+      if: steps.validate-artifact.outputs.artifact-provided == 'true' && steps.check-meta.outputs.exists == 'false'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: node ${{ github.action_path }}/dist/post-publish-metadata.js

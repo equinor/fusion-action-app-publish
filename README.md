@@ -29,7 +29,7 @@ This action exists to **make it dead simple for Equinor developers to publish th
 ## Features
 
 - 🔐 **Flexible Authentication**: Use either pre-acquired Fusion tokens or Azure Service Principal credentials
-- 🏗️ **Artifact Publishing**: Support for directories and zip archive files (.zip)
+- 🏗️ **Artifact Publishing**: Support for zip archive files (.zip) or source-based publishing from the working directory
 - ⚡ **Efficient Processing**: Direct zip file reading without temporary file extraction
 - ✅ **Comprehensive Validation**: Validated inputs, file formats, and authentication methods
 - 🌍 **Multi-Environment**: Support for ci, tr, fprd, fqa, and next environments
@@ -137,6 +137,38 @@ jobs:
           artifact: './app-bundle.zip'
 ```
 
+### PR Preview (Source-based, no artifact)
+
+When `artifact` is omitted, the action publishes directly from the working directory using `ffc app publish` without a prebuilt bundle. This simplifies PR workflows by letting the CLI handle the build.
+
+```yaml
+name: PR Preview (Source)
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Deploy PR Preview from source
+        uses: equinor/fusion-action-app-publish@v1
+        with:
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          prNR: ${{ github.event.number }}
+```
+
 ## Inputs
 
 | Input | Description | Required | Default |
@@ -147,7 +179,7 @@ jobs:
 | `azure-resource-id` | Fusion audience/resource ID for token acquisition (optional - auto-detected from environment) | No | - |
 | `env` | Target environment (ci/tr/fprd/fqa/next) | No | `ci` |
 | `prNR` | Pull Request number (used with env=ci) | No | - |
-| `artifact` | Path to built artifact file (.zip) | No | `./app-bundle.zip` |
+| `artifact` | Path to built artifact file (.zip). If omitted, publishes from working directory. | No | - |
 | `config` | Path to fusion app config file (optional) | No | - |
 | `tag` | Tag to apply to the deployment | No | `latest` |
 | `working-directory` | Working directory for commands | No | `.` |
@@ -273,7 +305,9 @@ When using `env: 'ci'` with a `prNR`, the action automatically creates preview d
 
 ## Artifact Requirements
 
-The action supports various artifact types:
+The `artifact` input is **optional**. When omitted, the action publishes directly from the working directory using `ffc app publish` (source-based publish). This is ideal for PR preview workflows where you want the CLI to handle the build.
+
+When providing an artifact, the action supports:
 
 ### Archive Files (Recommended)
 - `.zip` files - Standard ZIP archives (only format supported currently)

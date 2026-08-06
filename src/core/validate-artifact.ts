@@ -21,12 +21,13 @@ import * as core from "@actions/core";
  * Validates the artifact file input for the GitHub Action
  *
  * Performs the following checks:
- * 1. Artifact input is provided (required field)
+ * 1. If artifact is not provided, skips validation (artifact is optional for source-based publish)
  * 2. File exists at the specified path
  * 3. File has a .zip extension (only supported format)
  *
  * Sets GitHub Action outputs:
  * - `artifact-path`: The resolved absolute path to the validated artifact (on success)
+ * - `artifact-provided`: 'true' if artifact was provided, 'false' otherwise
  *
  * Fails the GitHub Action with an error message if validation fails
  *
@@ -39,9 +40,13 @@ export function validateArtifact(): void {
   // Get the artifact input from GitHub Action inputs
   const artifact = core.getInput("artifact");
 
-  // Validate that the artifact input is provided
+  // If artifact is not provided, skip validation (source-based publish)
   if (!artifact) {
-    core.setFailed("Input 'artifact' is required. Please provide the path to the artifact file.");
+    core.info("No artifact provided. The action will publish from the working directory.");
+    core.warning(
+      "Source-based publish: metadata outputs (app-name, app-version, publish-info) and PR comments will not be available.",
+    );
+    core.setOutput("artifact-provided", "false");
     return;
   }
 
@@ -67,6 +72,7 @@ export function validateArtifact(): void {
 
   // Set the artifact path as an output for use in subsequent steps
   core.setOutput("artifact-path", artifactPath);
+  core.setOutput("artifact-provided", "true");
 }
 
 // Execute if called directly
