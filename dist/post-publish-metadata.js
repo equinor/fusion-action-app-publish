@@ -4,23 +4,31 @@ import { fileURLToPath } from "node:url";
 import { g as getInput, i as info, s as setOutput, a as setFailed, w as warning } from "./core.js";
 import { g as getOctokit, c as context } from "./github.js";
 import { extractAppMetadata } from "./extract-metadata.js";
+const ENV_URLS = {
+  ci: "https://fusion.ci.fusion-dev.net",
+  fqa: "https://fusion.fqa.fusion-dev.net",
+  fprd: "https://fusion.equinor.com",
+  tr: "https://fusion.tr.fusion-dev.net",
+  next: "https://next.fusion.ci.fusion-dev.net"
+};
 function generateAppUrl(meta, env, tag) {
   const appKey = meta.key;
   if (!appKey) {
     throw new Error("App key not found in metadata");
   }
-  const envUrls = {
-    ci: "https://fusion.ci.fusion-dev.net",
-    fqa: "https://fusion.fqa.fusion-dev.net",
-    fprd: "https://fusion.equinor.com",
-    tr: "https://fusion.tr.fusion-dev.net",
-    next: "https://next.fusion.ci.fusion-dev.net"
-  };
-  const baseUrl = envUrls[env] || envUrls.fprd;
+  const baseUrl = ENV_URLS[env] || ENV_URLS.fprd;
   if (!tag.startsWith("latest")) {
     return `${baseUrl}/apps/${appKey}?$tag=${tag}`;
   }
   return `${baseUrl}/apps/${appKey}`;
+}
+function generatePortalUrl(meta, env) {
+  const appKey = meta.key;
+  if (!appKey) {
+    throw new Error("App key not found in metadata");
+  }
+  const baseUrl = ENV_URLS[env] || ENV_URLS.fprd;
+  return `${baseUrl}/apps/app-admin/app/${appKey}`;
 }
 async function postPrComment(meta, tag, appUrl) {
   try {
@@ -75,12 +83,15 @@ async function postPublishMetadata() {
     info(`App Key: ${appKey}`);
     const appUrl = generateAppUrl(meta, env, tag);
     info(`App URL: ${appUrl}`);
+    const portalUrl = generatePortalUrl(meta, env);
+    info(`Portal URL: ${portalUrl}`);
     setOutput("app-name", appName);
     setOutput("app-version", appVersion);
     setOutput("app-key", appKey);
     setOutput("app-url", appUrl);
+    setOutput("portal-url", portalUrl);
     const publishInfo = `🚀 **${appName}** v${appVersion} deployed to **${env.toUpperCase()}**
-[Open Application](${appUrl})`;
+[Open Application](${appUrl}) | [Manage in Portal](${portalUrl})`;
     setOutput("publish-info", publishInfo);
     await postPrComment(meta, tag, appUrl);
     info("Post-publish metadata processing completed successfully");
@@ -95,6 +106,7 @@ if (isDirectExecution) {
 }
 export {
   generateAppUrl,
+  generatePortalUrl,
   postPrComment,
   postPublishMetadata
 };
