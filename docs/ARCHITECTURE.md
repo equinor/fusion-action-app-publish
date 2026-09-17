@@ -27,7 +27,7 @@ graph TD
     L["Generate URLs<br/>generateAppUrl()"]
     M["Post PR Comment<br/>postPrComment()"]
     N["Check Meta Comment<br/>checkMetaComment()"]
-    
+
     A --> B
     B --> C
     B --> D
@@ -35,12 +35,12 @@ graph TD
     G --> H
     H --> F
     F --> E
-    
+
     %% All validation outputs feed into CLI publishing
     C --> O
     D --> O
     E --> O
-    
+
     %% After publishing, metadata processing happens
     O --> N
     O --> J
@@ -62,7 +62,7 @@ export { loadManifest };
 export { loadMetadata };
 export { extractAppMetadata, generateAppUrl, postPrComment, postPublishMetadata };
 export { validateArtifact };
-export { validateConfigAndManifest };  
+export { validateConfigAndManifest };
 export { validateEnv };
 export { validateIsTokenOrAzure };
 export * from "./types";
@@ -112,7 +112,7 @@ validateEnv()
 ↓
 Output: env='ci', tag='pr-42'
 ↓
-Creates deployment: https://fusion.ci.fusion-dev.net/apps/{appKey}?$tag=pr-42
+Creates deployment: https://fusion.ci.fusion-dev.net/apps/{appKey}?$tag[{appKey}]=pr-42
 ```
 
 ---
@@ -160,7 +160,7 @@ Extracts application information from the artifact and posts deployment details.
   - Reads metadata without temporary file extraction (more secure)
   - Maps `name` field to `key` for URL generation
   - Parses and validates JSON structure
-  
+
 - **`generateAppUrl(meta, env, tag)`**
   - Creates environment-specific URLs
   - Adds tag as query parameter for non-latest deployments
@@ -230,7 +230,7 @@ Extracts and loads the `app-manifest.json` file from Fusion application bundles.
 
 **Integration Notes:**
 - **Now Exported**: Available as public API from main index.ts
-- Used by publishing pipeline for deployment configuration  
+- Used by publishing pipeline for deployment configuration
 - Performant: Direct zip reading without temporary file extraction
 - Essential for proper Fusion app registration and routing
 - **Library Usage**: `import { loadManifest } from '@equinor/fusion-action-app-publish'`
@@ -239,7 +239,7 @@ Extracts and loads the `app-manifest.json` file from Fusion application bundles.
 ```
 app-bundle.zip
 ├── app-manifest.json     # Required: App configuration
-├── metadata.json         # Required: App metadata  
+├── metadata.json         # Required: App metadata
 └── ...                  # Other app files
 ```
 
@@ -283,8 +283,8 @@ type BundleMetadata = {
 **Expected metadata.json Structure:**
 ```json
 {
-  "name": "my-fusion-app",     
-  "version": "1.2.3",          
+  "name": "my-fusion-app",
+  "version": "1.2.3",
   "description": "App description (optional)"
 }
 ```
@@ -315,7 +315,7 @@ Validates the existence and structure of local configuration files, including bo
    - Skips validation if no config file specified
 
 **Integration Notes:**
-- **Now Exported**: Available as public API from main index.ts  
+- **Now Exported**: Available as public API from main index.ts
 - Runs early in deployment pipeline before bundle processing
 - Provides fast-fail validation for malformed configuration files
 - Uses GitHub Actions core logging for user feedback
@@ -330,7 +330,7 @@ Validates the existence and structure of local configuration files, including bo
 // Manifest file missing
 throw new Error(`Manifest file not found: ${path.join(cwd, manifestFile)}`);
 
-// Invalid JSON syntax  
+// Invalid JSON syntax
 throw new Error(`Manifest file is not valid JSON: ${error.message}`);
 
 // Config file missing (when specified)
@@ -418,18 +418,18 @@ sequenceDiagram
     participant CLI as fusion-framework-cli
     participant Fusion as Fusion Platform
     participant PR as GitHub PR
-    
+
     User->>GH: Push code / Create PR
     GH->>Val: validateArtifact()
     Val-->>GH: artifact-path set
-    
+
     GH->>Val: validateEnv()
     Val->>Val: Check prNR vs env/tag
     Val-->>GH: env, tag resolved
-    
+
     GH->>Auth: validateIsTokenOrAzure()
     Auth->>Auth: Detect auth method
-    
+
     alt Token Authentication
         Auth->>Auth: validateFusionToken()
         Auth-->>GH: token validated
@@ -438,18 +438,18 @@ sequenceDiagram
         GH->>Azure: Request OIDC token
         Azure-->>GH: Access token
     end
-    
+
     GH->>Ext: Extract manifest to app.manifest.json
     GH->>Val: validateConfigAndManifest()
     Val-->>GH: Config files validated
-    
+
     GH->>CLI: Publish with credentials
     CLI->>Fusion: Deploy application
     Fusion-->>CLI: Deployment success
     CLI-->>GH: Publish complete
-    
+
     GH->>GH: checkMetaComment()
-    
+
     alt No existing comment
         GH->>Ext: extractAppMetadata()
         Ext-->>GH: App name, version, key
@@ -459,7 +459,7 @@ sequenceDiagram
     else Comment exists
         GH->>GH: Skip posting
     end
-    
+
     GH-->>User: Deployment complete with outputs
 ```
 
@@ -471,15 +471,15 @@ graph LR
     I1["artifact<br/>file path"]
     I2["env +<br/>prNR + tag"]
     I3["auth<br/>credentials"]
-    
+
     V1["validateArtifact()"]
     V2["validateEnv()"]
     V3["validateIsTokenOrAzure()"]
-    
+
     O1["artifact-path"]
     O2["env, tag"]
     O3["auth-type"]
-    
+
     I1 --> V1 --> O1
     I2 --> V2 --> O2
     I3 --> V3 --> O3
@@ -495,7 +495,7 @@ graph TD
     E["App URL + Portal URL"]
     F["postPrComment()"]
     G["GitHub PR Comment"]
-    
+
     A --> B --> C
     C --> D --> E
     E --> F --> G
@@ -508,7 +508,7 @@ sequenceDiagram
     participant Action as GitHub Action
     participant Validator as validateFusionToken
     participant CLI as fusion-framework-cli
-    
+
     User->>Action: fusion-token=BEARER xxx
     Action->>Validator: Validate token format
     Validator->>Validator: Check BEARER prefix
@@ -526,7 +526,7 @@ sequenceDiagram
     participant Validator as detectAndValidateAuthType
     participant Azure as Azure OIDC
     participant CLI as fusion-framework-cli
-    
+
     User->>Action: azure-client-id, tenant-id, resource-id
     Action->>Validator: Validate all fields present
     Validator->>Validator: Check non-empty strings
@@ -542,10 +542,10 @@ sequenceDiagram
 graph TD
     A["User Input<br/>env='fprd'<br/>tag='v1.0.0'"]
     B["generateAppUrl()"]
-    C["https://fusion.equinor.com<br/>/apps/{appKey}?$tag=v1.0.0"]
+    C["https://fusion.equinor.com<br/>/apps/{appKey}?$tag[{appKey}]=v1.0.0"]
     D["postPrComment()"]
     E["Deploy to Production"]
-    
+
     A --> B --> C
     C --> D --> E
 ```
@@ -557,10 +557,10 @@ graph TD
     B["validateEnv()"]
     C["Converted to:<br/>env='ci'<br/>tag='pr-42'"]
     D["generateAppUrl()"]
-    E["https://fusion.ci.fusion-dev.net<br/>/apps/{appKey}?$tag=pr-42"]
+    E["https://fusion.ci.fusion-dev.net<br/>/apps/{appKey}?$tag[{appKey}]=pr-42"]
     F["postPrComment()"]
     G["Post to PR #42"]
-    
+
     A --> B --> C
     C --> D --> E
     E --> F --> G
@@ -574,7 +574,7 @@ graph TD
 ```
 User: env='fprd', tag='v1.0.0'
   ↓
-Environment: https://fusion.equinor.com/apps/{appKey}?$tag=v1.0.0
+Environment: https://fusion.equinor.com/apps/{appKey}?$tag[{appKey}]=v1.0.0
 PR Comment: Posts link to deployed app
 ```
 
@@ -584,7 +584,7 @@ User: prNR='42' (pull request #42)
   ↓
 validateEnv() converts to: env='ci', tag='pr-42'
   ↓
-Environment: https://fusion.ci.fusion-dev.net/apps/{appKey}?$tag=pr-42
+Environment: https://fusion.ci.fusion-dev.net/apps/{appKey}?$tag[{appKey}]=pr-42
 PR Comment: Posts link to preview deployment
   ↓
 Automatic comment posted to PR #42
@@ -618,7 +618,7 @@ The project uses **Vite** for building individual executable modules rather than
 // Each core module becomes a standalone executable
 entry: {
   "check-meta-comment": "src/core/check-meta-comment.ts",
-  "validate-artifact": "src/core/validate-artifact.ts", 
+  "validate-artifact": "src/core/validate-artifact.ts",
   "validate-env": "src/core/validate-env.ts",
   // ... etc
 }
@@ -691,22 +691,22 @@ describe("validate-env.ts", () => {
 
   // GitHub Actions core module mocking
   vi.mock("@actions/core");
-  
+
   // Input/output validation testing
   it("should set tag and env outputs when prNR is provided", () => {
     vi.mocked(core.getInput).mockImplementation((input: string) => {
       // Mock specific GitHub Action inputs
     });
-    
+
     validateEnv();
-    
+
     // Verify correct outputs set
     expect(vi.mocked(core.setOutput)).toHaveBeenCalledWith("tag", "pr-123");
   });
 });
 ```
 
-#### 2. **Integration Testing Pattern** 
+#### 2. **Integration Testing Pattern**
 ```typescript
 // Example: post-publish-metadata.orchestration.test.ts
 
@@ -734,7 +734,7 @@ vi.mock("adm-zip", () => {
 
 **GitHub Actions Core Mocking:**
 - **Complete API Surface**: Mock all `@actions/core` methods (getInput, setOutput, setFailed)
-- **Behavior Verification**: Test both success and failure paths 
+- **Behavior Verification**: Test both success and failure paths
 - **Output Validation**: Verify correct GitHub Action outputs are set
 
 **File System Mocking:**
@@ -753,9 +753,9 @@ vi.mock("adm-zip", () => {
 it("should fail for invalid environment value", () => {
   // Setup invalid input
   vi.mocked(core.getInput).mockReturnValue("invalid-env");
-  
+
   validateEnv();
-  
+
   // Verify proper error handling
   expect(vi.mocked(core.setFailed)).toHaveBeenCalledWith(
     "Input 'env' must be one of the following values: ci, tr, fprd, fqa, next."
@@ -767,7 +767,7 @@ it("should fail for invalid environment value", () => {
 ```typescript
 it("should handle zip extraction errors gracefully", async () => {
   zipState.shouldThrowOnGetData = true;
-  
+
   await expect(extractAppMetadata("/tmp/app.zip"))
     .rejects.toThrow("Failed to read metadata.json");
 });
