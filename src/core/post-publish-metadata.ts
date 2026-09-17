@@ -32,7 +32,7 @@ import { extractAppMetadata } from "./extract-metadata";
  * @throws Error if app key is not found in metadata
  * @example
  * const url = generateAppUrl(meta, 'fprd', 'v1.0.0');
- * // Returns: https://fusion.equinor.com/apps/my-app?$tag=v1.0.0
+ * // Returns: https://fusion.equinor.com/apps/my-app?$tag[my-app]=v1.0.0
  */
 export function generateAppUrl(meta: AppMetadata, env: string, tag: string): string {
   const appKey = meta.key;
@@ -54,7 +54,7 @@ export function generateAppUrl(meta: AppMetadata, env: string, tag: string): str
 
   // Construct application URL
   if (!tag.startsWith("latest")) {
-    return `${baseUrl}/apps/${appKey}?$tag=${tag}`;
+    return `${baseUrl}/apps/${appKey}?$tag[${appKey}]=${tag}`;
   }
 
   return `${baseUrl}/apps/${appKey}`;

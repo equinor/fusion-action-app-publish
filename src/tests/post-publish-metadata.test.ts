@@ -59,7 +59,7 @@ describe("post-publish-metadata.ts", () => {
 
       const result = generateAppUrl(manifest, env, tag);
 
-      expect(result).toBe("https://fusion.fqa.fusion-dev.net/apps/my-app?$tag=v1.2.3");
+      expect(result).toBe("https://fusion.fqa.fusion-dev.net/apps/my-app?$tag[my-app]=v1.2.3");
     });
 
     it("should generate URL when key is present", () => {
@@ -124,7 +124,7 @@ describe("post-publish-metadata.ts", () => {
 
       const result = generateAppUrl(manifest, env, tag);
 
-      expect(result).toBe("https://fusion.ci.fusion-dev.net/apps/my-app?$tag=pr-123");
+      expect(result).toBe("https://fusion.ci.fusion-dev.net/apps/my-app?$tag[my-app]=pr-123");
     });
 
     it("should throw error when no app identifier found", () => {
