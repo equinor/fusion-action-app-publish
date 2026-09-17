@@ -11,8 +11,10 @@ runs:
         package-manager-cache: false
         
     - name: Install pnpm
-      shell: bash
-      run: npm install -g pnpm
+      uses: pnpm/setup@v2
+      with:
+        install: false
+        cache: false
       
     - name: Get pnpm store directory
       shell: bash
