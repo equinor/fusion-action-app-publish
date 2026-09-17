@@ -50,7 +50,7 @@ jobs:
       # Process changesets: create version PR or create GitHub releases
       - name: Create Release Pull Request or Create GitHub Release
         id: changesets
-        uses: changesets/action@v1
+        uses: changesets/action@v2
         with:
           title: '🤖 Release - Fusion Action App Publish'
           createGithubReleases: true
