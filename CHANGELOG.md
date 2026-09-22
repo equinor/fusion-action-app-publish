@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.0
+
+### Minor Changes
+
+- 9a72947: update url `?$tag=` to `$tag[appKey]=`
+
 ## 2.0.1
 
 ### Patch Changes
