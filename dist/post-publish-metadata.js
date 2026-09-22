@@ -18,7 +18,7 @@ function generateAppUrl(meta, env, tag) {
   };
   const baseUrl = envUrls[env] || envUrls.fprd;
   if (!tag.startsWith("latest")) {
-    return `${baseUrl}/apps/${appKey}?$tag=${tag}`;
+    return `${baseUrl}/apps/${appKey}?$tag[${appKey}]=${tag}`;
   }
   return `${baseUrl}/apps/${appKey}`;
 }
