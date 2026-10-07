@@ -3,6 +3,20 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("Script Infrastructure Tests", () => {
+  it("Remote action dependencies are pinned to full SHAs with version comments", async () => {
+    const repoRoot = path.join(__dirname, "..", "..");
+    const actionManifest = await fs.readFile(path.join(repoRoot, "action.yml"), "utf8");
+    const usesDeclarations = actionManifest.match(/^\s+uses:.*$/gm) ?? [];
+
+    expect(usesDeclarations).toEqual([
+      "      uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0",
+      "      uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0",
+    ]);
+    expect(
+      usesDeclarations.every((declaration) => /@[0-9a-f]{40} # v\d+\.\d+\.\d+$/.test(declaration)),
+    ).toBe(true);
+  });
+
   it("All source files exist in the expected structure", async () => {
     const repoRoot = path.join(__dirname, "..", "..");
     const srcDir = path.join(repoRoot, "src");
