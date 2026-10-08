@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.1
+
+### Patch Changes
+
+- d59f077: Pin composite action dependencies to full commit SHAs for GitHub policy compatibility.
+
 ## 2.1.0
 
 ### Minor Changes
