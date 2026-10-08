@@ -225,6 +225,14 @@ pnpm changeset version
 - Test edge cases with invalid/malicious inputs
 - Validate all user inputs in validation scripts
 
+### GitHub Actions SHA Pinning
+
+The composite action's remote dependencies must use full commit SHAs when callers require GitHub Actions to be pinned. At the reported revision `d331a49e913781e970f3d0b0a80375f65c0a395a` and the current pre-fix revision, `action.yml` used `actions/setup-node@v6` and `azure/login@v3`; both were mutable major-version references. The action now pins setup-node v6.5.0 to `249970729cb0ef3589644e2896645e5dc5ba9c38` and azure/login v3.1.0 to `a641126d1b8aa4d1fa005f4f92df94a3a4c4c906`.
+
+The `github-actions` Dependabot updater is configured weekly for `/`. Dependabot's GitHub Actions file fetcher includes root `action.yml` and `action.yaml` alongside `.github/workflows` files, and its parser supports dependencies in composite actions. Keep the `# vX.Y.Z` comments when updating pins; Dependabot can update version comments alongside SHA references. The infrastructure test checks that every remote action reference in this composite manifest remains pinned and has a version comment.
+
+To verify native policy enforcement after merging, use a disposable caller repository with **Require actions to be pinned to a full-length commit SHA** enabled. Invoke this action by the full SHA of the merge commit under test, pin every other caller action to a full SHA, and run a publish against an authorized test environment using test credentials. A successful run should pass GitHub's policy check and exercise the selected authentication/publishing path. Record the caller workflow and the 40-character action revision used with the validation result. This workspace cannot validate that repository-level policy or perform a publish without access to an authorized caller repository and test credentials.
+
 ## 📈 Post-Release
 
 After a release is published:
