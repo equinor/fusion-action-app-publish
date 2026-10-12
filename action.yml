@@ -160,15 +160,6 @@ runs:
         tenant-id: ${{ steps.validate-auth.outputs.azure-tenant-id }}
         allow-no-subscriptions: true
 
-    - name: Acquire token (if SP)
-      if: steps.validate-auth.outputs.is-token == 'false'
-      id: token
-      shell: bash
-      run: |
-        TOKEN=$(az account get-access-token --resource "${{ steps.validate-auth.outputs.azure-resource-id }}" --query accessToken -o tsv)
-        echo "FUSION_TOKEN=$TOKEN" >> $GITHUB_ENV
-        echo "::add-mask::$TOKEN"
-
     - name: Set token from input
       if: steps.validate-auth.outputs.is-token == 'true'
       shell: bash
