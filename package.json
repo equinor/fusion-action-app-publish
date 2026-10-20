@@ -71,6 +71,6 @@
     "@vitest/coverage-v8": "^4.0.0",
     "typescript": "^6.0.2",
     "vite": "^8.2.1",
-    "vitest": "^4.0.17"
+    "vitest": "^4.1.12"
   }
 }
