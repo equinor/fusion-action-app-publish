@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       published: ${{ steps.changesets.outputs.published }}
-      hasChangesets: ${{ steps.changesets.outputs.hasChangesets }}
+      hasChangesets: ${{ steps.changesets.outputs.has-changesets }}
     steps:
       # Checkout repository with full history for changeset processing
       - uses: actions/checkout@v7
@@ -52,24 +52,23 @@ jobs:
         id: changesets
         uses: changesets/action@v2
         with:
-          title: '🤖 Release - Fusion Action App Publish'
-          createGithubReleases: true
-          setupGitUser: false
-          version: pnpm run changeset:version
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+          pr-title: '🤖 Release - Fusion Action App Publish'
+          create-github-releases: true
+          push-with-git-cli: true
+          version-script: pnpm run changeset:version
+          github-token: ${{ github.token }}
 
       # Convert changeset PR to draft to prevent accidental merging
       - name: Convert Changeset PR to draft
-        if: steps.changesets.outputs.published == 'false' && steps.changesets.outputs.pullRequestNumber
-        run: gh pr ready ${{ steps.changesets.outputs.pullRequestNumber }} --undo
+        if: steps.changesets.outputs.published == 'false' && steps.changesets.outputs.pr-number
+        run: gh pr ready ${{ steps.changesets.outputs.pr-number }} --undo
         env:
           GH_TOKEN: ${{ github.token }}
 
       # Create git tags for GitHub Action versioning (v1, v1.2, v1.2.3)
       # Only create tags when there are no pending changesets and dist files are committed
       - name: Create/Update Action Tags
-        if: steps.changesets.outputs.hasChangesets == 'false' && steps.changesets.outputs.pullRequestNumber == '' && steps.changesets.outputs.published == 'false'
+        if: steps.changesets.outputs.has-changesets == 'false' && steps.changesets.outputs.pr-number == '' && steps.changesets.outputs.published == 'false'
         run: |
           # Get the latest version from package.json
           VERSION=$(node -p "require('./package.json').version")
