@@ -23,6 +23,7 @@ All tests are located in `src/tests/`:
 - `src/tests/validate-is-token-or-azure.test.ts` - Token/Azure credential validation
 - `src/tests/post-publish-metadata.test.ts` - Metadata extraction and PR commenting
 - `src/tests/infrastructure.test.ts` - Infrastructure validation tests
+- `src/tests/publish-orchestration.test.ts` - Offline execution of both publish entry points and the shared shell helper, checking exact CLI arguments, default-off/opt-in recovery, rollback/preview notices, failure propagation, continuation and log cleanup
 - `src/tests/setup.js` - Global test setup (mocks console methods)
 
 ### Configuration Files

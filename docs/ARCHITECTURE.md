@@ -11,6 +11,88 @@
 
 ## System Architecture
 
+### Existing-version recovery investigation
+
+Investigation for [equinor/fusion-core-tasks#2357](https://github.com/equinor/fusion-core-tasks/issues/2357),
+2026-10-20:
+
+- Released action **v2.1.1**, commit
+  [`dafe22c3a6b5d6fb66943b2522bf725b2f443000`](https://github.com/equinor/fusion-action-app-publish/blob/dafe22c3a6b5d6fb66943b2522bf725b2f443000/action.yml),
+  invokes `@equinor/fusion-framework-cli@latest` in both publish branches.
+  An action version does not identify the CLI version used by a historical run.
+- Published CLI **15.6.3**, release commit
+  [`ebe110a156b38372b738c80b39d058e8d83297bf`](https://github.com/equinor/fusion-framework/tree/ebe110a156b38372b738c80b39d058e8d83297bf/packages/cli),
+  uploads the bundle, tags the returned app key/version, then publishes config
+  when requested. An upload failure exits before tagging or config publishing.
+- CLI 15.6.3 maps **every upload HTTP 409**, including unrelated conflicts and
+  responses without a JSON error body, to
+  `409 - Version is already published, please generate a new release`.
+  That line alone is not a reliable duplicate-version contract.
+- Controlled execution of the published upload/tag functions and publish callback
+  covered 19 scenarios: successful `latest` and preview tagging, source-bundle
+  version propagation, rerun/older-version/preview duplicates, unrelated and
+  unstructured conflicts, HTTP 401/403/404/410/500, network failures, discovery
+  failures during initialization/upload/tagging, tagging failure, and config
+  failure after tagging. Discovery and HTTP were test doubles; no production
+  registry, tags, credentials, or consumer workflows were used.
+- All duplicate scenarios exited with code 1 before tagging. Unrelated and
+  unstructured upload conflicts produced the same duplicate-version summary.
+  Successful tagging used the upload result's exact app key/version.
+  Config failure still failed publishing even after tagging succeeded.
+
+These checks characterize CLI behavior, not a full GitHub Actions deployment or
+the original reported run. The historical job logs were unavailable through the
+GitHub API, so its CLI version remains unverified. They do not verify deployed
+backend response serialization, real authentication/discovery, or registry state.
+
+**Implementation:** the action exposes `allow-existing-version`, default `false`,
+and forwards it to the CLI. Recovery is implemented in the CLI, where the built
+bundle, authentication, discovery and config continuation are already available.
+The action does not interpret logs or HTTP conflicts to decide whether to recover.
+
+Further source tracing found a structured backend discriminator:
+[`CreateAppVersion`](https://github.com/equinor/fusion-core-services/blob/fa025d4e36242f65ec7ba9316887f13dbb100d46/src/Fusion.Services.Apps/Applications/Domain/Commands/CreateAppVersion.cs)
+throws `ConflictError` with resource `version`; the
+[`controller response`](https://github.com/equinor/fusion-core-services/blob/fa025d4e36242f65ec7ba9316887f13dbb100d46/src/Fusion.Services.Apps/Shared/Controllers/BaseController.cs)
+and
+[`API error serializer`](https://github.com/equinor/fusion-libraries/blob/2f142938ba0d2902a7db189d97bd5924e7861977/src/Web/Fusion.AspNetCore/Models/Errors/ApiResourceExistsError.cs)
+retain `error.code: "ConflictError"` and `error.resourceIdentifier: "version"`.
+The CLI implementation gates on these fields, upload HTTP 409 and the exact
+duplicate message matching the valid, lowercased version in the uploaded
+`app-manifest.json`. This is a source-verified contract, not verification of the
+response from a deployed service.
+
+The prerequisite is released in CLI **15.7.0**, commit
+[`18afbe03fa6363a3c7d1b77e3aac5392ce780e08`](https://github.com/equinor/fusion-framework/tree/18afbe03fa6363a3c7d1b77e3aac5392ce780e08/packages/cli).
+Recovery-enabled publishing selects that exact version; default publishing
+retains `latest`. Both action publish branches invoke the shared
+[`scripts/publish-app.sh`](../scripts/publish-app.sh) with resolved environment/tag
+and unchanged authentication.
+
+The helper propagates CLI failures using Bash `errexit` and `pipefail`; it never
+retries or invokes a separate tag command. Only after exit code zero does it
+translate the CLI's final re-tagging confirmation for the resolved target into
+an escaped GitHub notice. This pinned log format is used for notification only,
+not recovery decisions. Intermediate messages, ordinary successful uploads and
+nonzero exits never generate a recovery-success notice. Temporary captured logs
+are removed on success and failure. The workflow summary runs only on success.
+
+Successful recovery follows the same metadata and PR-comment conditions as a
+successful upload, including artifact-only processing and duplicate-comment
+checks. Config-enabled recovery must also complete the requested config
+publication. Discovery, authentication, network, validation, unknown conflicts,
+missing identity, tagging and config failures remain failures without fallback
+targets. This action integration still requires an action release; the issue
+must not be treated as delivered to consumers solely because the CLI is released.
+
+The offline [publish orchestration tests](../src/tests/publish-orchestration.test.ts)
+execute both action publish entry points and the shared helper with an intercepted
+`npx` command. They verify default-off/opt-in CLI selection, resolved arguments,
+source/snapshot/config behavior, rollback/preview notices, failure propagation,
+log cleanup and reachability of following work. Metadata orchestration tests
+cover its existing outputs and PR-comment behavior. These checks do not perform
+a live registry deployment or simulate GitHub's step scheduler.
+
 ```mermaid
 graph TD
     A["GitHub Action Workflow<br/>(action.yml)<br/>Defines inputs & orchestrates steps"]

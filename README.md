@@ -184,6 +184,60 @@ jobs:
 | `tag` | Tag to apply to the deployment | No | `latest` |
 | `working-directory` | Working directory for commands | No | `.` |
 | `snapshot` | Enable snapshot versioning. Use `true` for auto-generated ID or provide custom identifier (e.g., `pr-123`) | No | - |
+| `allow-existing-version` | Re-tag the exact existing bundle version on a confirmed duplicate upload. Accepts `true` or `false`; unrelated failures still fail. | No | `false` |
+
+### Re-running or rolling back an existing version
+
+Set `allow-existing-version: 'true'` when a rerun or rollback should restore a tag
+to an already-published bundle version instead of failing on the duplicate upload:
+
+```yaml
+- name: Restore an older published version
+  uses: equinor/fusion-action-app-publish@v2
+  with:
+    fusion-token: ${{ secrets.FUSION_TOKEN }}
+    env: 'fqa'
+    artifact: './previously-published.bundle.zip'
+    tag: 'latest'
+    allow-existing-version: 'true'
+```
+
+For preview reruns, use `prNR` instead of `env`; the resolved target remains
+environment `ci` and tag `pr-<number>`:
+
+```yaml
+- name: Restore a PR preview
+  uses: equinor/fusion-action-app-publish@v2
+  with:
+    fusion-token: ${{ secrets.FUSION_TOKEN }}
+    prNR: ${{ github.event.number }}
+    artifact: './app-bundle.zip'
+    allow-existing-version: 'true'
+```
+
+Omitting the input or setting it to `'false'` preserves normal publishing,
+including duplicate-version failures. Recovery-enabled publishing uses the
+verified CLI **15.7.0** release; ordinary publishing retains the existing `latest`
+CLI selection.
+
+The CLI recovers only a structured upload HTTP 409 identifying the version
+resource and matching the exact valid version in the uploaded bundle's
+`app-manifest.json`. It reuses that upload's app key, resolved environment,
+authentication and tag without retrying the upload. Authentication, discovery,
+network, validation, unknown conflicts and tagging failures still fail the action.
+If `config` is provided, config publication must also succeed. Config publication
+is not transactional: its failure can occur after the tag has already moved.
+
+After successful recovery, the action emits a GitHub notice stating which
+existing app version was re-tagged and continues the usual artifact metadata and
+PR-comment steps, including their existing duplicate-comment checks. Ordinary
+successful uploads do not emit a recovery notice. Source-based publishing is
+also supported and retains its existing metadata/output limitations. Snapshot
+versioning usually generates a new version, so it may not encounter a duplicate.
+
+Recovery deploys the **existing registry contents**, not the newly supplied ZIP
+contents, and does not compare their bytes. Use a new version when the build has
+changed. Do not use broad `continue-on-error` to work around publishing failures.
 
 ## Outputs
 

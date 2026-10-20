@@ -52,6 +52,11 @@ inputs:
     description: 'Enable snapshot versioning. Use "true" for auto-generated ID or provide custom identifier (e.g., "pr-123"). Creates unique version without modifying package.json.'
     required: false
 
+  allow-existing-version:
+    description: 'Re-tag the exact existing bundle version on a confirmed duplicate upload. Other failures still fail.'
+    required: false
+    default: 'false'
+
 
 outputs:
   app-url:
@@ -195,34 +200,14 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       env:
         FUSION_TOKEN: ${{ env.FUSION_TOKEN }}
+        INPUT_CONFIG: ${{ inputs.config }}
         INPUT_ARTIFACT: ${{ inputs.artifact }}
         INPUT_SNAPSHOT: ${{ inputs.snapshot }}
+        INPUT_ALLOW_EXISTING_VERSION: ${{ inputs.allow-existing-version }}
+        INPUT_ENV: ${{ steps.validate-env.outputs.env }}
+        INPUT_TAG: ${{ steps.validate-env.outputs.tag }}
         NPM_CONFIG_REGISTRY: https://registry.npmjs.org
-      run: |
-        snapshot_args=()
-        if [[ -n "${INPUT_SNAPSHOT}" ]]; then
-          case "${INPUT_SNAPSHOT}" in
-            false|0|no)
-              # Explicitly disabled; do not add snapshot args
-              ;;
-            true)
-              snapshot_args+=(--snapshot)
-              ;;
-            *)
-              snapshot_args+=(--snapshot "${INPUT_SNAPSHOT}")
-              ;;
-          esac
-        fi
-        artifact_args=()
-        if [[ -n "${INPUT_ARTIFACT}" ]]; then
-          artifact_args+=("${INPUT_ARTIFACT}")
-        fi
-        mkdir -p "${RUNNER_TEMP}/fusion-app-publish"
-        npx --prefix "${RUNNER_TEMP}/fusion-app-publish" -y -p @equinor/fusion-framework-cli@latest ffc app publish \
-          --env "${{ steps.validate-env.outputs.env }}" \
-          --tag "${{ steps.validate-env.outputs.tag }}" \
-          "${snapshot_args[@]}" \
-          "${artifact_args[@]}"
+      run: bash "${{ github.action_path }}/scripts/publish-app.sh"
 
     - name: Publish with config (if provided)
       id: publish-config
@@ -234,33 +219,11 @@ runs:
         INPUT_CONFIG: ${{ inputs.config }}
         INPUT_ARTIFACT: ${{ inputs.artifact }}
         INPUT_SNAPSHOT: ${{ inputs.snapshot }}
+        INPUT_ALLOW_EXISTING_VERSION: ${{ inputs.allow-existing-version }}
+        INPUT_ENV: ${{ steps.validate-env.outputs.env }}
+        INPUT_TAG: ${{ steps.validate-env.outputs.tag }}
         NPM_CONFIG_REGISTRY: https://registry.npmjs.org
-      run: |
-        snapshot_args=()
-        if [[ -n "${INPUT_SNAPSHOT}" ]]; then
-          case "${INPUT_SNAPSHOT}" in
-            false|0|no)
-              # Explicitly disabled; do not add snapshot args
-              ;;
-            true)
-              snapshot_args+=(--snapshot)
-              ;;
-            *)
-              snapshot_args+=(--snapshot "${INPUT_SNAPSHOT}")
-              ;;
-          esac
-        fi
-        artifact_args=()
-        if [[ -n "${INPUT_ARTIFACT}" ]]; then
-          artifact_args+=("${INPUT_ARTIFACT}")
-        fi
-        mkdir -p "${RUNNER_TEMP}/fusion-app-publish"
-        npx --prefix "${RUNNER_TEMP}/fusion-app-publish" -y -p @equinor/fusion-framework-cli@latest ffc app publish \
-          --env "${{ steps.validate-env.outputs.env }}" \
-          --tag "${{ steps.validate-env.outputs.tag }}" \
-          "${snapshot_args[@]}" \
-          --config "${INPUT_CONFIG}" \
-          "${artifact_args[@]}"
+      run: bash "${{ github.action_path }}/scripts/publish-app.sh"
 
     - name: Check Meta Comment
       id: check-meta
@@ -288,7 +251,7 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
 
     - name: Workflow Summary
-      if: always()
+      if: success()
       shell: bash
       run: |
         echo "## 🚀 Application Published" >> $GITHUB_STEP_SUMMARY
