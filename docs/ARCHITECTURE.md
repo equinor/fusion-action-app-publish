@@ -69,6 +69,13 @@ retains `latest`. Both action publish branches invoke the shared
 [`scripts/publish-app.sh`](../scripts/publish-app.sh) with resolved environment/tag
 and unchanged authentication.
 
+Before invoking the CLI, the helper unsets an empty `FUSION_TOKEN`. The composite
+action supplies an empty value for Azure-authenticated runs, but the CLI's
+environment-backed token option treats its presence as explicit token auth.
+Omitting that empty variable preserves ambient Azure authentication from
+`azure/login`; non-empty tokens are forwarded unchanged. Both publish branches
+and existing-version recovery use the same normalization.
+
 The helper propagates CLI failures using Bash `errexit` and `pipefail`; it never
 retries or invokes a separate tag command. Only after exit code zero does it
 translate the CLI's final re-tagging confirmation for the resolved target into

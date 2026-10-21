@@ -38,6 +38,7 @@ function runPublish(options: {
   stdout?: string;
   allowExistingVersion?: string;
   env?: string;
+  token?: string | null;
 }) {
   const directory = mkdtempSync(path.join(tmpdir(), "fusion-publish-test-"));
   temporaryDirectories.push(directory);
@@ -56,7 +57,9 @@ function runPublish(options: {
       `
 npx() {
   printf '%s\\0' "$@" >> "$CALLS"
-  printf '%s' "$FUSION_TOKEN" > "$AUTH_CAPTURE"
+  if [[ "\${FUSION_TOKEN+x}" == x ]]; then
+    printf '%s' "$FUSION_TOKEN" > "$AUTH_CAPTURE"
+  fi
   printf '%s\\n' "$CLI_STDOUT"
   printf '%s\\n' "$CLI_ERROR" >&2
   return "$CLI_EXIT"
@@ -79,7 +82,7 @@ printf '%s' 'continued' > "$CONTINUATION"
         CLI_STDOUT: options.stdout ?? "",
         CONTINUATION: continuation,
         AUTH_CAPTURE: auth,
-        FUSION_TOKEN: "controlled-token",
+        FUSION_TOKEN: options.token === null ? undefined : (options.token ?? "controlled-token"),
         INPUT_CONFIG: options.config ? "config with spaces.ts" : "",
         INPUT_ARTIFACT: options.artifact ?? "bundle with spaces.zip",
         INPUT_SNAPSHOT: options.snapshot ?? "",
@@ -158,6 +161,28 @@ describe.each([false, true])("Publish shell (config=%s)", (config) => {
       expect(child.stdout).not.toContain("::notice::");
     },
   );
+
+  it.each(["false", "true"])(
+    "omits an empty token for Azure authentication with allow-existing-version=%s",
+    (allowExistingVersion) => {
+      const { child, continued, token } = runPublish({
+        config,
+        allowExistingVersion,
+        token: "",
+      });
+
+      expect(child.status).toBe(0);
+      expect(continued).toBe(true);
+      expect(token).toBeUndefined();
+    },
+  );
+
+  it("preserves an absent token for Azure authentication", () => {
+    const { child, token } = runPublish({ config, token: null });
+
+    expect(child.status).toBe(0);
+    expect(token).toBeUndefined();
+  });
 
   it.each([
     { tag: "latest", version: "19.2.0+8421b01", env: "fqa" },
