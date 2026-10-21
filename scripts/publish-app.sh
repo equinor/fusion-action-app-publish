@@ -6,6 +6,11 @@ if [[ -z "${INPUT_ENV:-}" || -z "${INPUT_TAG:-}" || -z "${RUNNER_TEMP:-}" ]]; th
   exit 1
 fi
 
+# An empty token still selects token auth in the CLI instead of Azure credentials.
+if [[ -z "${FUSION_TOKEN:-}" ]]; then
+  unset FUSION_TOKEN
+fi
+
 existing_version_args=()
 cli_package="@equinor/fusion-framework-cli@latest"
 case "${INPUT_ALLOW_EXISTING_VERSION:-false}" in

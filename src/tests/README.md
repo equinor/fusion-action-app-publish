@@ -24,7 +24,7 @@ All tests are located in `src/tests/`:
 - `src/tests/post-publish-metadata.test.ts` - Metadata extraction and PR commenting
 - `src/tests/infrastructure.test.ts` - Infrastructure validation tests
 - `src/tests/built-action.test.ts` - Builds and loads all distributed entry points in isolated Node.js processes, checks artifact validation and ZIP manifest extraction without installed runtime dependencies
-- `src/tests/publish-orchestration.test.ts` - Offline execution of both publish entry points and the shared shell helper, checking exact CLI arguments, default-off/opt-in recovery, rollback/preview notices, failure propagation, continuation and log cleanup
+- `src/tests/publish-orchestration.test.ts` - Offline execution of both publish entry points and the shared shell helper, checking exact CLI arguments, token preservation/empty-token removal for Azure auth, default-off/opt-in recovery, rollback/preview notices, failure propagation, continuation and log cleanup
 - `src/tests/setup.js` - Global test setup (mocks console methods)
 
 ### Configuration Files
