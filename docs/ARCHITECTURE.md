@@ -710,9 +710,14 @@ entry: {
 - **Individual Entry Points**: Each validation/processing step is a separate executable
 - **ES Module Format**: Modern JavaScript modules for Node.js 24+
 - **External Node.js Built-ins**: Reduces bundle size by excluding Node.js modules
+- **Node.js Platform**: `rolldownOptions.platform: "node"` makes Rolldown emit a `createRequire(import.meta.url)` shim, so bundled CommonJS dependencies can load external Node.js built-ins such as `net` and `tls` from ESM
 - **Stable Filenames**: No content hashing for predictable GitHub Action execution
 - **Source Maps**: Enabled for debugging in production
 - **No Minification**: Preserves readable stack traces
+
+Distribution smoke tests build the action and run both freshly built and committed
+bundles in isolated Node.js processes without `node_modules`. They load every emitted
+module and exercise artifact validation, including GitHub outputs and failure cases.
 
 **Distribution Structure:**
 ```

@@ -28,7 +28,9 @@ export default defineConfig({
     target: "node24",
     minify: false,
     sourcemap: true,
-    rollupOptions: {
+    rolldownOptions: {
+      // Emits a `createRequire` shim so bundled CommonJS deps can require Node built-ins from ESM
+      platform: "node",
       external: [...nodeBuiltins],
       output: {
         esModule: true,
