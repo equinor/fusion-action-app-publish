@@ -709,12 +709,20 @@ entry: {
 **Key Build Features:**
 - **Individual Entry Points**: Each validation/processing step is a separate executable
 - **ES Module Format**: Modern JavaScript modules for Node.js 24+
+- **Node.js Platform**: Vite 8's Rolldown bundler explicitly targets `node`, enabling its `createRequire` shim for bundled CommonJS dependencies that load Node.js built-ins. The default browser platform cannot execute those `require` calls in ES modules.
 - **External Node.js Built-ins**: Reduces bundle size by excluding Node.js modules
 - **Stable Filenames**: No content hashing for predictable GitHub Action execution
 - **Source Maps**: Enabled for debugging in production
 - **No Minification**: Preserves readable stack traces
 
 **Distribution Structure:**
+
+The [built-action tests](../src/tests/built-action.test.ts) build into an isolated
+temporary directory and load every entry point in a separate Node.js process
+without installed runtime dependencies. They also execute artifact validation
+(provided, omitted and missing artifacts) and ZIP manifest extraction, catching
+bundling failures that mocked source-level tests cannot detect.
+
 ```
 dist/
 ├── check-meta-comment.js

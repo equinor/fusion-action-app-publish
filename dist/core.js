@@ -1,14 +1,11 @@
+import { createRequire } from "node:module";
 import * as os$1 from "os";
 import os, { EOL } from "os";
 import * as crypto from "crypto";
 import * as fs from "fs";
 import { constants, promises } from "fs";
 import "path";
-import "http";
-import "https";
 import * as events from "events";
-import "assert";
-import "string_decoder";
 import "child_process";
 import "timers";
 //#region \0rolldown/runtime.js
@@ -33,10 +30,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 	value: mod,
 	enumerable: true
 }) : target, mod));
-var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, { get: (a, b) => (typeof require !== "undefined" ? require : a)[b] }) : x)(function(x) {
-	if (typeof require !== "undefined") return require.apply(this, arguments);
-	throw Error("Calling `require` for \"" + x + "\" in an environment that doesn't expose the `require` function. See https://rolldown.rs/in-depth/bundling-cjs#require-external-modules for more details.");
-});
+var __require = /* #__PURE__ */ (() => createRequire(import.meta.url))();
 //#endregion
 //#region node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/utils.js
 /**

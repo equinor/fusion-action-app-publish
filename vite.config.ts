@@ -28,7 +28,8 @@ export default defineConfig({
     target: "node24",
     minify: false,
     sourcemap: true,
-    rollupOptions: {
+    rolldownOptions: {
+      platform: "node",
       external: [...nodeBuiltins],
       output: {
         esModule: true,
