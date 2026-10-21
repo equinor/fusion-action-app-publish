@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.2
+
+### Patch Changes
+
+- 974a949: Unset an empty `FUSION_TOKEN` before publishing so Azure-authenticated runs use ambient credentials instead of selecting the CLI's token-authentication path. Preserve non-empty tokens for direct token authentication.
+
 ## 2.2.1
 
 ### Patch Changes
