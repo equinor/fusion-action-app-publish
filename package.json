@@ -68,9 +68,9 @@
     "@testing-library/jest-dom": "^6.1.5",
     "@types/adm-zip": "^0.5.7",
     "@types/node": "^25.3.0",
-    "@vitest/coverage-v8": "^4.0.0",
+    "@vitest/coverage-v8": "^5.0.5",
     "typescript": "^6.0.2",
     "vite": "^8.2.1",
-    "vitest": "^4.1.12"
+    "vitest": "^5.0.5"
   }
 }
