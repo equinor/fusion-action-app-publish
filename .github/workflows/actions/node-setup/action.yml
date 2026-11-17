@@ -5,13 +5,13 @@ runs:
   using: 'composite'
   steps:
     - name: Setup Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@v6.5.0
       with:
         node-version: '24'
         package-manager-cache: false
         
     - name: Install pnpm
-      uses: pnpm/setup@v2
+      uses: pnpm/setup@v2.1.0
       with:
         install: false
         cache: false
@@ -22,7 +22,7 @@ runs:
       id: pnpm-cache
       
     - name: Setup pnpm cache
-      uses: actions/cache@v4
+      uses: actions/cache@v4.3.0
       with:
         path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
