@@ -9,17 +9,21 @@ cleanup() {
 }
 trap cleanup EXIT
 
-VERSION=$(node -p "require('./package.json').version")
+PARSED_VERSION=$(
+  node -e '
+    const pkg = require("./package.json");
+    const version = typeof pkg.version === "string" ? pkg.version : "";
+    const semverRe = /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*))?$/;
+    const match = version.match(semverRe);
+    if (!match) {
+      console.error(`Error: Invalid semantic version in package.json: '\''${version}'\''`);
+      process.exit(1);
+    }
+    console.log([version, match[1], match[2], match[3], match[4] ?? ""].join("\t"));
+  '
+)
 
-if [[ ! "${VERSION}" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-([0-9A-Za-z.-]+))?$ ]]; then
-  echo "Error: Invalid semantic version in package.json: '${VERSION}'" >&2
-  exit 1
-fi
-
-MAJOR="${BASH_REMATCH[1]}"
-MINOR="${BASH_REMATCH[2]}"
-PATCH="${BASH_REMATCH[3]}"
-PRERELEASE="${BASH_REMATCH[5]:-}"
+IFS=$'\t' read -r VERSION MAJOR MINOR PATCH PRERELEASE <<<"${PARSED_VERSION}"
 TAG="v${VERSION}"
 HEAD_SHA=$(git rev-parse HEAD)
 

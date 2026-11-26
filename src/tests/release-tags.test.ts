@@ -321,8 +321,17 @@ describe("CI release tag and GitHub Release automation", () => {
     expect(rcRelease?.args).toContain("--prerelease");
   });
 
-  it("fails loudly if package.json contains an invalid semantic version", () => {
-    const fixture = createGitFixture("not-a-semver", "# Changelog\n");
+  it.each([
+    "not-a-semver",
+    "02.2.3",
+    "2.02.3",
+    "2.2.03",
+    "2.3.0-01",
+    "2.3.0-rc..1",
+    "2.3.0-",
+    "2.3.0-rc.1.",
+  ])("fails loudly if package.json contains malformed semantic version %s", (malformedVersion) => {
+    const fixture = createGitFixture(malformedVersion, "# Changelog\n");
     const result = fixture.runScript();
 
     expect(result.status).toBe(1);
