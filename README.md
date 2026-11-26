@@ -51,6 +51,19 @@ This guide covers 9+ detailed scenarios including:
 
 *Whether you're getting started or implementing enterprise-grade deployments, the complete guide has copy-paste ready examples for your use case.*
 
+## Versioning and Pinning
+
+Release-specific patch tags (`vX.Y.Z`) are immutable and backed by GitHub Releases with changelog notes. Floating major (`v2`) and minor (`v2.2`) tags move forward only when a new stable release is published.
+
+- **Highest security (recommended for SHA-pinned workflows):** Pin to the full 40-character commit SHA of a published `vX.Y.Z` release with a trailing version comment so Dependabot can propose updates on new releases:
+  ```yaml
+  - uses: equinor/fusion-action-app-publish@<40-char-commit-sha> # v2.2.3
+  ```
+- **Exact patch tag:** `equinor/fusion-action-app-publish@v2.2.3`
+- **Floating minor or major alias:** `equinor/fusion-action-app-publish@v2.2` or `equinor/fusion-action-app-publish@v2`
+
+See [docs/PUBLISHING.md](docs/PUBLISHING.md) for the full release and immutability policy.
+
 ## Usage
 
 ### Basic Usage with Pre-acquired Token

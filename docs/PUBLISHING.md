@@ -102,69 +102,75 @@ We follow [Semantic Versioning](https://semver.org/):
   - Documentation updates
   - Dependency updates
 
-### Git Tags
+### Git Tags and Immutability Policy
 
-The CI workflow automatically creates and maintains:
-- **Full version tag:** `v1.2.3` (immutable, points to specific release)
-- **Minor version tag:** `v1.2` (moves forward with v1.2.x releases)
-- **Major version tag:** `v1` (moves forward with v1.x.x releases)
+The CI workflow (`.github/workflows/ci.yml` + `.github/scripts/release-tags.sh`) separates **immutable release tags** from **floating compatibility aliases**:
 
-Users can pin to different levels:
+- **Release-specific patch tags (`vX.Y.Z`, e.g., `v2.2.3`):** Immutable. Created once per new `package.json` version without `--force`, never overwritten on subsequent commits, and paired with a GitHub Release whose notes are extracted from the matching `CHANGELOG.md` section.
+- **Floating minor aliases (`vX.Y`, e.g., `v2.2`):** Mutable Git tags (no GitHub Release). Updated forward via explicit refspecs only when a new highest stable `vX.Y.*` patch release is published.
+- **Floating major aliases (`vX`, e.g., `v2`):** Mutable Git tags (no GitHub Release). Updated forward via explicit refspecs only when a new highest stable `vX.*.*` release is published.
+- **Prerelease tags (`vX.Y.Z-rc.1`):** Published as GitHub prereleases and never update `vX` or `vX.Y` aliases.
+- **Non-release commits on `main`:** Pushes without a version bump leave existing `vX.Y.Z`, `vX.Y`, and `vX` tags untouched and do not create a release.
+
+#### Consumer Pinning Guidance
+
 ```yaml
-# Pin to exact version (recommended for production)
-- uses: equinor/fusion-action-app-publish@v1.2.3
+# Pin to a full 40-character commit SHA with a version comment (recommended for security-sensitive workflows)
+- uses: equinor/fusion-action-app-publish@<40-char-commit-sha> # v2.2.3
 
-# Auto-update patch versions
-- uses: equinor/fusion-action-app-publish@v1.2
+# Pin to an exact immutable patch tag
+- uses: equinor/fusion-action-app-publish@v2.2.3
 
-# Auto-update minor and patch versions
-- uses: equinor/fusion-action-app-publish@v1
+# Follow backward-compatible patch releases on v2.2
+- uses: equinor/fusion-action-app-publish@v2.2
 
-# Always latest (not recommended)
-- uses: equinor/fusion-action-app-publish@main
+# Follow backward-compatible minor and patch releases on v2
+- uses: equinor/fusion-action-app-publish@v2
 ```
+
+For SHA-pinned consumers (including repositories enforcing GitHub's *Require actions to be pinned to a full-length commit SHA* policy or using Dependabot `github-actions` updates), keep the `# vX.Y.Z` comment alongside the 40-character commit SHA. Because published `vX.Y.Z` tags are never moved, Dependabot only proposes SHA bumps when a new version is genuinely released with matching `CHANGELOG.md` and GitHub Release notes.
+
+### Repository-Level Release Safeguards
+
+In addition to the CI script guards (no `git tag -f` on `vX.Y.Z`, no `git push --tags --force`, remote existence check on `origin`), GitHub provides two complementary repository-level controls:
+
+1. **GitHub Immutable Releases** (*Settings → Releases → Enable immutable releases*): Cryptographically locks every published GitHub Release and its associated `vX.Y.Z` tag against modification or deletion, while still allowing floating `vX` and `vX.Y` Git tags that have no GitHub Release to move forward on new releases. See [GitHub Docs: Using immutable releases and tags to manage your action's releases](https://docs.github.com/en/actions/how-tos/create-and-publish-actions/using-immutable-releases-and-tags-to-manage-your-actions-releases).
+2. **Tag Protection Ruleset** (optional defense-in-depth): A repository tag ruleset targeting `refs/tags/v*.*.*` with **Restrict updates** and **Restrict deletions** blocks force-pushes to patch tags even before a GitHub Release is created, while leaving `v*` and `v*.*` aliases outside the pattern.
+
+Enabling repository-level Immutable Releases or tag rulesets requires repository admin permissions and must be configured in GitHub Settings.
 
 ## 🔄 Release Workflow
 
 ### Standard Release (Normal Process)
 
 1. **Merge PRs with changesets to `main`**
-   - CI detects changesets
-   - Creates/updates Release PR titled "🤖 Release - Fusion Action App Change"
-   - Release PR is automatically converted to draft
+   - CI detects pending `.changeset/*.md` files
+   - `changesets/action` creates/updates the Release PR titled `"🤖 Release - Fusion Action App Publish"`
+   - The Release PR is automatically converted to draft
+   - No tags or releases are modified while changesets are pending
 
 2. **Review the Release PR**
-   - Check version bumps in `package.json`
+   - Check the version bump in `package.json`
    - Review `CHANGELOG.md` entries
-   - Verify dist files are up to date
-   - Undraft the PR when ready to release
+   - Verify `dist/` files are up to date
+   - Mark the PR ready for review when ready to release
 
 3. **Merge the Release PR**
-   - CI automatically creates GitHub Release
-   - Tags are created and pushed
-   - Release notes are generated from changelog
+   - CI runs `.github/scripts/release-tags.sh`
+   - Verifies `vX.Y.Z` does not already exist on `origin`
+   - Creates and pushes the immutable `vX.Y.Z` tag without `--force`
+   - Creates the GitHub Release `vX.Y.Z` with release notes from `CHANGELOG.md`
+   - Updates floating `vX.Y` and `vX` aliases to the new stable release commit
+
+4. **Subsequent non-release commits on `main`**
+   - CI detects that `vX.Y.Z` already exists on `origin` at an earlier commit and exits without changing any tags or releases
 
 ### Emergency Hotfix
 
-For urgent fixes that bypass the normal process:
+For urgent fixes that need to publish immediately:
 
-1. **Create and merge fix PR with changeset**
-2. **Manually trigger release:**
-   ```bash
-   # Update version and changelog
-   pnpm changeset version
-   
-   # Commit changes
-   git add .
-   git commit -m "chore: release v1.2.4"
-   git push
-   
-   # Create and push tag
-   git tag v1.2.4
-   git push origin v1.2.4
-   ```
-
-3. **Create GitHub Release manually** from the tag
+1. **Create and merge the fix PR with a patch changeset** (preferred — follow Standard Release to allocate the next unused patch version, e.g., `v2.2.4`).
+2. **Never overwrite or move an existing `vX.Y.Z` tag.** Always allocate a new unused patch version (`package.json` + `CHANGELOG.md`), push the new `vX.Y.Z` tag without `--force`, create a matching GitHub Release, and only then update floating `vX.Y` and `vX` tags explicitly.
 
 ## 📋 Pre-Release Checklist
 
@@ -273,15 +279,12 @@ git commit -m "build: update dist files"
 
 ### Tag already exists
 
-```bash
-# Delete local and remote tag
-git tag -d v1.2.3
-git push origin :refs/tags/v1.2.3
+Do **not** delete, force-move, or recreate an already-published `vX.Y.Z` tag. Moving a published patch tag breaks immutability guarantees for SHA-pinned consumers and causes unexpected Dependabot updates.
 
-# Recreate tag at current commit
-git tag v1.2.3
-git push origin v1.2.3
-```
+Instead, allocate the next unused patch version:
+
+1. Add a patch changeset with `pnpm changeset` describing the fix.
+2. Merge the PR to `main` and merge the resulting Release PR so CI creates the next unused `vX.Y.Z` tag and GitHub Release.
 
 ## 📚 Additional Resources
 
