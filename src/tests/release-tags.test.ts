@@ -216,6 +216,49 @@ describe("CI release tag and GitHub Release automation", () => {
     expect(fixture.ghCalls().length).toBe(callsBefore);
   });
 
+  it("refuses to attach a missing release tag to a later non-release commit after a failed version-bump run", () => {
+    const fixture = createGitFixture(
+      "2.2.2",
+      "# Changelog\n\n## 2.2.2\n\n### Patch Changes\n\n- Initial 2.2.2 fix\n",
+    );
+    const v222Sha = git(fixture.workDir, ["rev-parse", "HEAD"]);
+    expect(fixture.runScript().status).toBe(0);
+
+    // Version-bump commit lands, but its CI run fails before tagging (v2.2.3 is still missing).
+    const versionBumpSha = fixture.commit("Version Packages (2.2.3)", {
+      "package.json": `${JSON.stringify({ name: "fusion-action-app-publish", version: "2.2.3" }, null, 2)}\n`,
+      "CHANGELOG.md":
+        "# Changelog\n\n## 2.2.3\n\n### Patch Changes\n\n- Fix 2.2.3\n\n## 2.2.2\n\n- Initial 2.2.2 fix\n",
+    });
+    git(fixture.workDir, ["push", "origin", "main"]);
+
+    // Next docs/CI-only commit keeps package.json at 2.2.3.
+    const followUpDocsSha = fixture.commit("docs: clarify readme", {
+      "README.md": "follow-up docs\n",
+    });
+    git(fixture.workDir, ["push", "origin", "main"]);
+
+    const callsBefore = fixture.ghCalls().length;
+    const docsRun = fixture.runScript();
+
+    expect(docsRun.status).toBe(0);
+    expect(docsRun.stdout).toContain("did not introduce version 2.2.3");
+    expect(fixture.remoteTagSha("v2.2.3")).toBe("");
+    expect(fixture.remoteTagSha("v2.2")).toBe(v222Sha);
+    expect(fixture.remoteTagSha("v2")).toBe(v222Sha);
+    expect(fixture.ghCalls().length).toBe(callsBefore);
+
+    // Re-running on the actual version-bump commit publishes v2.2.3 at the right SHA.
+    git(fixture.workDir, ["checkout", versionBumpSha]);
+    const rerunResult = fixture.runScript();
+
+    expect(rerunResult.status).toBe(0);
+    expect(fixture.remoteTagSha("v2.2.3")).toBe(versionBumpSha);
+    expect(fixture.remoteTagSha("v2.2.3")).not.toBe(followUpDocsSha);
+    expect(fixture.remoteTagSha("v2.2")).toBe(versionBumpSha);
+    expect(fixture.remoteTagSha("v2")).toBe(versionBumpSha);
+  });
+
   it("publishes a new unused patch version with matching changelog release notes while preserving prior patch tags", () => {
     const fixture = createGitFixture(
       "2.2.2",

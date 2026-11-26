@@ -43,6 +43,20 @@ if [[ -n "${REMOTE_TAG_SHA}" && "${REMOTE_TAG_SHA}" != "${HEAD_SHA}" ]]; then
 fi
 
 if [[ -z "${REMOTE_TAG_SHA}" ]]; then
+  if git rev-parse -q --verify HEAD^ >/dev/null 2>&1 && git cat-file -e HEAD^:package.json 2>/dev/null; then
+    PREV_VERSION=$(
+      git show HEAD^:package.json | node -e '
+        const fs = require("node:fs");
+        const pkg = JSON.parse(fs.readFileSync(0, "utf8"));
+        if (typeof pkg.version === "string") process.stdout.write(pkg.version);
+      '
+    )
+    if [[ "${PREV_VERSION}" == "${VERSION}" ]]; then
+      echo "HEAD (${HEAD_SHA}) did not introduce version ${VERSION} (parent already has ${PREV_VERSION}); skipping tag and release creation. Re-run CI on the version-bump commit to publish ${TAG}."
+      exit 0
+    fi
+  fi
+
   if LOCAL_TAG_SHA=$(git rev-parse -q --verify "refs/tags/${TAG}^{commit}" 2>/dev/null); then
     if [[ "${LOCAL_TAG_SHA}" != "${HEAD_SHA}" ]]; then
       echo "Error: Local tag ${TAG} already exists at ${LOCAL_TAG_SHA} (HEAD is ${HEAD_SHA}); refusing to overwrite." >&2
