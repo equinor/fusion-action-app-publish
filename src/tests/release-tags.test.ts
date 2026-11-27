@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 const repoRoot = path.join(__dirname, "..", "..");
 const releaseScriptPath = path.join(repoRoot, ".github", "scripts", "release-tags.sh");
 const ciWorkflowPath = path.join(repoRoot, ".github", "workflows", "ci.yml");
+const releaseWorkflowPath = path.join(repoRoot, ".github", "workflows", "release.yml");
 const temporaryDirectories: string[] = [];
 
 afterEach(() => {
@@ -62,8 +63,9 @@ function createGitFixture(initialVersion: string, initialChangelog: string): Fix
   const existingReleasesPath = path.join(root, "existing-releases.txt");
 
   git(root, ["init", "--bare", originDir]);
+  git(originDir, ["symbolic-ref", "HEAD", "refs/heads/main"]);
   git(root, ["clone", originDir, workDir]);
-  git(workDir, ["checkout", "-b", "main"]);
+  git(workDir, ["checkout", "-B", "main"]);
 
   writeFileSync(existingReleasesPath, "", "utf8");
   writeFileSync(ghLogPath, "", "utf8");
@@ -173,13 +175,35 @@ process.exit(2);
 }
 
 describe("CI release tag and GitHub Release automation", () => {
-  it("delegates tagging to release-tags.sh without force-pushing all tags in ci.yml", () => {
+  it("separates Changesets PR management in ci.yml from release publication in release.yml", () => {
     const ciWorkflow = readFileSync(ciWorkflowPath, "utf8");
+    const releaseWorkflow = readFileSync(releaseWorkflowPath, "utf8");
 
-    expect(ciWorkflow).toContain("bash .github/scripts/release-tags.sh");
+    expect(ciWorkflow).toContain("pr-title: '🤖 Release - Fusion Action App Publish'");
     expect(ciWorkflow).toContain("create-github-releases: false");
+    expect(ciWorkflow).toContain("push-with-git-cli: true");
+    expect(ciWorkflow).toContain("version-script: pnpm run changeset:version");
+    expect(ciWorkflow).toContain("steps.changesets.outputs.has-changesets");
+    expect(ciWorkflow).toContain("steps.changesets.outputs.pr-number");
+    expect(ciWorkflow).not.toContain("release-tags.sh");
     expect(ciWorkflow).not.toMatch(/git tag -f\b/);
     expect(ciWorkflow).not.toContain("git push origin --tags --force");
+
+    expect(releaseWorkflow).toContain("types: [closed]");
+    expect(releaseWorkflow).toContain("workflow_dispatch:");
+    expect(releaseWorkflow).toContain("github.ref == 'refs/heads/main'");
+    expect(releaseWorkflow).toContain("github.event.pull_request.merged == true");
+    expect(releaseWorkflow).toContain("github.event.pull_request.base.ref == 'main'");
+    expect(releaseWorkflow).toContain(
+      "github.event.pull_request.head.ref == 'changeset-release/main'",
+    );
+    expect(releaseWorkflow).toContain(
+      "github.event.pull_request.head.repo.full_name == github.repository",
+    );
+    expect(releaseWorkflow).toContain("github.event.pull_request.merge_commit_sha");
+    expect(releaseWorkflow).toContain("bash .github/scripts/release-tags.sh");
+    expect(releaseWorkflow).not.toMatch(/git tag -f\b/);
+    expect(releaseWorkflow).not.toContain("git push origin --tags --force");
   });
 
   it("does not overwrite an existing patch tag or move floating aliases on non-release commits", () => {
@@ -204,19 +228,25 @@ describe("CI release tag and GitHub Release automation", () => {
     // Even if local tag cache is missing, origin must still guard v2.2.2.
     git(fixture.workDir, ["tag", "-d", "v2.2.2"]);
 
-    const callsBefore = fixture.ghCalls().length;
+    const createCallsBefore = fixture
+      .ghCalls()
+      .filter((call) => call.args[0] === "release" && call.args[1] === "create").length;
     const nonReleaseRun = fixture.runScript();
 
     expect(nonReleaseRun.status).toBe(0);
-    expect(nonReleaseRun.stdout).toContain("already exists on origin");
+    expect(nonReleaseRun.stdout).toContain(`already points to release commit (${v222Sha})`);
+    expect(nonReleaseRun.stdout).toContain("GitHub Release v2.2.2 already exists");
     expect(fixture.remoteTagSha("v2.2.2")).toBe(v222Sha);
     expect(fixture.remoteTagSha("v2.2")).toBe(v222Sha);
     expect(fixture.remoteTagSha("v2")).toBe(v222Sha);
     expect(fixture.remoteTagSha("v2.2.2")).not.toBe(ciOnlySha);
-    expect(fixture.ghCalls().length).toBe(callsBefore);
+    expect(
+      fixture.ghCalls().filter((call) => call.args[0] === "release" && call.args[1] === "create")
+        .length,
+    ).toBe(createCallsBefore);
   });
 
-  it("refuses to attach a missing release tag to a later non-release commit after a failed version-bump run", () => {
+  it("recovers an unpublished release at the version-introducing commit instead of tagging a later non-release HEAD", () => {
     const fixture = createGitFixture(
       "2.2.2",
       "# Changelog\n\n## 2.2.2\n\n### Patch Changes\n\n- Initial 2.2.2 fix\n",
@@ -224,7 +254,7 @@ describe("CI release tag and GitHub Release automation", () => {
     const v222Sha = git(fixture.workDir, ["rev-parse", "HEAD"]);
     expect(fixture.runScript().status).toBe(0);
 
-    // Version-bump commit lands, but its CI run fails before tagging (v2.2.3 is still missing).
+    // Version-bump commit lands, but its release run fails or is dropped before tagging.
     const versionBumpSha = fixture.commit("Version Packages (2.2.3)", {
       "package.json": `${JSON.stringify({ name: "fusion-action-app-publish", version: "2.2.3" }, null, 2)}\n`,
       "CHANGELOG.md":
@@ -232,31 +262,70 @@ describe("CI release tag and GitHub Release automation", () => {
     });
     git(fixture.workDir, ["push", "origin", "main"]);
 
-    // Next docs/CI-only commit keeps package.json at 2.2.3.
+    // Later non-release commit advances main.
     const followUpDocsSha = fixture.commit("docs: clarify readme", {
       "README.md": "follow-up docs\n",
+      "CHANGELOG.md": "# Changelog\n\n## 2.2.3\n\n### Patch Changes\n\n- Mutated later docs\n",
     });
     git(fixture.workDir, ["push", "origin", "main"]);
 
-    const callsBefore = fixture.ghCalls().length;
-    const docsRun = fixture.runScript();
+    const recoveryRun = fixture.runScript();
 
-    expect(docsRun.status).toBe(0);
-    expect(docsRun.stdout).toContain("did not introduce version 2.2.3");
-    expect(fixture.remoteTagSha("v2.2.3")).toBe("");
-    expect(fixture.remoteTagSha("v2.2")).toBe(v222Sha);
-    expect(fixture.remoteTagSha("v2")).toBe(v222Sha);
-    expect(fixture.ghCalls().length).toBe(callsBefore);
-
-    // Re-running on the actual version-bump commit publishes v2.2.3 at the right SHA.
-    git(fixture.workDir, ["checkout", versionBumpSha]);
-    const rerunResult = fixture.runScript();
-
-    expect(rerunResult.status).toBe(0);
+    expect(recoveryRun.status).toBe(0);
+    expect(recoveryRun.stdout).toContain(
+      `Recovering unpublished release v2.2.3 at version-introducing commit ${versionBumpSha}`,
+    );
+    expect(fixture.remoteTagSha("v2.2.2")).toBe(v222Sha);
     expect(fixture.remoteTagSha("v2.2.3")).toBe(versionBumpSha);
     expect(fixture.remoteTagSha("v2.2.3")).not.toBe(followUpDocsSha);
     expect(fixture.remoteTagSha("v2.2")).toBe(versionBumpSha);
     expect(fixture.remoteTagSha("v2")).toBe(versionBumpSha);
+
+    const v223Release = fixture
+      .ghCalls()
+      .find((call) => call.args[1] === "create" && call.args[2] === "v2.2.3");
+    expect(v223Release?.notes).toContain("Fix 2.2.3");
+    expect(v223Release?.notes).not.toContain("Mutated later docs");
+  });
+
+  it("finishes incomplete GitHub Release and floating alias updates on retry after main advances", () => {
+    const fixture = createGitFixture(
+      "2.2.2",
+      "# Changelog\n\n## 2.2.2\n\n### Patch Changes\n\n- Initial 2.2.2 fix\n",
+    );
+    const v222Sha = git(fixture.workDir, ["rev-parse", "HEAD"]);
+    expect(fixture.runScript().status).toBe(0);
+
+    const versionBumpSha = fixture.commit("Version Packages (2.2.3)", {
+      "package.json": `${JSON.stringify({ name: "fusion-action-app-publish", version: "2.2.3" }, null, 2)}\n`,
+      "CHANGELOG.md":
+        "# Changelog\n\n## 2.2.3\n\n### Patch Changes\n\n- Partial failure fix 2.2.3\n\n## 2.2.2\n\n- Initial 2.2.2 fix\n",
+    });
+    git(fixture.workDir, ["push", "origin", "main"]);
+    git(fixture.workDir, ["tag", "v2.2.3", versionBumpSha]);
+    git(fixture.workDir, ["push", "origin", "refs/tags/v2.2.3"]);
+
+    expect(fixture.remoteTagSha("v2.2.3")).toBe(versionBumpSha);
+    expect(fixture.remoteTagSha("v2.2")).toBe(v222Sha);
+    expect(fixture.remoteTagSha("v2")).toBe(v222Sha);
+
+    const followUpSha = fixture.commit("docs: update after partial failure", {
+      "README.md": "after partial failure\n",
+    });
+    git(fixture.workDir, ["push", "origin", "main"]);
+
+    const retryRun = fixture.runScript();
+    expect(retryRun.status).toBe(0);
+    expect(fixture.remoteTagSha("v2.2.3")).toBe(versionBumpSha);
+    expect(fixture.remoteTagSha("v2.2.3")).not.toBe(followUpSha);
+    expect(fixture.remoteTagSha("v2.2")).toBe(versionBumpSha);
+    expect(fixture.remoteTagSha("v2")).toBe(versionBumpSha);
+
+    const v223Release = fixture
+      .ghCalls()
+      .find((call) => call.args[1] === "create" && call.args[2] === "v2.2.3");
+    expect(v223Release).toBeDefined();
+    expect(v223Release?.notes).toContain("Partial failure fix 2.2.3");
   });
 
   it("publishes a new unused patch version with matching changelog release notes while preserving prior patch tags", () => {
@@ -336,6 +405,68 @@ describe("CI release tag and GitHub Release automation", () => {
     // Floating tags must NOT regress from v2.2.3 back to v2.2.2.
     expect(fixture.remoteTagSha("v2.2")).toBe(v223Sha);
     expect(fixture.remoteTagSha("v2")).toBe(v223Sha);
+  });
+
+  it("refuses to move floating aliases backwards when a concurrent publisher advances them after the snapshot", () => {
+    const fixture = createGitFixture(
+      "2.2.2",
+      "# Changelog\n\n## 2.2.2\n\n### Patch Changes\n\n- Initial 2.2.2 fix\n",
+    );
+    expect(fixture.runScript().status).toBe(0);
+
+    const v223Sha = fixture.commit("Version Packages (2.2.3)", {
+      "package.json": `${JSON.stringify({ name: "fusion-action-app-publish", version: "2.2.3" }, null, 2)}\n`,
+      "CHANGELOG.md":
+        "# Changelog\n\n## 2.2.3\n\n### Patch Changes\n\n- Fix 2.2.3\n\n## 2.2.2\n\n- Initial 2.2.2 fix\n",
+    });
+    git(fixture.workDir, ["push", "origin", "main"]);
+
+    const concurrentDir = path.join(fixture.root, "concurrent");
+    git(fixture.root, ["clone", "--branch", "main", fixture.originDir, concurrentDir]);
+    writeFileSync(
+      path.join(concurrentDir, "package.json"),
+      `${JSON.stringify({ name: "fusion-action-app-publish", version: "2.2.4" }, null, 2)}\n`,
+      "utf8",
+    );
+    git(concurrentDir, ["add", "package.json"]);
+    git(concurrentDir, ["commit", "-m", "Version Packages (2.2.4)"]);
+    const concurrentV224Sha = git(concurrentDir, ["rev-parse", "HEAD"]);
+    git(concurrentDir, ["push", "origin", "main"]);
+
+    const realGit = spawnSync("which", ["git"], { encoding: "utf8" }).stdout.trim();
+    const wrapperDir = path.join(fixture.root, "race-bin");
+    spawnSync("mkdir", ["-p", wrapperDir]);
+    const gitWrapperPath = path.join(wrapperDir, "git");
+    writeFileSync(
+      gitWrapperPath,
+      `#!/usr/bin/env bash
+set -euo pipefail
+"${realGit}" "$@"
+if [[ "$*" == *"ls-remote --tags origin refs/tags/v2.*"* ]]; then
+  "${realGit}" --git-dir="${fixture.originDir}" update-ref refs/tags/v2.2.4 "${concurrentV224Sha}"
+  "${realGit}" --git-dir="${fixture.originDir}" update-ref refs/tags/v2.2 "${concurrentV224Sha}"
+  "${realGit}" --git-dir="${fixture.originDir}" update-ref refs/tags/v2 "${concurrentV224Sha}"
+fi
+`,
+      "utf8",
+    );
+    chmodSync(gitWrapperPath, 0o755);
+
+    const raceResult = spawnSync("bash", [releaseScriptPath], {
+      cwd: fixture.workDir,
+      encoding: "utf8",
+      timeout: 10000,
+      env: {
+        PATH: `${wrapperDir}:${fixture.ghBinDir}:${process.env.PATH ?? ""}`,
+        MOCK_GH_LOG: fixture.ghLogPath,
+        MOCK_GH_RELEASES: fixture.existingReleasesPath,
+      },
+    });
+
+    expect(raceResult.status).not.toBe(0);
+    expect(fixture.remoteTagSha("v2.2.3")).toBe(v223Sha);
+    expect(fixture.remoteTagSha("v2.2")).toBe(concurrentV224Sha);
+    expect(fixture.remoteTagSha("v2")).toBe(concurrentV224Sha);
   });
 
   it("marks prereleases with --prerelease and never moves floating major/minor tags", () => {

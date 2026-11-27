@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+# Security: Apply principle of least privilege
+# This workflow only publishes git tags and GitHub Releases when the Changesets Release PR merges to main
+permissions:
+  contents: write
+
+jobs:
+  publish-release:
+    name: Publish GitHub Release and Action Tags
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.merged == true &&
+        github.event.pull_request.base.ref == 'main' &&
+        github.event.pull_request.head.ref == 'changeset-release/main' &&
+        github.event.pull_request.head.repo.full_name == github.repository
+      )
+    runs-on: ubuntu-latest
+    steps:
+      # Check out the exact merged commit on main (not the temporary PR merge ref)
+      - name: Checkout merged commit
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.merge_commit_sha || 'refs/heads/main' }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.5.0
+        with:
+          node-version: '24'
+
+      - name: Create GitHub Release and Update Action Tags
+        run: bash .github/scripts/release-tags.sh
+        env:
+          GH_TOKEN: ${{ github.token }}

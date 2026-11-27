@@ -33,43 +33,70 @@ resolve_remote_tag_sha() {
     awk '$2 ~ /\^\{\}$/ { sha=$1 } $2 !~ /\^\{\}$/ && sha == "" { sha=$1 } END { print sha }'
 }
 
+resolve_remote_ref_oid() {
+  local tag_name="$1"
+  git ls-remote --tags origin "refs/tags/${tag_name}" | awk 'NR==1 { print $1 }'
+}
+
+resolve_version_introducing_sha() {
+  local target_version="$1"
+  local sha=""
+  local prev_sha=""
+
+  while IFS= read -r sha; do
+    local commit_version=""
+    if git cat-file -e "${sha}:package.json" 2>/dev/null; then
+      commit_version=$(
+        git show "${sha}:package.json" | node -e '
+          const fs = require("node:fs");
+          try {
+            const pkg = JSON.parse(fs.readFileSync(0, "utf8"));
+            if (typeof pkg.version === "string") process.stdout.write(pkg.version);
+          } catch {}
+        '
+      )
+    fi
+    if [[ "${commit_version}" != "${target_version}" ]]; then
+      break
+    fi
+    prev_sha="${sha}"
+  done < <(git rev-list --first-parent HEAD)
+
+  printf '%s' "${prev_sha}"
+}
+
+RELEASE_SHA=$(resolve_version_introducing_sha "${VERSION}")
+if [[ -z "${RELEASE_SHA}" ]]; then
+  echo "Error: Could not find committed package.json with version '${VERSION}' at HEAD (${HEAD_SHA})." >&2
+  exit 1
+fi
+
 REMOTE_TAG_SHA=$(resolve_remote_tag_sha "${TAG}")
 
-# Non-release pushes to main keep the already-tagged package.json version.
-# Never overwrite an existing release tag or move floating aliases for non-release commits.
-if [[ -n "${REMOTE_TAG_SHA}" && "${REMOTE_TAG_SHA}" != "${HEAD_SHA}" ]]; then
-  echo "Tag ${TAG} already exists on origin at ${REMOTE_TAG_SHA} (HEAD is ${HEAD_SHA}); skipping tag and release creation."
+# Never overwrite an existing release tag that points to a different commit.
+if [[ -n "${REMOTE_TAG_SHA}" && "${REMOTE_TAG_SHA}" != "${RELEASE_SHA}" ]]; then
+  echo "Tag ${TAG} already exists on origin at ${REMOTE_TAG_SHA} (release commit is ${RELEASE_SHA}); skipping tag and release creation."
   exit 0
 fi
 
 if [[ -z "${REMOTE_TAG_SHA}" ]]; then
-  if git rev-parse -q --verify HEAD^ >/dev/null 2>&1 && git cat-file -e HEAD^:package.json 2>/dev/null; then
-    PREV_VERSION=$(
-      git show HEAD^:package.json | node -e '
-        const fs = require("node:fs");
-        const pkg = JSON.parse(fs.readFileSync(0, "utf8"));
-        if (typeof pkg.version === "string") process.stdout.write(pkg.version);
-      '
-    )
-    if [[ "${PREV_VERSION}" == "${VERSION}" ]]; then
-      echo "HEAD (${HEAD_SHA}) did not introduce version ${VERSION} (parent already has ${PREV_VERSION}); skipping tag and release creation. Re-run CI on the version-bump commit to publish ${TAG}."
-      exit 0
-    fi
+  if [[ "${RELEASE_SHA}" != "${HEAD_SHA}" ]]; then
+    echo "Recovering unpublished release ${TAG} at version-introducing commit ${RELEASE_SHA} (HEAD is ${HEAD_SHA})."
   fi
 
   if LOCAL_TAG_SHA=$(git rev-parse -q --verify "refs/tags/${TAG}^{commit}" 2>/dev/null); then
-    if [[ "${LOCAL_TAG_SHA}" != "${HEAD_SHA}" ]]; then
-      echo "Error: Local tag ${TAG} already exists at ${LOCAL_TAG_SHA} (HEAD is ${HEAD_SHA}); refusing to overwrite." >&2
+    if [[ "${LOCAL_TAG_SHA}" != "${RELEASE_SHA}" ]]; then
+      echo "Error: Local tag ${TAG} already exists at ${LOCAL_TAG_SHA} (release commit is ${RELEASE_SHA}); refusing to overwrite." >&2
       exit 1
     fi
   else
-    git tag "${TAG}" "${HEAD_SHA}"
+    git tag "${TAG}" "${RELEASE_SHA}"
   fi
 
-  echo "Creating and pushing immutable release tag ${TAG} at ${HEAD_SHA}"
+  echo "Creating and pushing immutable release tag ${TAG} at ${RELEASE_SHA}"
   git push origin "refs/tags/${TAG}"
 else
-  echo "Tag ${TAG} already points to HEAD (${HEAD_SHA}); verifying GitHub Release and floating tags."
+  echo "Tag ${TAG} already points to release commit (${RELEASE_SHA}); verifying GitHub Release and floating tags."
 fi
 
 if gh release view "${TAG}" >/dev/null 2>&1; then
@@ -77,22 +104,23 @@ if gh release view "${TAG}" >/dev/null 2>&1; then
 else
   NOTES_FILE=$(mktemp)
 
-  node -e '
-    const fs = require("node:fs");
-    const version = process.argv[1];
-    const notesFile = process.argv[2];
-    if (!fs.existsSync("CHANGELOG.md")) process.exit(0);
-    const content = fs.readFileSync("CHANGELOG.md", "utf8");
-    const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const pattern = new RegExp(`^## ${escaped}\\r?\\n([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, "m");
-    const match = content.match(pattern);
-    if (match) {
-      const body = match[1].trim();
-      if (body) {
-        fs.writeFileSync(notesFile, `${body}\n`, "utf8");
+  if git cat-file -e "${RELEASE_SHA}:CHANGELOG.md" 2>/dev/null; then
+    git show "${RELEASE_SHA}:CHANGELOG.md" | node -e '
+      const fs = require("node:fs");
+      const version = process.argv[1];
+      const notesFile = process.argv[2];
+      const content = fs.readFileSync(0, "utf8");
+      const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const pattern = new RegExp(`^## ${escaped}\\r?\\n([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, "m");
+      const match = content.match(pattern);
+      if (match) {
+        const body = match[1].trim();
+        if (body) {
+          fs.writeFileSync(notesFile, `${body}\n`, "utf8");
+        }
       }
-    }
-  ' "${VERSION}" "${NOTES_FILE}"
+    ' "${VERSION}" "${NOTES_FILE}"
+  fi
 
   RELEASE_ARGS=("release" "create" "${TAG}" "--verify-tag" "--title" "${TAG}")
   if [[ -n "${PRERELEASE}" ]]; then
@@ -113,6 +141,17 @@ if [[ -n "${PRERELEASE}" ]]; then
   exit 0
 fi
 
+MINOR_ALIAS="v${MAJOR}.${MINOR}"
+MAJOR_ALIAS="v${MAJOR}"
+
+# Capture raw remote alias ref OIDs before listing release tags so a concurrent
+# publisher advancing vX or vX.Y invalidates --force-with-lease instead of
+# letting this run move floating aliases backwards.
+MINOR_ALIAS_RAW_OID=$(resolve_remote_ref_oid "${MINOR_ALIAS}")
+MAJOR_ALIAS_RAW_OID=$(resolve_remote_ref_oid "${MAJOR_ALIAS}")
+MINOR_ALIAS_COMMIT_SHA=$(resolve_remote_tag_sha "${MINOR_ALIAS}")
+MAJOR_ALIAS_COMMIT_SHA=$(resolve_remote_tag_sha "${MAJOR_ALIAS}")
+
 ALL_MAJOR_TAGS=$(
   git ls-remote --tags origin "refs/tags/v${MAJOR}.*" |
     awk '$2 !~ /\^\{\}$/ { sub(/^refs\/tags\//, "", $2); print $2 }'
@@ -120,16 +159,17 @@ ALL_MAJOR_TAGS=$(
 
 update_floating_tag() {
   local alias_tag="$1"
-  local current_sha
-  current_sha=$(resolve_remote_tag_sha "${alias_tag}")
-  if [[ "${current_sha}" == "${HEAD_SHA}" ]]; then
-    echo "Floating tag ${alias_tag} already points to ${HEAD_SHA}; skipping."
+  local expected_raw_oid="$2"
+  local current_commit_sha="$3"
+
+  if [[ "${current_commit_sha}" == "${RELEASE_SHA}" ]]; then
+    echo "Floating tag ${alias_tag} already points to ${RELEASE_SHA}; skipping."
     return 0
   fi
 
-  echo "Updating floating tag ${alias_tag} -> ${HEAD_SHA}"
-  git tag -f "${alias_tag}" "${HEAD_SHA}"
-  git push origin --force "refs/tags/${alias_tag}"
+  echo "Updating floating tag ${alias_tag} -> ${RELEASE_SHA} (lease: ${expected_raw_oid:-<absent>})"
+  git tag -f "${alias_tag}" "${RELEASE_SHA}"
+  git push origin --force-with-lease="refs/tags/${alias_tag}:${expected_raw_oid}" "refs/tags/${alias_tag}"
 }
 
 FLOAT_DECISION=$(
@@ -156,13 +196,13 @@ FLOAT_DECISION=$(
 read -r UPDATE_MINOR UPDATE_MAJOR <<<"${FLOAT_DECISION}"
 
 if [[ "${UPDATE_MINOR}" == "1" ]]; then
-  update_floating_tag "v${MAJOR}.${MINOR}"
+  update_floating_tag "${MINOR_ALIAS}" "${MINOR_ALIAS_RAW_OID}" "${MINOR_ALIAS_COMMIT_SHA}"
 else
-  echo "Skipping floating tag v${MAJOR}.${MINOR}: a newer patch tag already exists."
+  echo "Skipping floating tag ${MINOR_ALIAS}: a newer patch tag already exists."
 fi
 
 if [[ "${UPDATE_MAJOR}" == "1" ]]; then
-  update_floating_tag "v${MAJOR}"
+  update_floating_tag "${MAJOR_ALIAS}" "${MAJOR_ALIAS_RAW_OID}" "${MAJOR_ALIAS_COMMIT_SHA}"
 else
-  echo "Skipping floating tag v${MAJOR}: a newer release tag already exists."
+  echo "Skipping floating tag ${MAJOR_ALIAS}: a newer release tag already exists."
 fi

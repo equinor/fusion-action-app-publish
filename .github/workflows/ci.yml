@@ -8,15 +8,15 @@ on:
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 # Security: Apply principle of least privilege
-# This workflow handles action versioning and GitHub releases
+# This workflow runs CI checks on main and manages Changesets release PRs
 permissions:
-  contents: write      # Required for creating releases and pushing tags
+  contents: write      # Required for changesets/action to push the release branch
   id-token: write      # Required for OIDC token generation
-  pull-requests: write # Required for changesets action to create PRs
+  pull-requests: write # Required for changesets/action to create/update release PRs
 
 jobs:
   release-action:
-    name: Version or publish GitHub Action
+    name: Validate and manage Release PR
     runs-on: ubuntu-latest
     outputs:
       published: ${{ steps.changesets.outputs.published }}
@@ -62,14 +62,6 @@ jobs:
       - name: Convert Changeset PR to draft
         if: steps.changesets.outputs.published == 'false' && steps.changesets.outputs.pr-number
         run: gh pr ready ${{ steps.changesets.outputs.pr-number }} --undo
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-      # Create immutable vX.Y.Z tag + GitHub Release and update floating vX / vX.Y aliases.
-      # Skips cleanly on non-release commits where vX.Y.Z already exists on origin.
-      - name: Create GitHub Release and Update Action Tags
-        if: steps.changesets.outputs.has-changesets == 'false' && steps.changesets.outputs.pr-number == '' && steps.changesets.outputs.published == 'false'
-        run: bash .github/scripts/release-tags.sh
         env:
           GH_TOKEN: ${{ github.token }}
           

@@ -104,13 +104,18 @@ We follow [Semantic Versioning](https://semver.org/):
 
 ### Git Tags and Immutability Policy
 
-The CI workflow (`.github/workflows/ci.yml` + `.github/scripts/release-tags.sh`) separates **immutable release tags** from **floating compatibility aliases**:
+The release automation splits Changeset PR creation from release publishing across two workflows:
+
+- **`.github/workflows/ci.yml`** (`push` on `main`): runs tests/lint/build and `changesets/action` to open or update the draft Release PR (`changeset-release/main`). It never touches tags or GitHub Releases.
+- **`.github/workflows/release.yml`** (`pull_request: [closed]` on `main`, plus `workflow_dispatch` on `main`): runs `.github/scripts/release-tags.sh` **only** when the same-repository `changeset-release/main` Release PR merges into `main` (or manually dispatched on `main` for recovery).
+
+It separates **immutable release tags** from **floating compatibility aliases**:
 
 - **Release-specific patch tags (`vX.Y.Z`, e.g., `v2.2.3`):** Immutable. Created once per new `package.json` version without `--force`, never overwritten on subsequent commits, and paired with a GitHub Release whose notes are extracted from the matching `CHANGELOG.md` section.
-- **Floating minor aliases (`vX.Y`, e.g., `v2.2`):** Mutable Git tags (no GitHub Release). Updated forward via explicit refspecs only when a new highest stable `vX.Y.*` patch release is published.
-- **Floating major aliases (`vX`, e.g., `v2`):** Mutable Git tags (no GitHub Release). Updated forward via explicit refspecs only when a new highest stable `vX.*.*` release is published.
+- **Floating minor aliases (`vX.Y`, e.g., `v2.2`):** Mutable Git tags (no GitHub Release). Updated forward via `--force-with-lease` explicit refspecs only when a new highest stable `vX.Y.*` patch release is published.
+- **Floating major aliases (`vX`, e.g., `v2`):** Mutable Git tags (no GitHub Release). Updated forward via `--force-with-lease` explicit refspecs only when a new highest stable `vX.*.*` release is published.
 - **Prerelease tags (`vX.Y.Z-rc.1`):** Published as GitHub prereleases and never update `vX` or `vX.Y` aliases.
-- **Non-release commits on `main`:** Pushes without a version bump leave existing `vX.Y.Z`, `vX.Y`, and `vX` tags untouched and do not create a release.
+- **Non-release commits on `main`:** Normal PR merges never trigger `release.yml`, leaving existing `vX.Y.Z`, `vX.Y`, and `vX` tags untouched.
 
 #### Consumer Pinning Guidance
 
@@ -132,7 +137,7 @@ For SHA-pinned consumers (including repositories enforcing GitHub's *Require act
 
 ### Repository-Level Release Safeguards
 
-In addition to the CI script guards (no `git tag -f` on `vX.Y.Z`, no `git push --tags --force`, remote existence check on `origin`), GitHub provides two complementary repository-level controls:
+In addition to the separate `release.yml` trigger and script guards (no `git tag -f` on `vX.Y.Z`, no `git push --tags --force`, remote existence check on `origin`, first-parent version-introducing commit resolution, and `--force-with-lease` floating-alias updates), GitHub provides two complementary repository-level controls:
 
 1. **GitHub Immutable Releases** (*Settings → Releases → Enable immutable releases*): Cryptographically locks every published GitHub Release and its associated `vX.Y.Z` tag against modification or deletion, while still allowing floating `vX` and `vX.Y` Git tags that have no GitHub Release to move forward on new releases. See [GitHub Docs: Using immutable releases and tags to manage your action's releases](https://docs.github.com/en/actions/how-tos/create-and-publish-actions/using-immutable-releases-and-tags-to-manage-your-actions-releases).
 2. **Tag Protection Ruleset** (optional defense-in-depth): A repository tag ruleset targeting `refs/tags/v*.*.*` with **Restrict updates** and **Restrict deletions** blocks force-pushes to patch tags even before a GitHub Release is created, while leaving `v*` and `v*.*` aliases outside the pattern.
@@ -156,14 +161,16 @@ Enabling repository-level Immutable Releases or tag rulesets requires repository
    - Mark the PR ready for review when ready to release
 
 3. **Merge the Release PR**
-   - CI runs `.github/scripts/release-tags.sh`
-   - Verifies `vX.Y.Z` does not already exist on `origin`
+   - Merging the `changeset-release/main` PR triggers `.github/workflows/release.yml`
+   - Checks out the exact `merge_commit_sha` on `main` and runs `.github/scripts/release-tags.sh`
+   - Verifies `vX.Y.Z` does not already exist on `origin` and resolves the exact version-introducing commit
    - Creates and pushes the immutable `vX.Y.Z` tag without `--force`
    - Creates the GitHub Release `vX.Y.Z` with release notes from `CHANGELOG.md`
-   - Updates floating `vX.Y` and `vX` aliases to the new stable release commit
+   - Updates floating `vX.Y` and `vX` aliases with `--force-with-lease` to the new stable release commit
+   - If a release run fails partway through, re-run the workflow or trigger `release.yml` via `workflow_dispatch` on `main` to finish idempotently
 
 4. **Subsequent non-release commits on `main`**
-   - CI detects that `vX.Y.Z` already exists on `origin` at an earlier commit and exits without changing any tags or releases
+   - Normal PR merges never trigger `release.yml`, leaving `vX.Y.Z`, `vX.Y`, and `vX` untouched
 
 ### Emergency Hotfix
 
