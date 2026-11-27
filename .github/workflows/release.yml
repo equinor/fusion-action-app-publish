@@ -7,10 +7,6 @@ on:
       - main
   workflow_dispatch:
 
-concurrency:
-  group: release-main
-  cancel-in-progress: false
-
 # Security: Apply principle of least privilege
 # This workflow only publishes git tags and GitHub Releases when the Changesets Release PR merges to main
 permissions:
@@ -19,6 +15,9 @@ permissions:
 jobs:
   publish-release:
     name: Publish GitHub Release and Action Tags
+    concurrency:
+      group: release-main
+      cancel-in-progress: false
     if: >-
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
       (
@@ -37,10 +36,17 @@ jobs:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.merge_commit_sha || 'refs/heads/main' }}
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6.5.0
-        with:
-          node-version: '24'
+      - name: Setup node and install deps
+        uses: $/.github/workflows/actions/node-setup
+
+      - name: Run tests
+        run: pnpm run test:ci
+
+      - name: Run linter
+        run: pnpm run lint
+
+      - name: Build and package action
+        run: pnpm run build
 
       - name: Create GitHub Release and Update Action Tags
         run: bash .github/scripts/release-tags.sh

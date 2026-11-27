@@ -201,6 +201,14 @@ describe("CI release tag and GitHub Release automation", () => {
       "github.event.pull_request.head.repo.full_name == github.repository",
     );
     expect(releaseWorkflow).toContain("github.event.pull_request.merge_commit_sha");
+    expect(releaseWorkflow).not.toMatch(/^concurrency:/m);
+    expect(releaseWorkflow).toContain("    concurrency:\n      group: release-main");
+    expect(releaseWorkflow).toContain("run: pnpm run test:ci");
+    expect(releaseWorkflow).toContain("run: pnpm run lint");
+    expect(releaseWorkflow).toContain("run: pnpm run build");
+    expect(releaseWorkflow.indexOf("run: pnpm run build")).toBeLessThan(
+      releaseWorkflow.indexOf("bash .github/scripts/release-tags.sh"),
+    );
     expect(releaseWorkflow).toContain("bash .github/scripts/release-tags.sh");
     expect(releaseWorkflow).not.toMatch(/git tag -f\b/);
     expect(releaseWorkflow).not.toContain("git push origin --tags --force");
