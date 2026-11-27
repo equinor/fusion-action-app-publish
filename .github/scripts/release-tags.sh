@@ -1,6 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+RESOLVE_ONLY=0
+if [[ "$#" -gt 1 ]]; then
+  echo "Usage: $0 [--resolve-release-sha]" >&2
+  exit 1
+elif [[ "$#" -eq 1 ]]; then
+  case "$1" in
+    --resolve-release-sha)
+      RESOLVE_ONLY=1
+      ;;
+    *)
+      echo "Error: Unknown argument '$1'. Usage: $0 [--resolve-release-sha]" >&2
+      exit 1
+      ;;
+  esac
+fi
+
 NOTES_FILE=""
 cleanup() {
   if [[ -n "${NOTES_FILE}" ]]; then
@@ -71,6 +87,11 @@ if [[ -z "${RELEASE_SHA}" ]]; then
   exit 1
 fi
 
+if [[ "${RESOLVE_ONLY}" == "1" ]]; then
+  printf '%s\n' "${RELEASE_SHA}"
+  exit 0
+fi
+
 REMOTE_TAG_SHA=$(resolve_remote_tag_sha "${TAG}")
 
 # Never overwrite an existing release tag that points to a different commit.
@@ -79,11 +100,13 @@ if [[ -n "${REMOTE_TAG_SHA}" && "${REMOTE_TAG_SHA}" != "${RELEASE_SHA}" ]]; then
   exit 0
 fi
 
-if [[ -z "${REMOTE_TAG_SHA}" ]]; then
-  if [[ "${RELEASE_SHA}" != "${HEAD_SHA}" ]]; then
-    echo "Recovering unpublished release ${TAG} at version-introducing commit ${RELEASE_SHA} (HEAD is ${HEAD_SHA})."
-  fi
+# Require the caller to check out and validate RELEASE_SHA before publishing it.
+if [[ "${HEAD_SHA}" != "${RELEASE_SHA}" ]]; then
+  echo "Error: HEAD (${HEAD_SHA}) does not match the version-introducing commit (${RELEASE_SHA}); check out ${RELEASE_SHA} and run validation against it before publishing ${TAG}." >&2
+  exit 1
+fi
 
+if [[ -z "${REMOTE_TAG_SHA}" ]]; then
   if LOCAL_TAG_SHA=$(git rev-parse -q --verify "refs/tags/${TAG}^{commit}" 2>/dev/null); then
     if [[ "${LOCAL_TAG_SHA}" != "${RELEASE_SHA}" ]]; then
       echo "Error: Local tag ${TAG} already exists at ${LOCAL_TAG_SHA} (release commit is ${RELEASE_SHA}); refusing to overwrite." >&2
