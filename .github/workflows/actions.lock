@@ -11,6 +11,11 @@ workflows:
         - 'pnpm/setup@v2.1.0'
     '.github/workflows/dependabot.yml':
         - 'dependabot/fetch-metadata@v3.1.0'
+    '.github/workflows/release.yml':
+        - 'actions/cache@v4.3.0'
+        - 'actions/checkout@v7.0.1'
+        - 'actions/setup-node@v6.5.0'
+        - 'pnpm/setup@v2.1.0'
     '.github/workflows/test.yml':
         - 'actions/cache@v4.3.0'
         - 'actions/checkout@v7.0.1'

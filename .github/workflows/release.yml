@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+  workflow_dispatch:
+
+# Security: Apply principle of least privilege
+# This workflow only publishes git tags and GitHub Releases when the Changesets Release PR merges to main
+permissions:
+  contents: write
+
+jobs:
+  publish-release:
+    name: Publish GitHub Release and Action Tags
+    concurrency:
+      group: release-main
+      cancel-in-progress: false
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.merged == true &&
+        github.event.pull_request.base.ref == 'main' &&
+        github.event.pull_request.head.ref == 'changeset-release/main' &&
+        github.event.pull_request.head.repo.full_name == github.repository
+      )
+    runs-on: ubuntu-latest
+    steps:
+      # Check out the exact merged commit on main (not the temporary PR merge ref)
+      - name: Checkout merged commit
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.merge_commit_sha || 'refs/heads/main' }}
+          fetch-depth: 0
+
+      # Resolve the exact version-introducing commit and check it out before running validation,
+      # so manual recovery on main always tests, lints, and builds the commit being tagged.
+      - name: Resolve and checkout release commit
+        run: |
+          cp .github/scripts/release-tags.sh "${RUNNER_TEMP}/release-tags.sh"
+          chmod +x "${RUNNER_TEMP}/release-tags.sh"
+          RELEASE_SHA=$(bash "${RUNNER_TEMP}/release-tags.sh" --resolve-release-sha)
+          HEAD_SHA=$(git rev-parse HEAD)
+          if [[ "${RELEASE_SHA}" != "${HEAD_SHA}" ]]; then
+            echo "Checking out version-introducing release commit ${RELEASE_SHA} (was ${HEAD_SHA}) for validation and publication."
+            git checkout --detach "${RELEASE_SHA}"
+          fi
+
+      - name: Setup node and install deps
+        uses: $/.github/workflows/actions/node-setup
+
+      - name: Run tests
+        run: pnpm run test:ci
+
+      - name: Run linter
+        run: pnpm run lint
+
+      - name: Build and package action
+        run: pnpm run build
+
+      - name: Create GitHub Release and Update Action Tags
+        run: bash "${RUNNER_TEMP}/release-tags.sh"
+        env:
+          GH_TOKEN: ${{ github.token }}
